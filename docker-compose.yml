@@ -1,0 +1,35 @@
+services:
+  web-app:
+    build:
+      context: ./web-app
+      dockerfile: Dockerfile.dev
+    container_name: tooth_web_app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web-app:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    networks:
+      - tooth_net
+    restart: unless-stopped
+
+  mobile-web:
+    build:
+      context: ./mobile_app
+      dockerfile: Dockerfile.dev
+    container_name: tooth_mobile_web
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./mobile_app:/app
+      - /app/.dart_tool
+      - /app/build
+    networks:
+      - tooth_net
+    restart: unless-stopped
+
+networks:
+  tooth_net:
+    driver: bridge
