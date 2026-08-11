@@ -1,0 +1,15 @@
+{
+  "name": "styling-tooth-app",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev:web": "npm --prefix web-app run dev",
+    "build:web": "npm --prefix web-app run build",
+    "test:backend": "node supabase/tests/backend.test.mjs"
+  },
+
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.58.0"
+  }
+}
