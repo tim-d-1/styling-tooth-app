@@ -135,4 +135,25 @@ test('6. Appointment Status Transition Guard (State Machine Validation)', async 
   assert.equal(data?.length || 0, 0, 'Unauthenticated users must not be able to mutate appointment statuses')
 })
 
+test('7. Multi-Service Availability RPC get_available_slots_multi_service', async () => {
+  const { data: masters } = await supabase.from('masters').select('id').eq('is_active', true).limit(1)
+  const { data: services } = await supabase.from('services').select('id').limit(2)
+
+  if (!masters?.length || !services?.length) return
+
+  const masterId = masters[0].id
+  const serviceIds = services.map(s => s.id)
+  const testDate = '2026-08-10'
+
+  const { data: slots, error } = await supabase.rpc('get_available_slots_multi_service', {
+    p_master_id: masterId,
+    p_service_ids: serviceIds,
+    p_date: testDate
+  })
+
+  assert.equal(error, null, `get_available_slots_multi_service error: ${error?.message}`)
+  assert.ok(Array.isArray(slots), 'get_available_slots_multi_service should return an array of slots')
+})
+
+
 
