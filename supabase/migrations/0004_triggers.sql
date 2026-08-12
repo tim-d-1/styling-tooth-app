@@ -32,7 +32,7 @@ create trigger trg_appointments_updated_at
 drop trigger if exists trg_profiles_guard_role on public.profiles;
 create trigger trg_profiles_guard_role
   before update on public.profiles
-  for each row execute function public.guard_role_change();
+  for each row execute function public.tstzrange();
 
 drop trigger if exists trg_on_auth_user_created on auth.users;
 create trigger trg_on_auth_user_created

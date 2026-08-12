@@ -1,9 +1,5 @@
--- Multi-Service Line Items Table and Booking RPCs
-
--- 1. Make service_id optional on appointments for multi-service flexibility
 alter table public.appointments alter column service_id drop not null;
 
--- 2. Line Items Table: appointment_services
 create table if not exists public.appointment_services (
   appointment_id uuid not null references public.appointments(id) on delete cascade,
   service_id     uuid not null references public.services(id)     on delete restrict,
@@ -17,7 +13,6 @@ create table if not exists public.appointment_services (
 create index if not exists appointment_services_appointment_idx on public.appointment_services (appointment_id);
 create index if not exists appointment_services_service_idx     on public.appointment_services (service_id);
 
--- 3. RLS for appointment_services
 alter table public.appointment_services enable row level security;
 
 drop policy if exists appointment_services_select on public.appointment_services;
@@ -40,7 +35,6 @@ create policy appointment_services_insert on public.appointment_services
     )
   );
 
--- 4. Multi-Service Total Resolver Helper
 create or replace function public.resolve_multi_services(
   p_master_id   uuid,
   p_service_ids uuid[]
@@ -74,7 +68,6 @@ begin
 end;
 $$;
 
--- 5. Multi-Service Availability RPC
 create or replace function public.get_available_slots_multi_service(
   p_master_id   uuid,
   p_service_ids uuid[],
@@ -119,7 +112,6 @@ begin
 end;
 $$;
 
--- 6. Atomic Multi-Service Booking RPC
 create or replace function public.create_multi_service_appointment(
   p_pet_id      uuid,
   p_master_id   uuid,
@@ -174,7 +166,6 @@ begin
      p_starts_at, v_ends_at, v_total_price, p_client_note, p_source, v_client_id)
   returning * into v_appt;
 
-  -- Insert line items into appointment_services
   foreach v_sid in array p_service_ids loop
     v_idx := v_idx + 1;
     select price, duration_min into v_sp, v_sd

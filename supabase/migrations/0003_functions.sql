@@ -111,7 +111,6 @@ begin
     return false;
   end if;
 
-  -- 3) no time-off overlap
   if exists (
     select 1 from public.master_time_off t
     where t.master_id = p_master_id

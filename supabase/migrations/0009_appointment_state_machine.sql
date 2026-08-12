@@ -1,4 +1,3 @@
--- Enforce state machine transitions and role checks on appointments.status
 create or replace function public.validate_appointment_status_transition()
 returns trigger
 language plpgsql
@@ -6,12 +5,10 @@ security definer
 set search_path = public
 as $$
 begin
-  -- If status is not changing, allow the update
   if old.status = new.status then
     return new;
   end if;
 
-  -- 1. Client Role Restrictions: non-staff can ONLY change status to 'cancelled'
   if not public.is_staff() then
     if new.status <> 'cancelled' then
       raise exception 'Clients are only permitted to cancel appointments';
@@ -22,7 +19,6 @@ begin
     end if;
   end if;
 
-  -- 2. State Machine Transitions Matrix
   case old.status
     when 'new' then
       if new.status not in ('confirmed', 'in_progress', 'cancelled') then
