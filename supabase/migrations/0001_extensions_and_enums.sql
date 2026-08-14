@@ -9,12 +9,12 @@ exception when duplicate_object then null; end $$;
 
 do $$ begin
   create type public.appointment_status as enum (
-    'new',         -- Новий
-    'confirmed',   -- Підтверджено
-    'in_progress', -- В процесі
-    'completed',   -- Завершено
-    'cancelled',   -- Скасовано
-    'late'         -- Запізнюється
+    'new',
+    'confirmed',
+    'in_progress',
+    'completed',
+    'cancelled',
+    'late'
   );
 exception when duplicate_object then null; end $$;
 

@@ -1,0 +1,60 @@
+import { useState, type FC } from 'react';
+
+export interface RatingProps {
+  value: number;
+  maxStars?: number;
+  size?: number;
+  onChange?: (rating: number) => void;
+  readOnly?: boolean;
+  showScore?: boolean;
+  className?: string;
+}
+
+export const Rating: FC<RatingProps> = ({
+  value,
+  maxStars = 5,
+  size = 20,
+  onChange,
+  readOnly = true,
+  showScore = false,
+  className = '',
+}) => {
+  const [hoverValue, setHoverValue] = useState<number | null>(null);
+  const activeRating = hoverValue !== null ? hoverValue : value;
+
+  const starFullD =
+    'M19.863 7.32858C19.6925 6.786 19.352 6.31267 18.8917 5.97861C18.4314 5.64454 17.8759 5.46747 17.3072 5.47358H13.6663L12.5605 2.02691C12.3866 1.48438 12.0449 1.01109 11.5846 0.675301C11.1244 0.339511 10.5694 0.158569 9.99967 0.158569C9.42995 0.158569 8.87495 0.339511 8.4147 0.675301C7.95445 1.01109 7.61274 1.48438 7.43884 2.02691L6.33301 5.47358H2.69217C2.12529 5.47439 1.57317 5.65432 1.11466 5.98767C0.656146 6.32102 0.314706 6.79074 0.139107 7.32974C-0.0364925 7.86873 -0.0372697 8.44944 0.136886 8.98891C0.311042 9.52837 0.651223 9.999 1.10884 10.3336L4.07217 12.5002L2.94551 15.9894C2.76343 16.5306 2.76113 17.1161 2.93893 17.6587C3.11673 18.2012 3.46513 18.6718 3.93217 19.0002C4.39122 19.3392 4.9475 19.5208 5.51813 19.518C6.08877 19.5151 6.64321 19.328 7.09884 18.9844L9.99967 16.8494L12.9013 18.9819C13.3596 19.319 13.9128 19.502 14.4816 19.5048C15.0505 19.5076 15.6055 19.3299 16.067 18.9973C16.5285 18.6648 16.8726 18.1945 17.0499 17.654C17.2272 17.1135 17.2286 16.5307 17.0538 15.9894L15.9272 12.5002L18.8938 10.3336C19.3567 10.0032 19.7009 9.53258 19.8754 8.99137C20.05 8.45016 20.0456 7.86713 19.863 7.32858Z';
+
+  return (
+    <div className={`ui-rating ${className}`}>
+      <div className="ui-rating__stars">
+        {Array.from({ length: maxStars }).map((_, index) => {
+          const starIndex = index + 1;
+          const isFilled = starIndex <= activeRating;
+
+          return (
+            <svg
+              key={starIndex}
+              width={size}
+              height={size}
+              viewBox="0 0 20 20"
+              fill="none"
+              className={`ui-rating__star ${!readOnly ? 'ui-rating__star--interactive' : ''}`}
+              onMouseEnter={() => !readOnly && setHoverValue(starIndex)}
+              onMouseLeave={() => !readOnly && setHoverValue(null)}
+              onClick={() => !readOnly && onChange?.(starIndex)}
+            >
+              <path
+                d={starFullD}
+                fill={isFilled ? 'var(--color-interactive-primary)' : 'var(--color-interactive-lightgray)'}
+              />
+            </svg>
+          );
+        })}
+      </div>
+      {showScore && <span className="ui-rating__score">{value.toFixed(1)}</span>}
+    </div>
+  );
+};
+
+export default Rating;

@@ -10,10 +10,6 @@ begin
   end if;
 
   if not public.is_staff() then
-    if new.status <> 'cancelled' then
-      raise exception 'Clients are only permitted to cancel appointments';
-    end if;
-
     if old.status not in ('new', 'confirmed') then
       raise exception 'Cannot cancel appointment with status %', old.status;
     end if;
