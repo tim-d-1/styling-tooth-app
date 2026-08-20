@@ -73,8 +73,9 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
                   onArticleClick?.(article.id);
                 }
               }}
-              aria-label={`${article.title} ${article.subtitle || ''}`}
-              className="relative h-[212px] rounded-[10px] overflow-hidden cursor-pointer shadow-md bg-soft-blue bg-no-repeat bg-right-bottom bg-contain flex flex-col justify-center p-6 bg-[url('/images/dog_paw_close_up.png')] hover:scale-[1.01] transition-transform duration-200 text-left"
+              style={article.bgImage ? { backgroundImage: `url('${article.bgImage}')` } : undefined}
+              aria-label={`${article.title} ${article.subtitle || ''}`.trim()}
+              className="relative h-[212px] rounded-[10px] overflow-hidden cursor-pointer shadow-md bg-soft-blue bg-no-repeat bg-right-bottom bg-contain flex flex-col justify-center p-6 hover:scale-[1.01] transition-transform duration-200 text-left"
             >
               <div className="relative z-20 max-w-[200px]">
                 <div className="text-3xl font-extrabold text-[#1A2938] leading-none font-accented">

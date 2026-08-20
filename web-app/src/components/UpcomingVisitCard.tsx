@@ -29,6 +29,12 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
 }) => {
   const [transferEnabled, setTransferEnabled] = useState(initialTransferEnabled);
 
+  const effectiveDayOfWeek = dayOfWeek?.trim() || 'СЕР';
+  const effectiveDayNumber = dayNumber?.trim() || '10';
+  const effectiveTimeSlot = timeSlot?.trim() || '16:00';
+  const effectiveMasterName = masterName?.trim() || 'Марія Шевченко';
+  const effectiveProcedureName = procedureName?.trim() || 'Комплексний грумінг';
+
   const currentProcedureCost = basePrice;
   const totalPrice = basePrice + (transferEnabled ? transferPrice : 0);
 
@@ -42,13 +48,13 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
         <div className="bg-white rounded-2xl p-4 md:px-6 flex items-center gap-6 flex-1 min-w-[280px] shadow-xs">
           <div className="flex flex-col items-center justify-center border-r border-visit-gray pr-5 min-w-[70px]">
             <span className="text-xs font-semibold text-content-dark uppercase font-accented">
-              {dayOfWeek}
+              {effectiveDayOfWeek}
             </span>
             <span className="text-4xl font-bold leading-none my-1 text-content-dark">
-              {dayNumber}
+              {effectiveDayNumber}
             </span>
             <span className="text-xs font-medium text-content-dark">
-              {timeSlot}
+              {effectiveTimeSlot}
             </span>
           </div>
 
@@ -56,13 +62,13 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
             <div>
               <span className="text-xs text-gray-500 block leading-tight">Майстер:</span>
               <strong className="text-sm font-semibold text-content-dark leading-tight">
-                {masterName}
+                {effectiveMasterName}
               </strong>
             </div>
             <div>
               <span className="text-xs text-gray-500 block leading-tight">Процедура:</span>
               <strong className="text-sm font-semibold text-content-dark leading-tight">
-                {procedureName}
+                {effectiveProcedureName}
               </strong>
             </div>
           </div>

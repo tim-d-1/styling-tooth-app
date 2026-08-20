@@ -26,7 +26,7 @@ export const PromoBannersGrid: FC<PromoBannersGridProps> = ({
             }
           }}
           aria-label="Знижка 25% на перший грумінг"
-          className="relative h-[240px] rounded-3xl overflow-hidden cursor-pointer shadow-md bg-cover bg-center flex flex-col justify-between p-6 bg-[url('/images/promo_grooming_tools.png')] hover:scale-[1.01] transition-transform duration-200 text-left"
+          className="relative h-[240px] rounded-3xl overflow-hidden cursor-pointer shadow-md bg-cover bg-center flex flex-col justify-between p-6 bg-[url('/assets/images/promo_grooming_tools.png')] hover:scale-[1.01] transition-transform duration-200 text-left"
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/70 z-10" />
 
@@ -61,7 +61,7 @@ export const PromoBannersGrid: FC<PromoBannersGridProps> = ({
             }
           }}
           aria-label="Безкоштовне підстригання кігтів при комплексному грумінгу"
-          className="relative h-[240px] rounded-3xl overflow-hidden cursor-pointer shadow-md bg-cover bg-center flex flex-col justify-end p-6 bg-[url('/images/promo_nail_trimming.png')] hover:scale-[1.01] transition-transform duration-200 text-left"
+          className="relative h-[240px] rounded-3xl overflow-hidden cursor-pointer shadow-md bg-cover bg-center flex flex-col justify-end p-6 bg-[url('/assets/images/promo_nail_trimming.png')] hover:scale-[1.01] transition-transform duration-200 text-left"
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/85 z-10" />
 

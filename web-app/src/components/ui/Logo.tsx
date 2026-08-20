@@ -1,6 +1,14 @@
 import type { FC, CSSProperties } from 'react';
 
 export type LogoVariant =
+  | 'full-light'
+  | 'full-dark'
+  | 'full-dark-mono'
+  | 'full-transparent'
+  | 'mark-light'
+  | 'mark-dark'
+  | 'mark-dark-mono'
+  | 'mark-transparent'
   | 'logo-01'
   | 'logo-02'
   | 'logo-03'
@@ -19,24 +27,32 @@ export interface LogoProps {
 }
 
 const logoFileMap: Record<LogoVariant, string> = {
-  'logo-01': '/logos/logo-01 1.svg',
-  'logo-02': '/logos/logo-02 1.svg',
-  'logo-03': '/logos/logo-03 1.svg',
-  'logo-04': '/logos/logo-04 1.svg',
-  'logo-05': '/logos/logo-05 1.svg',
-  'logo-06': '/logos/logo-06 1.svg',
-  'logo-without-fon-01': '/logos/logo-without-fon-01 1.svg',
-  'logo-without-fon-02': '/logos/logo-without-fon-02-04 1.svg',
+  'full-light': '/assets/logos/logo-full-light.svg',
+  'full-dark': '/assets/logos/logo-full-dark.svg',
+  'full-dark-mono': '/assets/logos/logo-full-dark-mono.svg',
+  'full-transparent': '/assets/logos/logo-full-transparent.svg',
+  'mark-light': '/assets/logos/logo-mark-light.svg',
+  'mark-dark': '/assets/logos/logo-mark-dark.svg',
+  'mark-dark-mono': '/assets/logos/logo-mark-dark-mono.svg',
+  'mark-transparent': '/assets/logos/logo-mark-transparent.svg',
+  'logo-01': '/assets/logos/logo-full-light.svg',
+  'logo-02': '/assets/logos/logo-full-dark.svg',
+  'logo-03': '/assets/logos/logo-full-dark-mono.svg',
+  'logo-04': '/assets/logos/logo-mark-light.svg',
+  'logo-05': '/assets/logos/logo-mark-dark.svg',
+  'logo-06': '/assets/logos/logo-mark-dark-mono.svg',
+  'logo-without-fon-01': '/assets/logos/logo-full-transparent.svg',
+  'logo-without-fon-02': '/assets/logos/logo-mark-transparent.svg',
 };
 
 export const Logo: FC<LogoProps> = ({
-  variant = 'logo-without-fon-01',
+  variant = 'full-transparent',
   alt = 'Стильний Зубець Logo',
   width,
   height = 44,
   className = '',
 }) => {
-  const src = logoFileMap[variant] || logoFileMap['logo-without-fon-01'];
+  const src = logoFileMap[variant] || logoFileMap['full-transparent'];
 
   const customStyle: CSSProperties = {
     height: typeof height === 'number' ? `${height}px` : height,

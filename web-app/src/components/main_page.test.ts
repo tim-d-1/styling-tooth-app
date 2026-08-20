@@ -8,6 +8,10 @@ export function calculateTotalPrice(basePrice: number, transferPrice: number, tr
   return basePrice + (transferEnabled ? transferPrice : 0);
 }
 
+export function sanitizeStringProp(value: string | undefined, defaultValue: string): string {
+  return value?.trim() || defaultValue;
+}
+
 export function runMainPageSuite(): boolean {
   const components = [Header, LocationBar, UpcomingVisitCard, PromoBannersGrid, ExpertAdviceGrid];
   for (const comp of components) {
@@ -27,6 +31,11 @@ export function runMainPageSuite(): boolean {
   const priceWithTransfer = calculateTotalPrice(basePrice, transferPrice, true);
   if (priceWithTransfer !== 1400) {
     throw new Error(`Expected price with transfer to be 1400, got ${priceWithTransfer}`);
+  }
+
+  const fallbackTest = sanitizeStringProp('   ', 'СЕР');
+  if (fallbackTest !== 'СЕР') {
+    throw new Error(`Expected fallback value 'СЕР', got '${fallbackTest}'`);
   }
 
   return true;

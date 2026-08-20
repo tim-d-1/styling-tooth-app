@@ -18,10 +18,14 @@ export const UserProfileCard: FC<UserProfileCardProps> = ({
   onClick,
   className = '',
 }) => {
+  const effectiveName = name?.trim() || 'Катерина Ковальчук';
+  const effectiveRoleLabel = roleLabel?.trim() || "Ім'я та Прізвище";
+
   return (
     <div
       role="button"
       tabIndex={0}
+      aria-label={`Профіль користувача: ${effectiveName}`}
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -41,16 +45,16 @@ export const UserProfileCard: FC<UserProfileCardProps> = ({
 
       <div className="flex flex-col flex-1 gap-0.5">
         <span className="text-xs text-gray-500 font-primary">
-          {roleLabel}
+          {effectiveRoleLabel}
         </span>
         <span className="text-base font-medium text-content-dark font-primary">
-          {name}
+          {effectiveName}
         </span>
       </div>
 
       <button
         type="button"
-        aria-label="Редагувати профіль"
+        aria-label={`Редагувати профіль ${effectiveName}`}
         onClick={(e) => {
           e.stopPropagation();
           onEdit?.();

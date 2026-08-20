@@ -15,6 +15,8 @@ export const Header: FC<HeaderProps> = ({
   onProfileClick,
   onDeviceClick,
 }) => {
+  const currentNav = activeNav?.trim() || 'home';
+
   const navItems = [
     { id: 'services', label: 'Послуги' },
     { id: 'about', label: 'Про нас' },
@@ -29,17 +31,18 @@ export const Header: FC<HeaderProps> = ({
         aria-label="Головна сторінка"
         className="cursor-pointer flex items-center bg-transparent border-0 p-0 text-left hover:opacity-90 transition-opacity"
       >
-        <Logo variant="logo-without-fon-02" />
+        <Logo variant="mark-transparent" />
       </button>
 
       <nav className="flex items-center gap-10">
         {navItems.map((item) => {
-          const isActive = activeNav === item.id;
+          const isActive = currentNav === item.id;
           return (
             <button
               key={item.id}
               type="button"
               onClick={() => onNavClick?.(item.id)}
+              aria-label={item.label}
               className={`bg-transparent border-0 font-accented text-base transition-colors duration-150 py-2 cursor-pointer ${
                 isActive ? 'font-bold text-terracotta' : 'font-medium text-content-dark hover:text-terracotta'
               }`}
@@ -54,7 +57,7 @@ export const Header: FC<HeaderProps> = ({
         <button
           type="button"
           onClick={onDeviceClick}
-          aria-label="App download QR"
+          aria-label="Завантажити мобільний застосунок"
           className="w-10 h-10 rounded-full bg-visit-gray border-0 flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-gray-200"
         >
           <Icon name="fi-rr-mobile" size={20} color="var(--color-content-primary)" />
@@ -63,12 +66,12 @@ export const Header: FC<HeaderProps> = ({
         <button
           type="button"
           onClick={onProfileClick}
-          aria-label="User Profile"
+          aria-label="Особистий профіль користувача"
           className="w-10 h-10 rounded-full overflow-hidden border-2 border-terracotta p-0 cursor-pointer bg-visit-gray hover:opacity-90 transition-opacity"
         >
           <img
-            src="/images/cat_photo_1.png"
-            alt="User avatar"
+            src="/assets/images/cat_photo_1.png"
+            alt="Аватар користувача"
             className="w-full h-full object-cover"
           />
         </button>

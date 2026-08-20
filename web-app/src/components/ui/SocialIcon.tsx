@@ -76,7 +76,7 @@ export const SocialIcon: FC<SocialIconProps> = ({
 }) => {
   const key = platformKeyMap[platform] || 'telegram';
   const fileName = `${key}-${colorScheme.toLowerCase()}.svg`;
-  const src = `/social_icons/${fileName}`;
+  const src = `/assets/social_icons/${fileName}`;
 
   return (
     <img

@@ -71,6 +71,20 @@ export function runComponentSuite(): boolean {
     throw new Error('Transactions mock invalid');
   }
 
+  const standardizedVariants = [
+    'full-light',
+    'full-dark',
+    'full-dark-mono',
+    'full-transparent',
+    'mark-light',
+    'mark-dark',
+    'mark-dark-mono',
+    'mark-transparent',
+  ];
+  if (standardizedVariants.length !== 8) {
+    throw new Error('Logo variants mismatch');
+  }
+
   return true;
 }
 

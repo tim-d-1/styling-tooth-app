@@ -22,18 +22,21 @@ export const NavTabs: FC<NavTabsProps> = ({
   onChange,
   className = '',
 }) => {
+  const currentTab = activeTab?.trim() || 'home';
+
   return (
     <div
       className={`ui-nav-tabs flex items-center justify-around bg-white px-4 py-2 rounded-xl shadow-card w-full max-w-[360px] ${className}`}
     >
       {tabs.map((tab) => {
-        const isActive = tab.id === activeTab;
+        const isActive = tab.id === currentTab;
         const color = isActive ? 'var(--color-terracotta)' : 'var(--color-content-dark)';
 
         return (
           <button
             key={tab.id}
             type="button"
+            aria-label={tab.label}
             onClick={() => onChange?.(tab.id)}
             className="flex flex-col items-center justify-center gap-1 border-0 bg-transparent cursor-pointer py-1.5 px-3 min-w-[64px] hover:opacity-80 transition-opacity"
           >
