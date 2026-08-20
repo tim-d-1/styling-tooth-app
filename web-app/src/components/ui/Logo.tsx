@@ -50,7 +50,7 @@ export const Logo: FC<LogoProps> = ({
   alt = 'Стильний Зубець Logo',
   width,
   height = 44,
-  className = '',
+  className,
 }) => {
   const src = logoFileMap[variant] || logoFileMap['full-transparent'];
 
@@ -64,7 +64,7 @@ export const Logo: FC<LogoProps> = ({
       src={src}
       alt={alt}
       style={customStyle}
-      className={`object-contain max-h-none ${className}`}
+      className={['object-contain max-h-none', className].filter(Boolean).join(' ')}
       loading="lazy"
     />
   );

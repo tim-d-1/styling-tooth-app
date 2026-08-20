@@ -18,7 +18,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       leftIcon,
       rightIcon,
       variant = 'outline',
-      className = '',
+      className,
       id,
       disabled,
       ...props
@@ -36,7 +36,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       .join(' ');
 
     return (
-      <div className={`ui-input ${className}`}>
+      <div className={['ui-input', className].filter(Boolean).join(' ')}>
         {label && (
           <label htmlFor={inputId} className="ui-input__label">
             {label}

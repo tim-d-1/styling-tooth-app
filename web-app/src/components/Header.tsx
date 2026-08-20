@@ -1,8 +1,11 @@
 import type { FC } from 'react';
 import Logo from './ui/Logo';
 import Icon from './ui/Icon';
+import Button from './ui/Button';
 
 export interface HeaderProps {
+  isLoggedIn?: boolean;
+  onLoginClick?: () => void;
   onNavClick?: (nav: string) => void;
   activeNav?: string;
   onProfileClick?: () => void;
@@ -10,6 +13,8 @@ export interface HeaderProps {
 }
 
 export const Header: FC<HeaderProps> = ({
+  isLoggedIn = false,
+  onLoginClick,
   onNavClick,
   activeNav = 'home',
   onProfileClick,
@@ -54,27 +59,35 @@ export const Header: FC<HeaderProps> = ({
       </nav>
 
       <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={onDeviceClick}
-          aria-label="Завантажити мобільний застосунок"
-          className="w-10 h-10 rounded-full bg-visit-gray border-0 flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-gray-200"
-        >
-          <Icon name="fi-rr-mobile" size={20} color="var(--color-content-primary)" />
-        </button>
+        {isLoggedIn ? (
+          <>
+            <button
+              type="button"
+              onClick={onDeviceClick}
+              aria-label="Завантажити мобільний застосунок"
+              className="w-10 h-10 rounded-full bg-visit-gray border-0 flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-gray-200"
+            >
+              <Icon name="fi-rr-mobile" size={20} color="var(--color-content-primary)" />
+            </button>
 
-        <button
-          type="button"
-          onClick={onProfileClick}
-          aria-label="Особистий профіль користувача"
-          className="w-10 h-10 rounded-full overflow-hidden border-2 border-terracotta p-0 cursor-pointer bg-visit-gray hover:opacity-90 transition-opacity"
-        >
-          <img
-            src="/assets/images/cat_photo_1.png"
-            alt="Аватар користувача"
-            className="w-full h-full object-cover"
-          />
-        </button>
+            <button
+              type="button"
+              onClick={onProfileClick}
+              aria-label="Особистий профіль користувача"
+              className="w-10 h-10 rounded-full overflow-hidden border-2 border-terracotta p-0 cursor-pointer bg-visit-gray hover:opacity-90 transition-opacity"
+            >
+              <img
+                src="/assets/images/cat_photo_1.png"
+                alt="Аватар користувача"
+                className="w-full h-full object-cover"
+              />
+            </button>
+          </>
+        ) : (
+          <Button variant="primary" size="sm" onClick={onLoginClick}>
+            Log In
+          </Button>
+        )}
       </div>
     </header>
   );

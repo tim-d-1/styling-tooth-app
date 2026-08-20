@@ -20,7 +20,7 @@ export const Button: FC<ButtonProps> = ({
   isLoading = false,
   leftIcon,
   rightIcon,
-  className = '',
+  className,
   disabled,
   ...props
 }) => {

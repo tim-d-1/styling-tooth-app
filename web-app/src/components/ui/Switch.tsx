@@ -14,13 +14,13 @@ export const Switch: FC<SwitchProps> = ({
   onChange,
   disabled = false,
   label,
-  className = '',
+  className,
   id,
 }) => {
   const switchId = id || `switch-${Math.random().toString(36).substring(2, 9)}`;
 
   return (
-    <div className={`ui-switch ${className}`}>
+    <div className={['ui-switch', className].filter(Boolean).join(' ')}>
       <button
         id={switchId}
         type="button"

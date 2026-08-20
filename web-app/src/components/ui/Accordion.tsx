@@ -16,7 +16,7 @@ export const Accordion: FC<AccordionProps> = ({
   isExpanded: controlledExpanded,
   defaultExpanded = false,
   onToggle,
-  className = '',
+  className,
 }) => {
   const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
 
@@ -38,7 +38,9 @@ export const Accordion: FC<AccordionProps> = ({
 
   return (
     <div
-      className={`ui-accordion bg-white rounded-[20px] p-5 shadow-card w-full max-w-[353px] flex flex-col gap-4 ${className}`}
+      className={['ui-accordion bg-white rounded-[20px] p-5 shadow-card w-full max-w-[353px] flex flex-col gap-4', className]
+        .filter(Boolean)
+        .join(' ')}
     >
       <button
         type="button"

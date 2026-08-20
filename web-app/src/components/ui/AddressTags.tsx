@@ -16,7 +16,7 @@ export const AddressTags: FC<AddressTagsProps> = ({
   options = [],
   selectedId,
   onChange,
-  className = '',
+  className,
 }) => {
   const [internalSelected, setInternalSelected] = useState(selectedId);
 
@@ -36,7 +36,7 @@ export const AddressTags: FC<AddressTagsProps> = ({
   };
 
   return (
-    <div className={`ui-address-tags flex items-center gap-3 w-full max-w-[353px] ${className}`}>
+    <div className={['ui-address-tags flex items-center gap-3 w-full max-w-[353px]', className].filter(Boolean).join(' ')}>
       {options.map((opt) => {
         const isActive = opt.id === selected;
 

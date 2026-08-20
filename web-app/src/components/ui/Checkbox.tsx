@@ -14,13 +14,13 @@ export const Checkbox: FC<CheckboxProps> = ({
   onChange,
   disabled = false,
   label,
-  className = '',
+  className,
   id,
 }) => {
   const checkboxId = id || `checkbox-${Math.random().toString(36).substring(2, 9)}`;
 
   return (
-    <div className={`ui-checkbox ${className}`}>
+    <div className={['ui-checkbox', className].filter(Boolean).join(' ')}>
       <div
         id={checkboxId}
         role="checkbox"

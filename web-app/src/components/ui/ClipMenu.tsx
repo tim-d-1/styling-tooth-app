@@ -13,11 +13,11 @@ export interface ClipMenuProps {
   className?: string;
 }
 
-export const ClipMenu: FC<ClipMenuProps> = ({ items = [], onSelect, className = '' }) => {
+export const ClipMenu: FC<ClipMenuProps> = ({ items = [], onSelect, className }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className={`ui-clip-menu relative w-fit ${className}`}>
+    <div className={['ui-clip-menu relative w-fit', className].filter(Boolean).join(' ')}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}

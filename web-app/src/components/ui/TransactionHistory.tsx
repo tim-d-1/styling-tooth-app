@@ -19,7 +19,7 @@ export interface TransactionHistoryProps {
 
 export const TransactionHistory: FC<TransactionHistoryProps> = ({
   items = [],
-  className = '',
+  className,
 }) => {
   const [activeFilter, setActiveFilter] = useState<TransactionFilter>('all');
 
@@ -30,7 +30,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
   });
 
   return (
-    <div className={`ui-transaction-history flex flex-col gap-3 w-full max-w-[353px] ${className}`}>
+    <div className={['ui-transaction-history flex flex-col gap-3 w-full max-w-[353px]', className].filter(Boolean).join(' ')}>
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         <button
           type="button"

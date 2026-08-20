@@ -23,10 +23,10 @@ export const NotificationCard: FC<NotificationCardProps> = ({
   compact = false,
   icon,
   onMarkRead,
-  className = '',
+  className,
 }) => {
   return (
-    <div className={`ui-notification-card ${className}`}>
+    <div className={['ui-notification-card', className].filter(Boolean).join(' ')}>
       <div className="ui-notification-card__header">
         <div className="ui-notification-card__avatar">
           {icon || <Icon name="fi-rr-bug" size={20} color="var(--color-content-primary)" />}

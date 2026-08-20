@@ -19,13 +19,13 @@ export const FilterMenu: FC<FilterMenuProps> = ({
   selectedId,
   onSelect,
   placeholder = 'Вибрати фільтр',
-  className = '',
+  className,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectedOption = options.find((opt) => opt.id === selectedId);
 
   return (
-    <div className={`ui-filter-menu ${className}`}>
+    <div className={['ui-filter-menu', className].filter(Boolean).join(' ')}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}

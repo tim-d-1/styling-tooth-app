@@ -20,13 +20,13 @@ export const NavTabs: FC<NavTabsProps> = ({
   tabs = [],
   activeTab = 'home',
   onChange,
-  className = '',
+  className,
 }) => {
   const currentTab = activeTab?.trim() || 'home';
 
   return (
     <div
-      className={`ui-nav-tabs flex items-center justify-around bg-white px-4 py-2 rounded-xl shadow-card w-full max-w-[360px] ${className}`}
+      className={['ui-nav-tabs flex items-center justify-around bg-white px-4 py-2 rounded-xl shadow-card w-full max-w-[360px]', className].filter(Boolean).join(' ')}
     >
       {tabs.map((tab) => {
         const isActive = tab.id === currentTab;

@@ -22,7 +22,7 @@ export const PaymentMethodsList: FC<PaymentMethodsListProps> = ({
   selectedId,
   onSelect,
   onDelete,
-  className = '',
+  className,
 }) => {
   const [internalSelected, setInternalSelected] = useState(selectedId);
 
@@ -42,7 +42,7 @@ export const PaymentMethodsList: FC<PaymentMethodsListProps> = ({
   };
 
   return (
-    <div className={`ui-payment-methods flex flex-col gap-3 w-full max-w-[345px] ${className}`}>
+    <div className={['ui-payment-methods flex flex-col gap-3 w-full max-w-[345px]', className].filter(Boolean).join(' ')}>
       {methods.map((method) => {
         const isSelected = method.id === selected;
 

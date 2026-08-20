@@ -72,7 +72,7 @@ export const SocialIcon: FC<SocialIconProps> = ({
   colorScheme = 'Original',
   size = 24,
   alt,
-  className = '',
+  className,
 }) => {
   const key = platformKeyMap[platform] || 'telegram';
   const fileName = `${key}-${colorScheme.toLowerCase()}.svg`;
@@ -85,7 +85,7 @@ export const SocialIcon: FC<SocialIconProps> = ({
       width={size}
       height={size}
       style={{ width: `${size}px`, height: `${size}px` }}
-      className={`inline-block shrink-0 object-contain ${className}`}
+      className={['inline-block shrink-0 object-contain', className].filter(Boolean).join(' ')}
       loading="lazy"
     />
   );

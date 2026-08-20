@@ -10,13 +10,13 @@ export interface NotificationBellProps {
 export const NotificationBell: FC<NotificationBellProps> = ({
   hasBadge = true,
   onClick,
-  className = '',
+  className,
 }) => {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`ui-notification-bell relative w-10 h-10 rounded-full bg-white border border-visit-gray flex items-center justify-center cursor-pointer shadow-subtle hover:bg-visit-gray transition-colors ${className}`}
+      className={['ui-notification-bell relative w-10 h-10 rounded-full bg-white border border-visit-gray flex items-center justify-center cursor-pointer shadow-subtle hover:bg-visit-gray transition-colors', className].filter(Boolean).join(' ')}
       aria-label={hasBadge ? 'Нові сповіщення' : 'Сповіщення'}
     >
       <Icon name="fi-rr-bell" size={20} color="var(--color-content-primary)" />

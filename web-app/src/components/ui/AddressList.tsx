@@ -19,10 +19,10 @@ export const AddressList: FC<AddressListProps> = ({
   items = [],
   selectedId,
   onSelect,
-  className = '',
+  className,
 }) => {
   return (
-    <div className={`ui-address-list ${className}`}>
+    <div className={['ui-address-list', className].filter(Boolean).join(' ')}>
       {items.map((item) => {
         const isSelected = item.id === selectedId;
 

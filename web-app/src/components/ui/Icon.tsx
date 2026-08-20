@@ -14,7 +14,7 @@ export const Icon: FC<IconProps> = ({
   name,
   size = 20,
   color = 'currentColor',
-  className = '',
+  className,
   style,
   ...props
 }) => {
@@ -22,7 +22,7 @@ export const Icon: FC<IconProps> = ({
 
   return (
     <i
-      className={`${iconClass} ${className}`}
+      className={[iconClass, className].filter(Boolean).join(' ')}
       style={{
         fontSize: `${size}px`,
         color,

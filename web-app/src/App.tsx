@@ -1,9 +1,20 @@
 import { useState } from 'react';
 import Header from './components/Header';
 import LocationBar from './components/LocationBar';
-import UpcomingVisitCard from './components/UpcomingVisitCard';
+import VisitSection, { type VisitData } from './components/VisitSection';
 import PromoBannersGrid from './components/PromoBannersGrid';
 import ExpertAdviceGrid, { type ArticleItem } from './components/ExpertAdviceGrid';
+
+const INITIAL_VISIT: VisitData = {
+  dayOfWeek: 'СЕР',
+  dayNumber: '10',
+  timeSlot: '16:00',
+  masterName: 'Марія Шевченко',
+  procedureName: 'Комплексний грумінг',
+  basePrice: 1300,
+  transferPrice: 100,
+  initialTransferEnabled: false,
+};
 
 const EXPERT_ARTICLES: ArticleItem[] = [
   {
@@ -24,6 +35,8 @@ const EXPERT_ARTICLES: ArticleItem[] = [
 ];
 
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [visit, setVisit] = useState<VisitData | null>(INITIAL_VISIT);
   const [activeNav, setActiveNav] = useState('home');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -43,7 +56,12 @@ export default function App() {
       )}
 
       <Header
+        isLoggedIn={isLoggedIn}
         activeNav={activeNav}
+        onLoginClick={() => {
+          setIsLoggedIn(true);
+          showToast('Успішний вхід до системи');
+        }}
         onNavClick={(nav) => {
           setActiveNav(nav);
           showToast(`Перехід на розділ: ${nav}`);
@@ -58,17 +76,22 @@ export default function App() {
         onNotificationClick={() => showToast('У вас є 1 нове сповіщення')}
       />
 
-      <UpcomingVisitCard
-        dayOfWeek="СЕР"
-        dayNumber="10"
-        timeSlot="16:00"
-        masterName="Марія Шевченко"
-        procedureName="Комплексний грумінг"
-        basePrice={1300}
-        transferPrice={100}
-        initialTransferEnabled={false}
+      <VisitSection
+        isLoggedIn={isLoggedIn}
+        visit={visit}
+        onLoginClick={() => {
+          setIsLoggedIn(true);
+          showToast('Успішний вхід до системи');
+        }}
+        onBookClick={() => {
+          setVisit(INITIAL_VISIT);
+          showToast('Візит успішно заброньовано');
+        }}
         onReschedule={() => showToast('Запит на перенесення візиту прийнято')}
-        onCancel={() => showToast('Запит на скасування візиту прийнято')}
+        onCancel={() => {
+          setVisit(null);
+          showToast('Запит на скасування візиту прийнято');
+        }}
       />
 
       <PromoBannersGrid
