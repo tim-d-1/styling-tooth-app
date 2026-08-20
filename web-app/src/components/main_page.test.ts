@@ -1,9 +1,10 @@
 import Header from './Header';
 import LocationBar from './LocationBar';
+import GuestBanner from './GuestBanner';
+import VisitSection from './VisitSection';
 import UpcomingVisitCard from './UpcomingVisitCard';
 import PromoBannersGrid from './PromoBannersGrid';
 import ExpertAdviceGrid from './ExpertAdviceGrid';
-import VisitSection from './VisitSection';
 
 export function calculateTotalPrice(basePrice: number, transferPrice: number, transferEnabled: boolean): number {
   return basePrice + (transferEnabled ? transferPrice : 0);
@@ -13,16 +14,16 @@ export function sanitizeStringProp(value: string | undefined, defaultValue: stri
   return value?.trim() || defaultValue;
 }
 
-export type VisitSectionState = 'guest_banner' | 'empty_state' | 'visit_card';
+export type MainPageView = 'guest_banner' | 'empty_visits' | 'active_visit';
 
-export function resolveVisitSectionState(isLoggedIn: boolean, hasVisit: boolean): VisitSectionState {
+export function resolveMainPageView(isLoggedIn: boolean, hasVisit: boolean): MainPageView {
   if (!isLoggedIn) {
     return 'guest_banner';
   }
   if (!hasVisit) {
-    return 'empty_state';
+    return 'empty_visits';
   }
-  return 'visit_card';
+  return 'active_visit';
 }
 
 export type HeaderActionState = 'login_button' | 'user_profile';
@@ -32,7 +33,15 @@ export function resolveHeaderActionState(isLoggedIn: boolean): HeaderActionState
 }
 
 export function runMainPageSuite(): boolean {
-  const components = [Header, LocationBar, UpcomingVisitCard, PromoBannersGrid, ExpertAdviceGrid, VisitSection];
+  const components = [
+    Header,
+    LocationBar,
+    GuestBanner,
+    VisitSection,
+    UpcomingVisitCard,
+    PromoBannersGrid,
+    ExpertAdviceGrid,
+  ];
   for (const comp of components) {
     if (!comp) {
       throw new Error('Main page component export missing');
@@ -57,24 +66,29 @@ export function runMainPageSuite(): boolean {
     throw new Error(`Expected fallback value 'СЕР', got '${fallbackTest}'`);
   }
 
-  const guestState = resolveVisitSectionState(false, false);
-  if (guestState !== 'guest_banner') {
-    throw new Error(`Expected guest_banner for logged out user, got ${guestState}`);
+  const locationFallback = sanitizeStringProp('', 'м. Запоріжжя');
+  if (locationFallback !== 'м. Запоріжжя') {
+    throw new Error(`Expected location fallback value 'м. Запоріжжя', got '${locationFallback}'`);
   }
 
-  const guestStateWithVisit = resolveVisitSectionState(false, true);
-  if (guestStateWithVisit !== 'guest_banner') {
-    throw new Error(`Expected guest_banner when logged out even with visit data, got ${guestStateWithVisit}`);
+  const guestView = resolveMainPageView(false, false);
+  if (guestView !== 'guest_banner') {
+    throw new Error(`Expected guest_banner for logged out user, got ${guestView}`);
   }
 
-  const emptyState = resolveVisitSectionState(true, false);
-  if (emptyState !== 'empty_state') {
-    throw new Error(`Expected empty_state for logged in user without visit, got ${emptyState}`);
+  const guestViewWithVisit = resolveMainPageView(false, true);
+  if (guestViewWithVisit !== 'guest_banner') {
+    throw new Error(`Expected guest_banner when logged out even with visit data, got ${guestViewWithVisit}`);
   }
 
-  const visitState = resolveVisitSectionState(true, true);
-  if (visitState !== 'visit_card') {
-    throw new Error(`Expected visit_card for logged in user with visit, got ${visitState}`);
+  const emptyVisitView = resolveMainPageView(true, false);
+  if (emptyVisitView !== 'empty_visits') {
+    throw new Error(`Expected empty_visits for logged in user without visit, got ${emptyVisitView}`);
+  }
+
+  const activeVisitView = resolveMainPageView(true, true);
+  if (activeVisitView !== 'active_visit') {
+    throw new Error(`Expected active_visit for logged in user with visit, got ${activeVisitView}`);
   }
 
   const loggedOutHeader = resolveHeaderActionState(false);

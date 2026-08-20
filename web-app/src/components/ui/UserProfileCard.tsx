@@ -25,10 +25,10 @@ export const UserProfileCard: FC<UserProfileCardProps> = ({
     <div
       role="button"
       tabIndex={0}
-      aria-label={`Профіль користувача: ${effectiveName}`}
+      aria-label={`Картка профілю користувача: ${effectiveName}`}
       onClick={onClick}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.key === 'Enter' || e.code === 'Space') {
           e.preventDefault();
           onClick?.();
         }
@@ -56,7 +56,7 @@ export const UserProfileCard: FC<UserProfileCardProps> = ({
 
       <button
         type="button"
-        aria-label={`Редагувати профіль ${effectiveName}`}
+        aria-label={`Редагувати профіль користувача: ${effectiveName}`}
         onClick={(e) => {
           e.stopPropagation();
           onEdit?.();

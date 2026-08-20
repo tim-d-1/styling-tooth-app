@@ -85,7 +85,7 @@ export const Header: FC<HeaderProps> = ({
           </>
         ) : (
           <Button variant="primary" size="sm" onClick={onLoginClick}>
-            Log In
+            Вхід / Реєстрація
           </Button>
         )}
       </div>

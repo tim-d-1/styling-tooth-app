@@ -54,7 +54,7 @@ export const PaymentMethodsList: FC<PaymentMethodsListProps> = ({
             aria-label={`Обрати спосіб оплати: ${method.title}`}
             onClick={() => handleSelect(method.id)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
+              if (e.key === 'Enter' || e.code === 'Space') {
                 e.preventDefault();
                 handleSelect(method.id);
               }
@@ -92,7 +92,7 @@ export const PaymentMethodsList: FC<PaymentMethodsListProps> = ({
               ) : (
                 <button
                   type="button"
-                  aria-label={`Видалити спосіб оплати ${method.title}`}
+                  aria-label={`Видалити збережений спосіб оплати: ${method.title}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete?.(method.id);

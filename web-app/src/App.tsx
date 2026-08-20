@@ -1,20 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Header from './components/Header';
 import LocationBar from './components/LocationBar';
+import GuestBanner from './components/GuestBanner';
 import VisitSection, { type VisitData } from './components/VisitSection';
 import PromoBannersGrid from './components/PromoBannersGrid';
 import ExpertAdviceGrid, { type ArticleItem } from './components/ExpertAdviceGrid';
-
-const INITIAL_VISIT: VisitData = {
-  dayOfWeek: 'СЕР',
-  dayNumber: '10',
-  timeSlot: '16:00',
-  masterName: 'Марія Шевченко',
-  procedureName: 'Комплексний грумінг',
-  basePrice: 1300,
-  transferPrice: 100,
-  initialTransferEnabled: false,
-};
+import { supabase } from './lib/supabase';
 
 const EXPERT_ARTICLES: ArticleItem[] = [
   {
@@ -35,10 +26,22 @@ const EXPERT_ARTICLES: ArticleItem[] = [
 ];
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [visit, setVisit] = useState<VisitData | null>(INITIAL_VISIT);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [visit] = useState<VisitData | null>(null);
   const [activeNav, setActiveNav] = useState('home');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(Boolean(session?.user));
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(Boolean(session?.user));
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -58,10 +61,7 @@ export default function App() {
       <Header
         isLoggedIn={isLoggedIn}
         activeNav={activeNav}
-        onLoginClick={() => {
-          setIsLoggedIn(true);
-          showToast('Успішний вхід до системи');
-        }}
+        onLoginClick={() => showToast('Відкрито форму входу')}
         onNavClick={(nav) => {
           setActiveNav(nav);
           showToast(`Перехід на розділ: ${nav}`);
@@ -72,27 +72,22 @@ export default function App() {
 
       <LocationBar
         location="м. Запоріжжя"
-        hasNotification={true}
+        hasNotification={false}
         onNotificationClick={() => showToast('У вас є 1 нове сповіщення')}
       />
 
-      <VisitSection
-        isLoggedIn={isLoggedIn}
-        visit={visit}
-        onLoginClick={() => {
-          setIsLoggedIn(true);
-          showToast('Успішний вхід до системи');
-        }}
-        onBookClick={() => {
-          setVisit(INITIAL_VISIT);
-          showToast('Візит успішно заброньовано');
-        }}
-        onReschedule={() => showToast('Запит на перенесення візиту прийнято')}
-        onCancel={() => {
-          setVisit(null);
-          showToast('Запит на скасування візиту прийнято');
-        }}
-      />
+      {isLoggedIn ? (
+        <VisitSection
+          visit={visit}
+          onBookClick={() => showToast('Відкрито форму запису на візит')}
+          onReschedule={() => showToast('Запит на перенесення візиту прийнято')}
+          onCancel={() => showToast('Запит на скасування візиту прийнято')}
+        />
+      ) : (
+        <GuestBanner
+          onQuickBookClick={() => showToast('Відкрито форму швидкого запису')}
+        />
+      )}
 
       <PromoBannersGrid
         onBanner1Click={() => showToast('Акція "-25% на перший грумінг"')}

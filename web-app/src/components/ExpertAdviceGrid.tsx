@@ -26,6 +26,11 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {articles.map((article) => {
+          const effectiveBgImage = article.bgImage?.trim();
+          const label = article.subtitle
+            ? `${article.title} - ${article.subtitle}`
+            : article.title;
+
           if (article.type === 'shampoo') {
             return (
               <div
@@ -34,17 +39,17 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
                 tabIndex={0}
                 onClick={() => onArticleClick?.(article.id)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
+                  if (e.key === 'Enter' || e.code === 'Space') {
                     e.preventDefault();
                     onArticleClick?.(article.id);
                   }
                 }}
-                aria-label={article.title}
+                aria-label={label}
                 className="relative h-[212px] rounded-[10px] overflow-hidden cursor-pointer shadow-md bg-soft-ice flex items-center p-6 hover:scale-[1.01] transition-transform duration-200 text-left"
               >
-                {article.bgImage && (
+                {effectiveBgImage && (
                   <img
-                    src={article.bgImage}
+                    src={effectiveBgImage}
                     alt=""
                     className="absolute right-0 top-0 h-full max-h-[212px] w-auto object-cover object-right z-10"
                   />
@@ -68,17 +73,17 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
               tabIndex={0}
               onClick={() => onArticleClick?.(article.id)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (e.key === 'Enter' || e.code === 'Space') {
                   e.preventDefault();
                   onArticleClick?.(article.id);
                 }
               }}
-              aria-label={`${article.title} ${article.subtitle || ''}`.trim()}
+              aria-label={label}
               className="relative h-[212px] rounded-[10px] overflow-hidden cursor-pointer shadow-md bg-soft-blue flex flex-col justify-center p-6 hover:scale-[1.01] transition-transform duration-200 text-left"
             >
-              {article.bgImage && (
+              {effectiveBgImage && (
                 <img
-                  src={article.bgImage}
+                  src={effectiveBgImage}
                   alt=""
                   className="absolute right-0 bottom-0 max-h-[212px] w-auto object-contain object-right-bottom z-10"
                 />

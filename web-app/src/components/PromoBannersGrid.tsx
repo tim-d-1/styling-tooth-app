@@ -20,7 +20,7 @@ export const PromoBannersGrid: FC<PromoBannersGridProps> = ({
           tabIndex={0}
           onClick={onBanner1Click}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === 'Enter' || e.code === 'Space') {
               e.preventDefault();
               onBanner1Click?.();
             }
@@ -55,7 +55,7 @@ export const PromoBannersGrid: FC<PromoBannersGridProps> = ({
           tabIndex={0}
           onClick={onBanner2Click}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === 'Enter' || e.code === 'Space') {
               e.preventDefault();
               onBanner2Click?.();
             }
@@ -80,7 +80,7 @@ export const PromoBannersGrid: FC<PromoBannersGridProps> = ({
           tabIndex={0}
           onClick={onBanner3Click}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === 'Enter' || e.code === 'Space') {
               e.preventDefault();
               onBanner3Click?.();
             }

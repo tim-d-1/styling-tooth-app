@@ -21,7 +21,7 @@ export const ClipMenu: FC<ClipMenuProps> = ({ items = [], onSelect, className })
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        aria-label="Меню прикріплень"
+        aria-label="Меню швидких дій та прикріплень"
         aria-expanded={isOpen}
         className="bg-transparent border-0 p-2 cursor-pointer flex items-center justify-center text-content-dark hover:opacity-80 transition-opacity"
       >
@@ -45,7 +45,7 @@ export const ClipMenu: FC<ClipMenuProps> = ({ items = [], onSelect, className })
             <button
               key={item.id}
               type="button"
-              aria-label={item.label}
+              aria-label={item.label?.trim() || 'Пункт меню прикріплення'}
               onClick={() => {
                 onSelect?.(item);
                 setIsOpen(false);
