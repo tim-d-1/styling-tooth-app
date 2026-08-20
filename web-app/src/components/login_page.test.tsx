@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import LoginPage from './LoginPage';
 import { validateLoginForm, isEmailIdentifier } from './login_utils';
 
@@ -154,6 +154,38 @@ describe('LoginPage and Login Utilities', () => {
       const alert = await screen.findByRole('alert');
       expect(alert.textContent).toBe('Network error');
       expect(handleSuccess).not.toHaveBeenCalled();
+    });
+
+    it('initiates social login without immediately triggering onSuccess callback', async () => {
+      const { supabase } = await import('../lib/supabase');
+      vi.spyOn(supabase.auth, 'signInWithOAuth').mockResolvedValueOnce({
+        data: { provider: 'google', url: 'https://accounts.google.com/o/oauth2/v2/auth' },
+        error: null,
+      });
+
+      const assignSpy = vi.fn();
+      const originalAssign = window.location.assign;
+      Object.defineProperty(window, 'location', {
+        value: { ...window.location, assign: assignSpy },
+        writable: true,
+      });
+
+      const handleSuccess = vi.fn();
+      render(<LoginPage onSuccess={handleSuccess} />);
+
+      const googleBtn = screen.getByRole('button', { name: /Увійти за допомогою Google/i });
+      await act(async () => {
+        fireEvent.click(googleBtn);
+      });
+
+      expect(handleSuccess).not.toHaveBeenCalled();
+      expect(assignSpy).toHaveBeenCalledWith('https://accounts.google.com/o/oauth2/v2/auth');
+      expect(screen.queryByRole('alert')).toBeNull();
+
+      Object.defineProperty(window, 'location', {
+        value: { ...window.location, assign: originalAssign },
+        writable: true,
+      });
     });
 
     it('handles password login error without calling onSuccess', async () => {

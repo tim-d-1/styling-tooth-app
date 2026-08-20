@@ -44,13 +44,18 @@ export const LoginPage: FC<LoginPageProps> = ({
       setIsLoading(true);
       setErrorMessage(null);
       const providerKey = provider === 'Google' ? 'google' : 'apple';
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: providerKey,
+        options: {
+          redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+        },
       });
       if (error) {
         setErrorMessage(error.message);
-      } else {
-        onSuccess?.();
+        return;
+      }
+      if (data?.url && typeof window !== 'undefined') {
+        window.location.assign(data.url);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Помилка авторизації через соціальну мережу';
@@ -102,26 +107,26 @@ export const LoginPage: FC<LoginPageProps> = ({
 
   return (
     <div className="min-h-screen w-full bg-surface-cream flex flex-col lg:flex-row relative text-content-dark font-primary">
-      <div className="w-full lg:w-[710px] min-h-[21.25rem] sm:min-h-[26.25rem] h-auto lg:min-h-screen relative shrink-0 overflow-hidden select-none">
+      <button
+        type="button"
+        onClick={handleBack}
+        aria-label="Повернутися назад"
+        className="absolute top-6 left-6 lg:top-[59px] lg:left-[120px] z-20 w-10 h-10 rounded-full bg-visit-gray lg:bg-white/20 text-content-dark lg:text-white hover:bg-visit-gray/80 lg:hover:bg-white/40 backdrop-blur-xs flex items-center justify-center transition-colors cursor-pointer border-0 p-0 outline-none"
+      >
+        <i className="fi fi-rr-arrow-left text-xl flex items-center justify-center leading-none" />
+      </button>
+
+      <div className="hidden lg:block lg:w-[710px] lg:min-h-screen relative shrink-0 overflow-hidden select-none">
         <img
           src="/assets/images/cat_photo_1.png"
           alt="Стильний Зубець"
           className="w-full h-full object-cover object-center"
         />
 
-        <div className="absolute inset-x-0 bottom-0 min-h-[13.75rem] sm:min-h-[17.5rem] lg:min-h-[32rem] h-auto bg-gradient-to-b from-transparent to-banner-navy flex items-end p-6 sm:p-10 lg:p-[60px]" />
-
-        <button
-          type="button"
-          onClick={handleBack}
-          aria-label="Повернутися назад"
-          className="absolute top-6 left-6 lg:top-[59px] lg:left-[120px] z-20 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-xs flex items-center justify-center text-white transition-colors cursor-pointer border-0 p-0 outline-none"
-        >
-          <i className="fi fi-rr-arrow-left text-xl flex items-center justify-center leading-none" />
-        </button>
+        <div className="absolute inset-x-0 bottom-0 min-h-[32rem] h-auto bg-gradient-to-b from-transparent to-banner-navy flex items-end p-[60px]" />
       </div>
 
-      <div className="flex-1 min-h-[calc(100vh-21.25rem)] lg:min-h-screen flex flex-col justify-between p-6 sm:p-12 lg:p-0 relative">
+      <div className="flex-1 min-h-screen flex flex-col justify-between p-6 sm:p-12 lg:p-0 relative">
         <div className="w-full flex justify-end lg:absolute lg:top-[58px] lg:right-[120px] z-10">
           <button
             type="button"
