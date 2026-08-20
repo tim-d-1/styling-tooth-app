@@ -11,7 +11,6 @@ export interface LoginPageProps {
 }
 
 export const LoginPage: FC<LoginPageProps> = ({
-
   onBack,
   onSuccess,
   onNavigateRegister,
@@ -101,38 +100,32 @@ export const LoginPage: FC<LoginPageProps> = ({
 
   return (
     <div className="min-h-screen w-full bg-[#FFFBF6] flex flex-col lg:flex-row relative text-content-dark font-primary">
-      <div className="w-full lg:w-[710px] h-[340px] sm:h-[420px] lg:h-auto lg:min-h-screen relative shrink-0 overflow-hidden select-none">
+      <div className="w-full lg:w-[710px] min-h-[21.25rem] sm:min-h-[26.25rem] h-auto lg:min-h-screen relative shrink-0 overflow-hidden select-none">
         <img
           src="/assets/images/cat_photo_1.png"
           alt="Стильний Зубець"
           className="w-full h-full object-cover object-center"
         />
 
-        <div className="absolute inset-x-0 bottom-0 h-[220px] sm:h-[280px] lg:h-[511px] bg-gradient-to-b from-transparent to-[#09151D] flex items-end p-6 sm:p-10 lg:p-[60px]" />
-
-        <div className="absolute inset-x-0 bottom-0 p-6 sm:p-10 lg:p-[60px] pointer-events-none">
-          <h2 className="font-primary font-bold text-3xl sm:text-4xl lg:text-[60px] lg:leading-[1.1] tracking-[-0.011em] uppercase text-[#FCFBEC] whitespace-pre-line">
-            Стиль,{'\n'}який помітно
-          </h2>
-        </div>
+        <div className="absolute inset-x-0 bottom-0 min-h-[13.75rem] sm:min-h-[17.5rem] lg:min-h-[32rem] h-auto bg-gradient-to-b from-transparent to-[#09151D] flex items-end p-6 sm:p-10 lg:p-[60px]" />
 
         <button
           type="button"
           onClick={handleBack}
           aria-label="Повернутися назад"
-          className="absolute top-6 left-6 lg:top-[59px] lg:left-[120px] z-20 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-xs flex items-center justify-center text-white transition-colors cursor-pointer border-0 p-0"
+          className="absolute top-6 left-6 lg:top-[59px] lg:left-[120px] z-20 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-xs flex items-center justify-center text-white transition-colors cursor-pointer border-0 p-0 outline-none"
         >
           <i className="fi fi-rr-arrow-left text-xl flex items-center justify-center leading-none" />
         </button>
       </div>
 
-      <div className="flex-1 min-h-[calc(100vh-340px)] lg:min-h-screen flex flex-col justify-between p-6 sm:p-12 lg:p-0 relative">
+      <div className="flex-1 min-h-[calc(100vh-21.25rem)] lg:min-h-screen flex flex-col justify-between p-6 sm:p-12 lg:p-0 relative">
         <div className="w-full flex justify-end lg:absolute lg:top-[58px] lg:right-[120px] z-10">
           <button
             type="button"
             onClick={toggleLanguage}
-            aria-label="Змінити мову"
-            className="inline-flex items-center gap-2 text-[#B2B2B2] hover:text-content-dark font-sans text-[17px] leading-none transition-colors cursor-pointer bg-transparent border-0 p-0"
+            aria-label="Змінити мову інтерфейсу"
+            className="inline-flex items-center gap-2 text-[#B2B2B2] hover:text-content-dark font-sans text-[17px] leading-none transition-colors cursor-pointer bg-transparent border-0 p-0 outline-none"
           >
             <i className="fi fi-rr-globe text-[15px] flex items-center justify-center leading-none" />
             <span>{language}</span>
@@ -207,7 +200,7 @@ export const LoginPage: FC<LoginPageProps> = ({
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       aria-label={showPassword ? 'Сховати пароль' : 'Показати пароль'}
-                      className="text-[#B2B2B2] hover:text-content-dark transition-colors cursor-pointer bg-transparent border-0 p-1 flex items-center justify-center"
+                      className="text-[#B2B2B2] hover:text-content-dark transition-colors cursor-pointer bg-transparent border-0 p-1 flex items-center justify-center outline-none"
                     >
                       <i className={`fi ${showPassword ? 'fi-rr-eye-crossed' : 'fi-rr-eye'} text-lg leading-none`} />
                     </button>
@@ -230,12 +223,14 @@ export const LoginPage: FC<LoginPageProps> = ({
                     type="button"
                     onClick={() => handleSocialLogin('Google')}
                     aria-label="Увійти за допомогою Google"
-                    className="w-[50px] h-[50px] rounded-full border border-[#B2B2B2] hover:border-content-dark hover:bg-black/5 transition-all flex items-center justify-center cursor-pointer bg-transparent p-0 shrink-0"
+                    className="w-12 h-12 rounded-full border border-[#B2B2B2] hover:border-content-dark hover:bg-black/5 transition-all flex items-center justify-center cursor-pointer bg-transparent p-0 shrink-0 outline-none"
                   >
                     <img
                       src="/assets/social_icons/google-original.svg"
                       alt="Google"
-                      className="w-[22px] h-[22px] object-contain pointer-events-none"
+                      width={22}
+                      height={22}
+                      className="w-6 h-6 object-contain pointer-events-none"
                     />
                   </button>
 
@@ -243,11 +238,13 @@ export const LoginPage: FC<LoginPageProps> = ({
                     type="button"
                     onClick={() => handleSocialLogin('Apple')}
                     aria-label="Увійти за допомогою Apple"
-                    className="w-12 h-12 rounded-full border border-[#B2B2B2] hover:border-content-dark hover:bg-black/5 transition-all flex items-center justify-center cursor-pointer bg-transparent p-0 shrink-0"
+                    className="w-12 h-12 rounded-full border border-[#B2B2B2] hover:border-content-dark hover:bg-black/5 transition-all flex items-center justify-center cursor-pointer bg-transparent p-0 shrink-0 outline-none"
                   >
                     <img
                       src="/assets/social_icons/apple-original.svg"
                       alt="Apple"
+                      width={20}
+                      height={24}
                       className="w-5 h-6 object-contain pointer-events-none"
                     />
                   </button>
@@ -256,7 +253,8 @@ export const LoginPage: FC<LoginPageProps> = ({
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-12 rounded-xl bg-terracotta hover:opacity-90 active:scale-[0.99] transition-all text-white font-accented font-semibold text-base flex items-center justify-center cursor-pointer border-0 disabled:opacity-60 disabled:cursor-not-allowed shadow-xs"
+                  aria-busy={isLoading}
+                  className="w-full h-12 rounded-xl bg-terracotta hover:opacity-90 active:scale-[0.99] transition-all text-white font-accented font-semibold text-base flex items-center justify-center cursor-pointer border-0 disabled:opacity-60 disabled:cursor-not-allowed shadow-xs outline-none"
                 >
                   {isLoading ? (
                     <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -272,7 +270,7 @@ export const LoginPage: FC<LoginPageProps> = ({
                 <button
                   type="button"
                   onClick={onNavigateRegister}
-                  className="text-xs font-primary text-[#B2B2B2] hover:text-terracotta transition-colors bg-transparent border-0 cursor-pointer"
+                  className="text-xs font-primary text-[#B2B2B2] hover:text-terracotta transition-colors bg-transparent border-0 cursor-pointer outline-none"
                 >
                   Ще не маєте акаунту? <span className="underline">Зареєструватися</span>
                 </button>

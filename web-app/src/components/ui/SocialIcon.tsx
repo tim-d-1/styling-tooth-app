@@ -84,8 +84,7 @@ export const SocialIcon: FC<SocialIconProps> = ({
       alt={alt || `${platform} Icon`}
       width={size}
       height={size}
-      style={{ width: `${size}px`, height: `${size}px` }}
-      className={['inline-block shrink-0 object-contain', className].filter(Boolean).join(' ')}
+      className={['inline-block shrink-0 object-contain w-6 h-6', className].filter(Boolean).join(' ')}
       loading="lazy"
     />
   );

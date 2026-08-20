@@ -26,19 +26,21 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     ref
   ) => {
     const inputId = id || `input-${Math.random().toString(36).substring(2, 9)}`;
+    const helperId = `${inputId}-helper`;
 
     const wrapperClasses = [
-      'ui-input__wrapper',
-      variant === 'filled' ? 'ui-input__wrapper--filled' : '',
-      error ? 'ui-input__wrapper--error' : '',
+      'ui-input__wrapper flex items-center gap-3 min-h-[3.5rem] h-auto px-4 rounded-xl border transition-colors',
+      variant === 'filled' ? 'bg-visit-gray border-transparent' : 'bg-white border-content-dark',
+      error ? 'border-red-500' : 'focus-within:border-terracotta',
+      disabled ? 'opacity-50 cursor-not-allowed bg-visit-gray/50' : '',
     ]
       .filter(Boolean)
       .join(' ');
 
     return (
-      <div className={['ui-input', className].filter(Boolean).join(' ')}>
+      <div className={['ui-input flex flex-col gap-1.5 w-full max-w-[353px]', className].filter(Boolean).join(' ')}>
         {label && (
-          <label htmlFor={inputId} className="ui-input__label">
+          <label htmlFor={inputId} className="ui-input__label text-xs font-primary font-semibold uppercase text-gray-500">
             {label}
           </label>
         )}
@@ -48,13 +50,19 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             disabled={disabled}
-            className="ui-input__field"
+            aria-invalid={Boolean(error)}
+            aria-describedby={error || helperText ? helperId : undefined}
+            className="ui-input__field flex-1 h-full border-0 outline-none bg-transparent font-primary text-sm text-content-dark placeholder:text-gray-400"
             {...props}
           />
           {rightIcon}
         </div>
         {(error || helperText) && (
-          <span className={`ui-input__helper ${error ? 'ui-input__helper--error' : ''}`}>
+          <span
+            id={helperId}
+            role={error ? 'alert' : undefined}
+            className={`ui-input__helper text-xs font-primary ${error ? 'text-red-500' : 'text-gray-500'}`}
+          >
             {error || helperText}
           </span>
         )}

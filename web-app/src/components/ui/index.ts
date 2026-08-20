@@ -17,3 +17,6 @@ export * from './PaymentMethodsList';
 export * from './UserProfileCard';
 export * from './AddressTags';
 export * from './NotificationBell';
+export * from './Tabs';
+export * from './TagGroup';
+export * from './FilterPills';

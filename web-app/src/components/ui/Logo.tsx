@@ -1,4 +1,4 @@
-import type { FC, CSSProperties } from 'react';
+import type { FC } from 'react';
 
 export type LogoVariant =
   | 'full-light'
@@ -54,17 +54,13 @@ export const Logo: FC<LogoProps> = ({
 }) => {
   const src = logoFileMap[variant] || logoFileMap['full-transparent'];
 
-  const customStyle: CSSProperties = {
-    height: typeof height === 'number' ? `${height}px` : height,
-    width: width ? (typeof width === 'number' ? `${width}px` : width) : 'auto',
-  };
-
   return (
     <img
       src={src}
       alt={alt}
-      style={customStyle}
-      className={['object-contain max-h-none', className].filter(Boolean).join(' ')}
+      width={width}
+      height={height}
+      className={['object-contain max-h-none h-11 w-auto', className].filter(Boolean).join(' ')}
       loading="lazy"
     />
   );

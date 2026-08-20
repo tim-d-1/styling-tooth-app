@@ -13,6 +13,7 @@ export interface UpcomingVisitCardProps {
   initialTransferEnabled?: boolean;
   onReschedule?: () => void;
   onCancel?: () => void;
+  className?: string;
 }
 
 export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
@@ -26,6 +27,7 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
   initialTransferEnabled = false,
   onReschedule,
   onCancel,
+  className,
 }) => {
   const [transferEnabled, setTransferEnabled] = useState(initialTransferEnabled);
 
@@ -39,13 +41,13 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
   const totalPrice = basePrice + (transferEnabled ? transferPrice : 0);
 
   return (
-    <section className="max-w-[1200px] mx-auto my-6 px-8 mb-10">
+    <section className={['max-w-[1200px] mx-auto my-6 px-6 sm:px-8 mb-10', className].filter(Boolean).join(' ')}>
       <h2 className="text-2xl font-semibold font-accented mb-4 text-content-dark">
         Запланований візит
       </h2>
 
-      <div className="bg-visit-gray rounded-3xl p-6 flex flex-wrap items-stretch justify-between gap-5">
-        <div className="bg-white rounded-2xl p-4 md:px-6 flex items-center gap-6 flex-1 min-w-[280px] shadow-xs">
+      <div className="bg-visit-gray rounded-3xl p-6 flex flex-wrap items-stretch justify-between gap-5 min-h-[6rem] h-auto">
+        <div className="bg-white rounded-2xl p-4 md:px-6 flex items-center gap-6 flex-1 min-w-[280px] shadow-xs min-h-[5rem] h-auto">
           <div className="flex flex-col items-center justify-center border-r border-visit-gray pr-5 min-w-[70px]">
             <span className="text-xs font-semibold text-content-dark uppercase font-accented">
               {effectiveDayOfWeek}
@@ -74,7 +76,7 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl py-3 px-4 md:px-6 flex flex-col justify-between gap-3 flex-1 min-w-[260px] shadow-xs">
+        <div className="bg-white rounded-2xl py-3 px-4 md:px-6 flex flex-col justify-between gap-3 flex-1 min-w-[260px] shadow-xs min-h-[5rem] h-auto">
           <div className="flex items-center justify-between text-sm text-content-dark">
             <span>Вартість обраних процедур:</span>
             <strong className="text-base font-semibold">
@@ -91,6 +93,7 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
               checked={transferEnabled}
               onChange={(checked) => setTransferEnabled(checked)}
               id="pet-transfer-switch"
+              ariaLabel="Увімкнути або вимкнути трансфер улюбленця"
             />
           </div>
         </div>
@@ -100,6 +103,7 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
             variant="primary"
             size="md"
             onClick={onReschedule}
+            aria-label="Перенести запланований візит"
             className="w-full bg-terracotta rounded-xl shadow-xs hover:bg-[#d8552d] transition-colors"
           >
             Перенести
@@ -108,6 +112,7 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
             variant="outline"
             size="md"
             onClick={onCancel}
+            aria-label="Скасувати запланований візит"
             className="w-full rounded-xl border-content-dark hover:bg-gray-100 transition-colors"
           >
             Скасувати

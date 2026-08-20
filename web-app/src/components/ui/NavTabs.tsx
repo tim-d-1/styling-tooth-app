@@ -14,6 +14,7 @@ export interface NavTabsProps {
   activeTab?: NavTabId;
   onChange?: (tabId: NavTabId) => void;
   className?: string;
+  ariaLabel?: string;
 }
 
 export const NavTabs: FC<NavTabsProps> = ({
@@ -21,24 +22,36 @@ export const NavTabs: FC<NavTabsProps> = ({
   activeTab = 'home',
   onChange,
   className,
+  ariaLabel = 'Навігаційні вкладки',
 }) => {
   const currentTab = activeTab?.trim() || 'home';
 
+  if (tabs.length === 0) {
+    return (
+      <div className={['ui-nav-tabs-empty p-3 text-center text-xs text-gray-500 font-primary', className].filter(Boolean).join(' ')}>
+        Немає пунктів навігації
+      </div>
+    );
+  }
+
   return (
-    <div
+    <nav
+      aria-label={ariaLabel}
       className={['ui-nav-tabs flex items-center justify-around bg-white px-4 py-2 rounded-xl shadow-card w-full max-w-[360px]', className].filter(Boolean).join(' ')}
     >
-      {tabs.map((tab) => {
-        const isActive = tab.id === currentTab;
+      {tabs.map((tab, index) => {
+        const tabId = tab.id || `nav-tab-${index}`;
+        const isActive = tabId === currentTab;
         const color = isActive ? 'var(--color-terracotta)' : 'var(--color-content-dark)';
 
         return (
           <button
-            key={tab.id}
+            key={tabId}
             type="button"
             aria-label={tab.label}
-            onClick={() => onChange?.(tab.id)}
-            className="flex flex-col items-center justify-center gap-1 border-0 bg-transparent cursor-pointer py-1.5 px-3 min-w-[64px] hover:opacity-80 transition-opacity"
+            aria-current={isActive ? 'page' : undefined}
+            onClick={() => onChange?.(tabId)}
+            className="flex flex-col items-center justify-center gap-1 border-0 bg-transparent cursor-pointer py-1.5 px-3 min-w-[64px] hover:opacity-80 transition-opacity outline-none"
           >
             <Icon name={tab.icon} size={20} color={color} />
             <span
@@ -51,7 +64,7 @@ export const NavTabs: FC<NavTabsProps> = ({
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 };
 

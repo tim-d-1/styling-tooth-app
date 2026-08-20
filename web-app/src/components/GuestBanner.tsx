@@ -11,8 +11,8 @@ export const GuestBanner: FC<GuestBannerProps> = ({
   className,
 }) => {
   return (
-    <section className={['max-w-[1200px] mx-auto my-6 px-8 mb-10', className].filter(Boolean).join(' ')}>
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#4E2417] via-[#321910] to-[#1A0E0A] min-h-[220px] md:min-h-[240px] flex items-center p-8 md:p-12 shadow-md">
+    <section className={['max-w-[1200px] mx-auto my-6 px-6 sm:px-8 mb-10', className].filter(Boolean).join(' ')}>
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#4E2417] via-[#321910] to-[#1A0E0A] min-h-[14rem] md:min-h-[15rem] h-auto flex items-center p-8 md:p-12 shadow-md">
         <img
           src="/assets/images/dog_towel_shampoo.png"
           alt=""
@@ -30,6 +30,7 @@ export const GuestBanner: FC<GuestBannerProps> = ({
             variant="primary"
             size="md"
             onClick={onQuickBookClick}
+            aria-label="Швидкий запис на візит"
             className="bg-terracotta rounded-xl shadow-xs hover:bg-[#d8552d] transition-colors px-6 py-2.5 mt-5 text-white font-accented font-semibold"
           >
             Швидкий запис

@@ -14,6 +14,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button: FC<ButtonProps> = ({
   children,
+  type = 'button',
   variant = 'primary',
   size = 'md',
   fullWidth = false,
@@ -35,7 +36,14 @@ export const Button: FC<ButtonProps> = ({
     .join(' ');
 
   return (
-    <button disabled={disabled || isLoading} className={classes} {...props}>
+    <button
+      type={type}
+      disabled={disabled || isLoading}
+      aria-busy={isLoading}
+      aria-disabled={disabled || isLoading}
+      className={classes}
+      {...props}
+    >
       {isLoading ? (
         <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
       ) : (

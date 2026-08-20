@@ -26,16 +26,22 @@ export const NotificationCard: FC<NotificationCardProps> = ({
   className,
 }) => {
   return (
-    <div className={['ui-notification-card', className].filter(Boolean).join(' ')}>
+    <div
+      role="article"
+      aria-label={`Сповіщення: ${title}`}
+      className={['ui-notification-card min-h-[6rem] h-auto', className].filter(Boolean).join(' ')}
+    >
       <div className="ui-notification-card__header">
         <div className="ui-notification-card__avatar">
-          {icon || <Icon name="fi-rr-bug" size={20} color="var(--color-content-primary)" />}
+          {icon || <Icon name="fi-rr-bell" size={20} color="var(--color-content-primary)" />}
         </div>
 
         <div className="ui-notification-card__content">
           <div className="ui-notification-card__top">
             <h4 className="ui-notification-card__title">{title}</h4>
-            {unread && !read && <span className="ui-notification-card__badge" />}
+            {unread && !read && (
+              <span className="ui-notification-card__badge" aria-label="Непрочитане сповіщення" />
+            )}
           </div>
           <p className="ui-notification-card__message">{message}</p>
           {timeAgo && <span className="ui-notification-card__time">{timeAgo}</span>}
@@ -48,6 +54,7 @@ export const NotificationCard: FC<NotificationCardProps> = ({
           size="md"
           fullWidth
           onClick={onMarkRead}
+          aria-label={read ? `Сповіщення "${title}" вже прочитано` : `Позначити сповіщення "${title}" як прочитане`}
           rightIcon={read ? <Icon name="fi-rr-check" size={14} color="#FFFFFF" /> : undefined}
         >
           {read ? 'Прочитано' : 'Позначити прочитаним'}

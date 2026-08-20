@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react';
+import { useState, useEffect, useRef, type FC } from 'react';
 import Icon from './Icon';
 
 export interface ClipMenuItem {
@@ -15,15 +15,32 @@ export interface ClipMenuProps {
 
 export const ClipMenu: FC<ClipMenuProps> = ({ items = [], onSelect, className }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [isOpen]);
 
   return (
-    <div className={['ui-clip-menu relative w-fit', className].filter(Boolean).join(' ')}>
+    <div ref={containerRef} className={['ui-clip-menu relative w-fit', className].filter(Boolean).join(' ')}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Меню швидких дій та прикріплень"
+        aria-haspopup="menu"
         aria-expanded={isOpen}
-        className="bg-transparent border-0 p-2 cursor-pointer flex items-center justify-center text-content-dark hover:opacity-80 transition-opacity"
+        className="bg-transparent border-0 p-2 cursor-pointer flex items-center justify-center text-content-dark hover:opacity-80 transition-opacity outline-none"
       >
         <svg
           width="20"
@@ -40,22 +57,37 @@ export const ClipMenu: FC<ClipMenuProps> = ({ items = [], onSelect, className })
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-[calc(100%+8px)] left-0 w-[200px] bg-white rounded-xl shadow-card border border-visit-gray overflow-hidden z-50">
-          {items.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              aria-label={item.label?.trim() || 'Пункт меню прикріплення'}
-              onClick={() => {
-                onSelect?.(item);
-                setIsOpen(false);
-              }}
-              className="w-full flex items-center gap-3 px-4 py-3 cursor-pointer text-xs font-primary text-content-dark border-0 border-b border-visit-gray last:border-b-0 hover:bg-visit-gray transition-colors text-left bg-transparent"
-            >
-              <Icon name={item.icon} size={16} color="var(--color-content-primary)" />
-              <span>{item.label}</span>
-            </button>
-          ))}
+        <div
+          role="menu"
+          aria-label="Меню прикріплень"
+          className="absolute bottom-[calc(100%+8px)] left-0 w-[200px] bg-white rounded-xl shadow-card border border-visit-gray overflow-hidden z-50"
+        >
+          {items.length === 0 ? (
+            <div className="p-3 text-center text-xs text-gray-500 font-primary">
+              Немає доступних дій
+            </div>
+          ) : (
+            items.map((item, index) => {
+              const itemId = item.id || `clip-item-${index}`;
+
+              return (
+                <button
+                  key={itemId}
+                  type="button"
+                  role="menuitem"
+                  aria-label={item.label?.trim() || 'Пункт меню прикріплення'}
+                  onClick={() => {
+                    onSelect?.(item);
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 cursor-pointer text-xs font-primary text-content-dark border-0 border-b border-visit-gray last:border-b-0 hover:bg-visit-gray transition-colors text-left bg-transparent outline-none"
+                >
+                  <Icon name={item.icon} size={16} color="var(--color-content-primary)" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })
+          )}
         </div>
       )}
     </div>

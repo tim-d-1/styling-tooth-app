@@ -1,5 +1,4 @@
 import type { FC, HTMLAttributes } from 'react';
-import '@flaticon/flaticon-uicons/css/regular/rounded.css';
 
 export type IconName = string;
 
@@ -13,25 +12,26 @@ export interface IconProps extends HTMLAttributes<HTMLElement> {
 export const Icon: FC<IconProps> = ({
   name,
   size = 20,
-  color = 'currentColor',
+  color,
   className,
-  style,
   ...props
 }) => {
   const iconClass = name.startsWith('fi-') ? `fi ${name}` : `fi fi-rr-${name}`;
 
   return (
     <i
-      className={[iconClass, className].filter(Boolean).join(' ')}
+      className={[
+        iconClass,
+        'inline-flex items-center justify-center leading-none select-none text-[20px]',
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
       style={{
-        fontSize: `${size}px`,
-        color,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        lineHeight: 1,
-        ...style,
+        fontSize: size !== 20 ? `${size}px` : undefined,
+        color: color || undefined,
       }}
+      aria-hidden="true"
       {...props}
     />
   );

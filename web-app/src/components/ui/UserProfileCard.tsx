@@ -26,15 +26,16 @@ export const UserProfileCard: FC<UserProfileCardProps> = ({
       role="button"
       tabIndex={0}
       aria-label={`Картка профілю користувача: ${effectiveName}`}
+      aria-pressed={isSelected}
       onClick={onClick}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.code === 'Space') {
+        if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
           e.preventDefault();
           onClick?.();
         }
       }}
       className={[
-        'ui-user-profile-card flex items-center gap-3 p-4 rounded-xl w-full max-w-[342px] cursor-pointer transition-colors text-left',
+        'ui-user-profile-card flex items-center gap-3 p-4 rounded-xl w-full max-w-[342px] min-h-[4.5rem] h-auto cursor-pointer transition-colors text-left outline-none',
         isSelected ? 'bg-visit-gray border border-soft-blue' : 'bg-transparent border border-transparent hover:bg-visit-gray/50',
         className,
       ]
@@ -61,7 +62,7 @@ export const UserProfileCard: FC<UserProfileCardProps> = ({
           e.stopPropagation();
           onEdit?.();
         }}
-        className="bg-transparent border-0 cursor-pointer p-1 flex items-center justify-center text-content-dark hover:opacity-80 transition-opacity"
+        className="bg-transparent border-0 cursor-pointer p-1 flex items-center justify-center text-content-dark hover:opacity-80 transition-opacity outline-none"
       >
         <Icon name="fi-rr-pencil" size={18} color="var(--color-content-primary)" />
       </button>
