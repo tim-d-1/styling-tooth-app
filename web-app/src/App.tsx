@@ -5,6 +5,7 @@ import GuestBanner from './components/GuestBanner';
 import VisitSection, { type VisitData } from './components/VisitSection';
 import PromoBannersGrid from './components/PromoBannersGrid';
 import ExpertAdviceGrid, { type ArticleItem } from './components/ExpertAdviceGrid';
+import LoginPage from './components/LoginPage';
 import { supabase } from './lib/supabase';
 
 const EXPERT_ARTICLES: ArticleItem[] = [
@@ -27,6 +28,7 @@ const EXPERT_ARTICLES: ArticleItem[] = [
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentView, setCurrentView] = useState<'main' | 'login'>('main');
   const [visit] = useState<VisitData | null>(null);
   const [activeNav, setActiveNav] = useState('home');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -40,7 +42,23 @@ export default function App() {
       setIsLoggedIn(Boolean(session?.user));
     });
 
-    return () => subscription.unsubscribe();
+    const handleHashChange = () => {
+      if (window.location.hash === '#login' || window.location.pathname === '/login') {
+        setCurrentView('login');
+      } else {
+        setCurrentView('main');
+      }
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleHashChange);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('popstate', handleHashChange);
+    };
   }, []);
 
   const showToast = (message: string) => {
@@ -49,6 +67,36 @@ export default function App() {
       setToastMessage((current) => (current === message ? null : current));
     }, 3000);
   };
+
+  const navigateToLogin = () => {
+    setCurrentView('login');
+    if (window.location.hash !== '#login') {
+      window.location.hash = 'login';
+    }
+  };
+
+  const navigateToMain = () => {
+    setCurrentView('main');
+    if (window.location.hash === '#login') {
+      window.history.pushState(null, '', window.location.pathname);
+    }
+  };
+
+  if (currentView === 'login') {
+    return (
+      <LoginPage
+        onBack={navigateToMain}
+        onSuccess={() => {
+          setIsLoggedIn(true);
+          navigateToMain();
+          showToast('Успішний вхід у систему');
+        }}
+        onNavigateRegister={() => {
+          showToast('Форма реєстрації в розробці');
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface-cream text-content-dark font-primary pb-12">
@@ -61,7 +109,7 @@ export default function App() {
       <Header
         isLoggedIn={isLoggedIn}
         activeNav={activeNav}
-        onLoginClick={() => showToast('Відкрито форму входу')}
+        onLoginClick={navigateToLogin}
         onNavClick={(nav) => {
           setActiveNav(nav);
           showToast(`Перехід на розділ: ${nav}`);
@@ -102,3 +150,4 @@ export default function App() {
     </div>
   );
 }
+
