@@ -2,7 +2,7 @@ import { useState, type FC } from 'react';
 import Button from './ui/Button';
 import Switch from './ui/Switch';
 
-interface UpcomingVisitCardProps {
+export interface UpcomingVisitCardProps {
   dayOfWeek?: string;
   dayNumber?: string;
   timeSlot?: string;
@@ -29,161 +29,57 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
 }) => {
   const [transferEnabled, setTransferEnabled] = useState(initialTransferEnabled);
 
+  const currentProcedureCost = basePrice;
   const totalPrice = basePrice + (transferEnabled ? transferPrice : 0);
 
   return (
-    <section
-      style={{
-        maxWidth: '1200px',
-        margin: '1.5rem auto 2.5rem auto',
-        padding: '0 2rem',
-      }}
-    >
-      <h2
-        style={{
-          fontSize: '1.5rem',
-          fontWeight: 600,
-          fontFamily: 'var(--font-accented)',
-          marginBottom: '1rem',
-          color: 'var(--color-content-primary)',
-        }}
-      >
+    <section className="max-w-[1200px] mx-auto my-6 px-8 mb-10">
+      <h2 className="text-2xl font-semibold font-accented mb-4 text-content-dark">
         Запланований візит
       </h2>
 
-      <div
-        style={{
-          backgroundColor: '#ECEEF1',
-          borderRadius: 'var(--radius-lg)',
-          padding: '1.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '1.25rem',
-          flexWrap: 'wrap',
-        }}
-      >
-        {/* Left Date & Procedure White Container */}
-        <div
-          style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: 'var(--radius-md)',
-            padding: '1rem 1.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1.5rem',
-            flex: '1 1 320px',
-            minWidth: '280px',
-            boxShadow: 'var(--shadow-subtle)',
-          }}
-        >
-          {/* Date Column */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRight: '1px solid var(--color-interactive-lightgray)',
-              paddingRight: '1.25rem',
-              minWidth: '70px',
-            }}
-          >
-            <span
-              style={{
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                color: 'var(--color-content-primary)',
-                textTransform: 'uppercase',
-                fontFamily: 'var(--font-accented)',
-              }}
-            >
+      <div className="bg-visit-gray rounded-3xl p-6 flex flex-wrap items-stretch justify-between gap-5">
+        <div className="bg-white rounded-2xl p-4 md:px-6 flex items-center gap-6 flex-1 min-w-[280px] shadow-xs">
+          <div className="flex flex-col items-center justify-center border-r border-visit-gray pr-5 min-w-[70px]">
+            <span className="text-xs font-semibold text-content-dark uppercase font-accented">
               {dayOfWeek}
             </span>
-            <span
-              style={{
-                fontSize: '2.5rem',
-                fontWeight: 700,
-                lineHeight: 1,
-                margin: '0.25rem 0',
-                color: 'var(--color-content-primary)',
-              }}
-            >
+            <span className="text-4xl font-bold leading-none my-1 text-content-dark">
               {dayNumber}
             </span>
-            <span
-              style={{
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                color: 'var(--color-content-primary)',
-              }}
-            >
+            <span className="text-xs font-medium text-content-dark">
               {timeSlot}
             </span>
           </div>
 
-          {/* Master & Procedure Details */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div className="flex flex-col gap-1.5 justify-center">
             <div>
-              <span style={{ fontSize: '0.8125rem', color: '#555', display: 'block' }}>
-                Майстер:
-              </span>
-              <strong style={{ fontSize: '0.9375rem', color: 'var(--color-content-primary)' }}>
+              <span className="text-xs text-gray-500 block leading-tight">Майстер:</span>
+              <strong className="text-sm font-semibold text-content-dark leading-tight">
                 {masterName}
               </strong>
             </div>
             <div>
-              <span style={{ fontSize: '0.8125rem', color: '#555', display: 'block' }}>
-                Процедура:
-              </span>
-              <strong style={{ fontSize: '0.9375rem', color: 'var(--color-content-primary)' }}>
+              <span className="text-xs text-gray-500 block leading-tight">Процедура:</span>
+              <strong className="text-sm font-semibold text-content-dark leading-tight">
                 {procedureName}
               </strong>
             </div>
           </div>
         </div>
 
-        {/* Center Price & Pet Transfer Toggle White Container */}
-        <div
-          style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: 'var(--radius-md)',
-            padding: '1rem 1.5rem',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            gap: '0.625rem',
-            flex: '1 1 300px',
-            minWidth: '260px',
-            boxShadow: 'var(--shadow-subtle)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontSize: '0.875rem',
-              color: 'var(--color-content-primary)',
-            }}
-          >
+        <div className="bg-white rounded-2xl py-3 px-4 md:px-6 flex flex-col justify-between gap-3 flex-1 min-w-[260px] shadow-xs">
+          <div className="flex items-center justify-between text-sm text-content-dark">
             <span>Вартість обраних процедур:</span>
-            <strong style={{ fontSize: '0.9375rem' }}>{basePrice} ₴</strong>
+            <strong className="text-base font-semibold">
+              {transferEnabled ? `${totalPrice} ₴` : `${currentProcedureCost} ₴`}
+            </strong>
           </div>
 
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '0.5rem',
-              fontSize: '0.875rem',
-              color: 'var(--color-content-primary)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="flex items-center justify-between gap-2 text-sm text-content-dark">
+            <div className="flex items-center gap-2">
               <span>Трансфер улюбленця:</span>
-              <strong style={{ fontSize: '0.9375rem' }}>{transferPrice} ₴</strong>
+              <strong className="text-base font-semibold">{transferPrice} ₴</strong>
             </div>
             <Switch
               checked={transferEnabled}
@@ -191,41 +87,14 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
               id="pet-transfer-switch"
             />
           </div>
-
-          {transferEnabled && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                fontSize: '0.8125rem',
-                color: 'var(--color-interactive-primary)',
-                fontWeight: 600,
-                borderTop: '1px dashed var(--color-interactive-lightgray)',
-                paddingTop: '0.375rem',
-              }}
-            >
-              <span>Загалом до сплати:</span>
-              <span>{totalPrice} ₴</span>
-            </div>
-          )}
         </div>
 
-        {/* Right Action Buttons Column */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.75rem',
-            flex: '0 0 auto',
-            minWidth: '150px',
-          }}
-        >
+        <div className="flex flex-col justify-between gap-2.5 min-w-[140px] w-full sm:w-auto">
           <Button
             variant="primary"
             size="md"
             onClick={onReschedule}
-            style={{ width: '100%', minWidth: '130px', backgroundColor: '#EC643A', borderRadius: '12px' }}
+            className="w-full bg-terracotta rounded-xl shadow-xs hover:bg-[#d8552d] transition-colors"
           >
             Перенести
           </Button>
@@ -233,7 +102,7 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
             variant="outline"
             size="md"
             onClick={onCancel}
-            style={{ width: '100%', minWidth: '130px', borderRadius: '12px', borderColor: '#242F35' }}
+            className="w-full rounded-xl border-content-dark hover:bg-gray-100 transition-colors"
           >
             Скасувати
           </Button>

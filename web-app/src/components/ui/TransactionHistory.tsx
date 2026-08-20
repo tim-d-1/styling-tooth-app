@@ -17,35 +17,8 @@ export interface TransactionHistoryProps {
   className?: string;
 }
 
-const DEFAULT_TRANSACTIONS: TransactionItem[] = [
-  {
-    id: '1',
-    title: 'Комплексний грумінг (Мальтипу)',
-    date: '18 Липня 2026',
-    amount: 240,
-    icon: 'fi-rr-barber-shop',
-    type: 'earned',
-  },
-  {
-    id: '2',
-    title: 'Спа + Заспокійлива маска',
-    date: '02 Липня 2026',
-    amount: -400,
-    icon: 'fi-rr-spa',
-    type: 'spent',
-  },
-  {
-    id: '3',
-    title: 'Експрес-лінька & Догляд за кігтями',
-    date: '25 Червня 2026',
-    amount: 60,
-    icon: 'fi-rr-paw',
-    type: 'earned',
-  },
-];
-
 export const TransactionHistory: FC<TransactionHistoryProps> = ({
-  items = DEFAULT_TRANSACTIONS,
+  items = [],
   className = '',
 }) => {
   const [activeFilter, setActiveFilter] = useState<TransactionFilter>('all');
@@ -57,113 +30,67 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
   });
 
   return (
-    <div
-      className={`ui-transaction-history ${className}`}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        width: '100%',
-        maxWidth: '353px',
-      }}
-    >
-      <div style={{ display: 'flex', gap: '6px', overflowX: 'auto' }}>
+    <div className={`ui-transaction-history flex flex-col gap-3 w-full max-w-[353px] ${className}`}>
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
         <button
           type="button"
           onClick={() => setActiveFilter('all')}
-          style={{
-            padding: '8px 16px',
-            borderRadius: '9999px',
-            border: activeFilter === 'all' ? 'none' : '1px solid var(--color-content-primary)',
-            backgroundColor: activeFilter === 'all' ? 'var(--color-surface-accent)' : 'transparent',
-            color: activeFilter === 'all' ? 'var(--color-surface-white)' : 'var(--color-content-primary)',
-            fontSize: '14px',
-            fontFamily: 'var(--font-primary)',
-            cursor: 'pointer',
-          }}
+          className={`px-4 py-2 rounded-full text-sm font-primary cursor-pointer transition-colors ${
+            activeFilter === 'all'
+              ? 'bg-soft-blue text-white border-0'
+              : 'bg-transparent border border-content-dark text-content-dark hover:bg-visit-gray'
+          }`}
         >
           Всі
         </button>
         <button
           type="button"
           onClick={() => setActiveFilter('earned')}
-          style={{
-            padding: '8px 16px',
-            borderRadius: '9999px',
-            border: activeFilter === 'earned' ? 'none' : '1px solid var(--color-content-primary)',
-            backgroundColor: activeFilter === 'earned' ? 'var(--color-surface-accent)' : 'transparent',
-            color: activeFilter === 'earned' ? 'var(--color-surface-white)' : 'var(--color-content-primary)',
-            fontSize: '14px',
-            fontFamily: 'var(--font-primary)',
-            cursor: 'pointer',
-          }}
+          className={`px-4 py-2 rounded-full text-sm font-primary cursor-pointer transition-colors ${
+            activeFilter === 'earned'
+              ? 'bg-soft-blue text-white border-0'
+              : 'bg-transparent border border-content-dark text-content-dark hover:bg-visit-gray'
+          }`}
         >
           Нараховано
         </button>
         <button
           type="button"
           onClick={() => setActiveFilter('spent')}
-          style={{
-            padding: '8px 16px',
-            borderRadius: '9999px',
-            border: activeFilter === 'spent' ? 'none' : '1px solid var(--color-content-primary)',
-            backgroundColor: activeFilter === 'spent' ? 'var(--color-surface-accent)' : 'transparent',
-            color: activeFilter === 'spent' ? 'var(--color-surface-white)' : 'var(--color-content-primary)',
-            fontSize: '14px',
-            fontFamily: 'var(--font-primary)',
-            cursor: 'pointer',
-          }}
+          className={`px-4 py-2 rounded-full text-sm font-primary cursor-pointer transition-colors ${
+            activeFilter === 'spent'
+              ? 'bg-soft-blue text-white border-0'
+              : 'bg-transparent border border-content-dark text-content-dark hover:bg-visit-gray'
+          }`}
         >
           Витрачено
         </button>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div className="flex flex-col gap-4">
         {filteredItems.map((item) => (
           <div
             key={item.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '16px',
-              backgroundColor: 'var(--color-surface-white)',
-              borderRadius: '24px',
-              boxShadow: 'var(--shadow-card)',
-            }}
+            className="flex items-center justify-between p-4 bg-white rounded-3xl shadow-card"
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--color-interactive-lightgray)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-visit-gray flex items-center justify-center shrink-0">
                 <Icon name={item.icon} size={20} color="var(--color-content-primary)" />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 500, color: 'var(--color-content-primary)' }}>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-base font-medium text-content-dark">
                   {item.title}
                 </span>
-                <span style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>
+                <span className="text-sm text-gray-500">
                   {item.date}
                 </span>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div className="flex items-center gap-1">
               <span
-                style={{
-                  fontFamily: 'var(--font-accented)',
-                  fontSize: '24px',
-                  fontWeight: 700,
-                  color: item.amount > 0 ? 'var(--color-interactive-primary)' : 'var(--color-content-primary)',
-                }}
+                className={`font-accented text-2xl font-bold ${
+                  item.amount > 0 ? 'text-terracotta' : 'text-content-dark'
+                }`}
               >
                 {item.amount > 0 ? `+${item.amount}` : item.amount}
               </span>

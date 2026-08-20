@@ -3,7 +3,25 @@ import Header from './components/Header';
 import LocationBar from './components/LocationBar';
 import UpcomingVisitCard from './components/UpcomingVisitCard';
 import PromoBannersGrid from './components/PromoBannersGrid';
-import ExpertAdviceGrid from './components/ExpertAdviceGrid';
+import ExpertAdviceGrid, { type ArticleItem } from './components/ExpertAdviceGrid';
+
+const EXPERT_ARTICLES: ArticleItem[] = [
+  {
+    id: 'shampoo-guide',
+    title: 'ЯК ОБРАТИ ПРАВИЛЬНИЙ ШАМПУНЬ?',
+    bgImage: '/images/golden_retriever_bath.png',
+    bgColor: '#E8EFFA',
+    type: 'shampoo',
+  },
+  {
+    id: 'paws-tips',
+    title: '5 ПОРАД',
+    subtitle: 'для здорових лап',
+    bgImage: '/images/dog_paw_close_up.png',
+    bgColor: '#96B3E2',
+    type: 'paw',
+  },
+];
 
 export default function App() {
   const [activeNav, setActiveNav] = useState('home');
@@ -17,38 +35,13 @@ export default function App() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: 'var(--color-surface-main)',
-        color: 'var(--color-content-primary)',
-        fontFamily: 'var(--font-primary)',
-        paddingBottom: '3rem',
-      }}
-    >
-      {/* Toast Notification Banner */}
+    <div className="min-h-screen bg-surface-cream text-content-dark font-primary pb-12">
       {toastMessage && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            zIndex: 9999,
-            backgroundColor: 'var(--color-content-primary)',
-            color: '#FFFFFF',
-            padding: '0.875rem 1.25rem',
-            borderRadius: 'var(--radius-md)',
-            boxShadow: 'var(--shadow-modal)',
-            fontSize: '0.9375rem',
-            fontFamily: 'var(--font-primary)',
-            animation: 'fadeIn 0.2s ease-in-out',
-          }}
-        >
+        <div className="fixed bottom-6 right-6 z-[9999] bg-content-dark text-white px-5 py-3.5 rounded-xl shadow-2xl text-sm font-primary animate-fade-in">
           {toastMessage}
         </div>
       )}
 
-      {/* Top Header Navigation Bar */}
       <Header
         activeNav={activeNav}
         onNavClick={(nav) => {
@@ -59,14 +52,12 @@ export default function App() {
         onProfileClick={() => showToast('Відкрито особистий кабінет клієнта')}
       />
 
-      {/* Location & Notification Bar */}
       <LocationBar
         location="м. Запоріжжя"
         hasNotification={true}
         onNotificationClick={() => showToast('У вас є 1 нове сповіщення')}
       />
 
-      {/* Section 1: Scheduled Visit Card */}
       <UpcomingVisitCard
         dayOfWeek="СЕР"
         dayNumber="10"
@@ -80,15 +71,14 @@ export default function App() {
         onCancel={() => showToast('Запит на скасування візиту прийнято')}
       />
 
-      {/* Section 2: Promo Banners Grid */}
       <PromoBannersGrid
         onBanner1Click={() => showToast('Акція "-25% на перший грумінг"')}
         onBanner2Click={() => showToast('Акція "Безкоштовне підстригання кігтів"')}
         onBanner3Click={() => showToast('Поповер з QR-кодом для завантаження додатка')}
       />
 
-      {/* Section 3: Expert Advice Grid */}
       <ExpertAdviceGrid
+        articles={EXPERT_ARTICLES}
         onArticleClick={(articleId) => showToast(`Відкрито статтю: ${articleId}`)}
       />
     </div>

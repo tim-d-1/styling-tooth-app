@@ -37,17 +37,7 @@ export const Button: FC<ButtonProps> = ({
   return (
     <button disabled={disabled || isLoading} className={classes} {...props}>
       {isLoading ? (
-        <span
-          style={{
-            display: 'inline-block',
-            width: '16px',
-            height: '16px',
-            border: '2px solid currentColor',
-            borderTopColor: 'transparent',
-            borderRadius: '50%',
-            animation: 'spin 0.8s linear infinite',
-          }}
-        />
+        <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
       ) : (
         leftIcon
       )}

@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import Icon from './ui/Icon';
 import NotificationBell from './ui/NotificationBell';
 
-interface LocationBarProps {
+export interface LocationBarProps {
   location?: string;
   onNotificationClick?: () => void;
   hasNotification?: boolean;
@@ -14,33 +14,16 @@ export const LocationBar: FC<LocationBarProps> = ({
   hasNotification = true,
 }) => {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '1.25rem 2rem 0.5rem 2rem',
-        maxWidth: '1200px',
-        margin: '0 auto',
-      }}
-    >
-      {/* Location Pin */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          color: 'var(--color-content-primary)',
-          fontSize: '0.9375rem',
-          fontWeight: 500,
-          cursor: 'pointer',
-        }}
+    <div className="flex items-center justify-between pt-5 pb-2 px-8 max-w-[1200px] mx-auto">
+      <button
+        type="button"
+        aria-label={`Поточна локація: ${location}`}
+        className="flex items-center gap-2 text-content-dark text-sm font-medium cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-0 p-0"
       >
         <Icon name="fi-rr-marker" size={18} color="var(--color-content-primary)" />
         <span>{location}</span>
-      </div>
+      </button>
 
-      {/* Notification Bell */}
       <NotificationBell hasBadge={hasNotification} onClick={onNotificationClick} />
     </div>
   );

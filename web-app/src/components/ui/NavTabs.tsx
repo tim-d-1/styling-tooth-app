@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import Icon, { type IconName } from './Icon';
 
-export type NavTabId = 'home' | 'booking' | 'pets' | 'account';
+export type NavTabId = 'home' | 'booking' | 'pets' | 'account' | string;
 
 export interface NavTabItem {
   id: NavTabId;
@@ -10,64 +10,38 @@ export interface NavTabItem {
 }
 
 export interface NavTabsProps {
+  tabs?: NavTabItem[];
   activeTab?: NavTabId;
   onChange?: (tabId: NavTabId) => void;
   className?: string;
 }
 
-const TABS: NavTabItem[] = [
-  { id: 'home', label: 'Головна', icon: 'fi-rr-home' },
-  { id: 'booking', label: 'Запис', icon: 'fi-rr-calendar' },
-  { id: 'pets', label: 'Улюбленці', icon: 'fi-rr-paw' },
-  { id: 'account', label: 'Акаунт', icon: 'fi-rr-user' },
-];
-
-export const NavTabs: FC<NavTabsProps> = ({ activeTab = 'home', onChange, className = '' }) => {
+export const NavTabs: FC<NavTabsProps> = ({
+  tabs = [],
+  activeTab = 'home',
+  onChange,
+  className = '',
+}) => {
   return (
     <div
-      className={`ui-nav-tabs ${className}`}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-around',
-        backgroundColor: 'var(--color-surface-white)',
-        padding: '8px 16px',
-        borderRadius: 'var(--radius-md)',
-        boxShadow: 'var(--shadow-card)',
-        width: '100%',
-        maxWidth: '360px',
-      }}
+      className={`ui-nav-tabs flex items-center justify-around bg-white px-4 py-2 rounded-xl shadow-card w-full max-w-[360px] ${className}`}
     >
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
-        const color = isActive ? 'var(--color-interactive-primary)' : 'var(--color-content-primary)';
+        const color = isActive ? 'var(--color-terracotta)' : 'var(--color-content-dark)';
 
         return (
           <button
             key={tab.id}
             type="button"
             onClick={() => onChange?.(tab.id)}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '4px',
-              border: 'none',
-              background: 'none',
-              cursor: 'pointer',
-              padding: '6px 12px',
-              minWidth: '64px',
-            }}
+            className="flex flex-col items-center justify-center gap-1 border-0 bg-transparent cursor-pointer py-1.5 px-3 min-w-[64px] hover:opacity-80 transition-opacity"
           >
             <Icon name={tab.icon} size={20} color={color} />
             <span
-              style={{
-                fontSize: '11px',
-                fontFamily: 'var(--font-primary)',
-                fontWeight: isActive ? 600 : 400,
-                color,
-              }}
+              className={`text-[11px] font-primary transition-colors ${
+                isActive ? 'font-semibold text-terracotta' : 'font-normal text-content-dark'
+              }`}
             >
               {tab.label}
             </span>

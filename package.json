@@ -6,6 +6,7 @@
   "scripts": {
     "dev:web": "npm --prefix web-app run dev",
     "build:web": "npm --prefix web-app run build",
+    "test:web": "npm --prefix web-app run test",
     "test:backend": "node supabase/tests/backend.test.mjs"
   },
 

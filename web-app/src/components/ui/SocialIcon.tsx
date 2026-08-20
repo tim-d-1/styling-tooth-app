@@ -30,7 +30,7 @@ export type SocialPlatform =
 
 export type SocialColorScheme = 'Negative' | 'Original';
 
-interface SocialIconProps {
+export interface SocialIconProps {
   platform: SocialPlatform;
   colorScheme?: SocialColorScheme;
   size?: number;

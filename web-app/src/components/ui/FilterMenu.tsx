@@ -7,7 +7,7 @@ export interface FilterOption {
 }
 
 export interface FilterMenuProps {
-  options: FilterOption[];
+  options?: FilterOption[];
   selectedId?: string;
   onSelect?: (option: FilterOption) => void;
   placeholder?: string;
@@ -15,7 +15,7 @@ export interface FilterMenuProps {
 }
 
 export const FilterMenu: FC<FilterMenuProps> = ({
-  options,
+  options = [],
   selectedId,
   onSelect,
   placeholder = 'Вибрати фільтр',
@@ -29,9 +29,11 @@ export const FilterMenu: FC<FilterMenuProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         className="ui-filter-menu__trigger"
       >
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span className="flex items-center gap-2">
           {selectedOption?.icon}
           {selectedOption ? selectedOption.label : placeholder}
         </span>
@@ -40,10 +42,7 @@ export const FilterMenu: FC<FilterMenuProps> = ({
           height="16"
           viewBox="0 0 16 16"
           fill="none"
-          style={{
-            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform var(--transition-fast)',
-          }}
+          className={`transition-transform duration-150 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
         >
           <path
             d="M4 6L8 10L12 6"
@@ -56,24 +55,27 @@ export const FilterMenu: FC<FilterMenuProps> = ({
       </button>
 
       {isOpen && (
-        <div className="ui-filter-menu__dropdown">
+        <div className="ui-filter-menu__dropdown" role="listbox">
           {options.map((option) => {
             const isSelected = option.id === selectedId;
 
             return (
-              <div
+              <button
                 key={option.id}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
                 onClick={() => {
                   onSelect?.(option);
                   setIsOpen(false);
                 }}
-                className={`ui-filter-menu__item ${
+                className={`ui-filter-menu__item w-full text-left bg-transparent border-0 ${
                   isSelected ? 'ui-filter-menu__item--selected' : ''
                 }`}
               >
                 {option.icon}
                 <span>{option.label}</span>
-              </div>
+              </button>
             );
           })}
         </div>

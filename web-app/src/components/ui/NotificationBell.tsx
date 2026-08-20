@@ -16,35 +16,12 @@ export const NotificationBell: FC<NotificationBellProps> = ({
     <button
       type="button"
       onClick={onClick}
-      className={`ui-notification-bell ${className}`}
-      aria-label="Notifications"
-      style={{
-        position: 'relative',
-        width: '40px',
-        height: '40px',
-        borderRadius: '50%',
-        backgroundColor: 'var(--color-surface-white)',
-        border: '1px solid var(--color-interactive-lightgray)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        boxShadow: 'var(--shadow-subtle)',
-      }}
+      className={`ui-notification-bell relative w-10 h-10 rounded-full bg-white border border-visit-gray flex items-center justify-center cursor-pointer shadow-subtle hover:bg-visit-gray transition-colors ${className}`}
+      aria-label="Сповіщення"
     >
       <Icon name="fi-rr-bell" size={20} color="var(--color-content-primary)" />
       {hasBadge && (
-        <span
-          style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--color-interactive-primary)',
-          }}
-        />
+        <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-terracotta" />
       )}
     </button>
   );

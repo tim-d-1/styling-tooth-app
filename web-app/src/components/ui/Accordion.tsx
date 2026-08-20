@@ -1,79 +1,67 @@
-import { useState, type FC, type ReactNode } from 'react';
+import { useState, useEffect, type FC, type ReactNode } from 'react';
 import Icon from './Icon';
 
 export interface AccordionProps {
   title: string;
   children: ReactNode;
+  isExpanded?: boolean;
   defaultExpanded?: boolean;
+  onToggle?: (expanded: boolean) => void;
   className?: string;
 }
 
 export const Accordion: FC<AccordionProps> = ({
   title,
   children,
+  isExpanded: controlledExpanded,
   defaultExpanded = false,
+  onToggle,
   className = '',
 }) => {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
+
+  const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
+
+  useEffect(() => {
+    if (controlledExpanded !== undefined) {
+      setInternalExpanded(controlledExpanded);
+    }
+  }, [controlledExpanded]);
+
+  const handleToggle = () => {
+    const nextState = !isExpanded;
+    if (controlledExpanded === undefined) {
+      setInternalExpanded(nextState);
+    }
+    onToggle?.(nextState);
+  };
 
   return (
     <div
-      className={`ui-accordion ${className}`}
-      style={{
-        backgroundColor: 'var(--color-surface-white)',
-        borderRadius: '20px',
-        padding: '20px',
-        boxShadow: 'var(--shadow-card)',
-        width: '100%',
-        maxWidth: '353px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-      }}
+      className={`ui-accordion bg-white rounded-[20px] p-5 shadow-card w-full max-w-[353px] flex flex-col gap-4 ${className}`}
     >
-      <div
-        onClick={() => setIsExpanded(!isExpanded)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          cursor: 'pointer',
-        }}
+      <button
+        type="button"
+        onClick={handleToggle}
+        aria-expanded={isExpanded}
+        className="w-full flex items-center justify-between cursor-pointer bg-transparent border-0 p-0 text-left"
       >
-        <span
-          style={{
-            fontSize: '16px',
-            fontFamily: 'var(--font-primary)',
-            fontWeight: 500,
-            color: 'var(--color-content-primary)',
-            lineHeight: 1.3,
-          }}
-        >
+        <span className="text-base font-primary font-medium text-content-dark leading-snug">
           {title}
         </span>
-        <div
-          style={{
-            transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-            transition: 'transform var(--transition-fast)',
-            display: 'flex',
-            alignItems: 'center',
-          }}
+        <span
+          className={`flex items-center transition-transform duration-150 ${
+            isExpanded ? 'rotate-90' : 'rotate-0'
+          }`}
         >
           <Icon name="fi-rr-angle-small-right" size={24} color="var(--color-content-primary)" />
-        </div>
-      </div>
+        </span>
+      </button>
 
       {isExpanded && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ height: '1px', backgroundColor: 'var(--color-interactive-lightgray)' }} />
-          <div
-            style={{
-              fontSize: '14px',
-              fontFamily: 'var(--font-primary)',
-              color: 'var(--color-content-primary)',
-              lineHeight: 1.5,
-            }}
-          >
+        <div className="flex flex-col gap-4">
+          <div className="h-px bg-visit-gray" />
+          <div className="text-sm font-primary text-content-dark leading-relaxed">
             {children}
           </div>
         </div>

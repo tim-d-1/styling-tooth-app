@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import Button from './ui/Button';
 
-interface PromoBannersGridProps {
+export interface PromoBannersGridProps {
   onBanner1Click?: () => void;
   onBanner2Click?: () => void;
   onBanner3Click?: () => void;
@@ -13,83 +13,37 @@ export const PromoBannersGrid: FC<PromoBannersGridProps> = ({
   onBanner3Click,
 }) => {
   return (
-    <section
-      style={{
-        maxWidth: '1200px',
-        margin: '0 auto 3rem auto',
-        padding: '0 2rem',
-      }}
-    >
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '1.25rem',
-        }}
-      >
+    <section className="max-w-[1200px] mx-auto mb-12 px-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div
+          role="button"
+          tabIndex={0}
           onClick={onBanner1Click}
-          style={{
-            position: 'relative',
-            height: '240px',
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            cursor: 'pointer',
-            boxShadow: 'var(--shadow-card)',
-            backgroundImage: 'url("/images/promo_grooming_tools.png")',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            padding: '1.5rem',
-            boxSizing: 'border-box',
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onBanner1Click?.();
+            }
           }}
+          aria-label="Знижка 25% на перший грумінг"
+          className="relative h-[240px] rounded-3xl overflow-hidden cursor-pointer shadow-md bg-cover bg-center flex flex-col justify-between p-6 bg-[url('/images/promo_grooming_tools.png')] hover:scale-[1.01] transition-transform duration-200 text-left"
         >
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.7) 100%)',
-              zIndex: 1,
-            }}
-          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/70 z-10" />
 
-          <div style={{ position: 'relative', zIndex: 2 }}>
-            <span
-              style={{
-                fontSize: '1rem',
-                fontWeight: 700,
-                color: '#FFFFFF',
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-                display: 'block',
-              }}
-            >
+          <div className="relative z-20">
+            <span className="text-sm font-bold text-white tracking-wider uppercase block">
               НА ПЕРШИЙ ГРУМІНГ
             </span>
-            <div
-              style={{
-                fontSize: '3rem',
-                fontWeight: 800,
-                color: '#FFFFFF',
-                lineHeight: 1.1,
-                marginTop: '0.25rem',
-              }}
-            >
+            <div className="text-5xl font-extrabold text-white leading-tight mt-1">
               -25%
             </div>
           </div>
 
-          <div style={{ position: 'relative', zIndex: 2 }}>
+          <div className="relative z-20">
             <Button
               variant="primary"
               size="sm"
-              style={{
-                backgroundColor: '#EC643A',
-                borderRadius: '12px',
-                padding: '0.5rem 1.25rem',
-              }}
+              className="bg-terracotta rounded-xl px-5 py-2 hover:bg-[#d8552d] transition-colors"
             >
               Детальніше
             </Button>
@@ -97,80 +51,49 @@ export const PromoBannersGrid: FC<PromoBannersGridProps> = ({
         </div>
 
         <div
+          role="button"
+          tabIndex={0}
           onClick={onBanner2Click}
-          style={{
-            position: 'relative',
-            height: '240px',
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            cursor: 'pointer',
-            boxShadow: 'var(--shadow-card)',
-            backgroundImage: 'url("/images/promo_nail_trimming.png")',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            padding: '1.5rem',
-            boxSizing: 'border-box',
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onBanner2Click?.();
+            }
           }}
+          aria-label="Безкоштовне підстригання кігтів при комплексному грумінгу"
+          className="relative h-[240px] rounded-3xl overflow-hidden cursor-pointer shadow-md bg-cover bg-center flex flex-col justify-end p-6 bg-[url('/images/promo_nail_trimming.png')] hover:scale-[1.01] transition-transform duration-200 text-left"
         >
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.85) 100%)',
-              zIndex: 1,
-            }}
-          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/85 z-10" />
 
-          <div style={{ position: 'relative', zIndex: 2, maxWidth: '280px' }}>
-            <span
-              style={{
-                fontSize: '1.25rem',
-                fontWeight: 700,
-                color: '#EC643A',
-                display: 'block',
-                marginBottom: '0.25rem',
-              }}
-            >
+          <div className="relative z-20 max-w-[280px]">
+            <span className="text-xl font-bold text-terracotta block mb-1">
               Безкоштовне
             </span>
-            <p
-              style={{
-                margin: 0,
-                fontSize: '0.9375rem',
-                fontWeight: 500,
-                color: '#FFFFFF',
-                lineHeight: 1.3,
-              }}
-            >
+            <p className="m-0 text-sm font-medium text-white leading-snug">
               підстригання кігтів при комплексному грумінгу
             </p>
           </div>
         </div>
 
         <div
+          role="button"
+          tabIndex={0}
           onClick={onBanner3Click}
-          style={{
-            position: 'relative',
-            height: '240px',
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            backgroundColor: '#DDE2E7',
-            boxShadow: 'var(--shadow-card)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxSizing: 'border-box',
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onBanner3Click?.();
+            }
           }}
+          aria-label="Мобільний застосунок: Керуйте візитами та бонусами 24/7"
+          className="relative h-[240px] rounded-3xl overflow-hidden bg-advice-gray shadow-md flex items-center justify-center p-4 cursor-pointer hover:bg-[#d5dbe1] transition-colors text-center"
         >
-          <div style={{ textAlign: 'center', padding: '1rem', color: '#666' }}>
-            <span style={{ fontSize: '1.5rem', display: 'block', marginBottom: '0.5rem' }}>📱</span>
-            <strong style={{ fontSize: '1rem', display: 'block', color: 'var(--color-content-primary)' }}>
+          <div>
+            <span className="text-2xl block mb-2">📱</span>
+            <strong className="text-base block text-content-dark">
               Мобільний застосунок
             </strong>
-            <span style={{ fontSize: '0.875rem', color: '#666' }}>
+            <span className="text-sm text-gray-600">
               Керуйте візитами та бонусами 24/7
             </span>
           </div>

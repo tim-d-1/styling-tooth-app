@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 
 export interface AddressTagOption {
   id: string;
@@ -12,30 +12,31 @@ export interface AddressTagsProps {
   className?: string;
 }
 
-const DEFAULT_TAGS: AddressTagOption[] = [
-  { id: 'home', label: '🏡 Дім' },
-  { id: 'office', label: '💼 Офіс' },
-];
-
 export const AddressTags: FC<AddressTagsProps> = ({
-  options = DEFAULT_TAGS,
-  selectedId = 'home',
+  options = [],
+  selectedId,
   onChange,
   className = '',
 }) => {
-  const [selected, setSelected] = useState(selectedId);
+  const [internalSelected, setInternalSelected] = useState(selectedId);
+
+  const selected = selectedId !== undefined ? selectedId : internalSelected;
+
+  useEffect(() => {
+    if (selectedId !== undefined) {
+      setInternalSelected(selectedId);
+    }
+  }, [selectedId]);
+
+  const handleSelect = (id: string) => {
+    if (selectedId === undefined) {
+      setInternalSelected(id);
+    }
+    onChange?.(id);
+  };
 
   return (
-    <div
-      className={`ui-address-tags ${className}`}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        width: '100%',
-        maxWidth: '353px',
-      }}
-    >
+    <div className={`ui-address-tags flex items-center gap-3 w-full max-w-[353px] ${className}`}>
       {options.map((opt) => {
         const isActive = opt.id === selected;
 
@@ -43,24 +44,12 @@ export const AddressTags: FC<AddressTagsProps> = ({
           <button
             key={opt.id}
             type="button"
-            onClick={() => {
-              setSelected(opt.id);
-              onChange?.(opt.id);
-            }}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '12px',
-              border: isActive ? 'none' : '0.8px solid var(--color-content-primary)',
-              backgroundColor: isActive ? 'var(--color-surface-accent)' : 'transparent',
-              color: isActive ? 'var(--color-surface-white)' : 'var(--color-content-primary)',
-              fontSize: '14px',
-              fontFamily: 'var(--font-primary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '40px',
-            }}
+            onClick={() => handleSelect(opt.id)}
+            className={`px-4 h-10 rounded-xl text-sm font-primary cursor-pointer flex items-center justify-center transition-colors duration-150 ${
+              isActive
+                ? 'bg-soft-blue text-white border-0'
+                : 'bg-transparent border border-content-dark text-content-dark hover:bg-visit-gray'
+            }`}
           >
             {opt.label}
           </button>

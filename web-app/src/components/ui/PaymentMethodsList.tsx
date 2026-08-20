@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import Icon from './Icon';
 
 export interface PaymentMethod {
@@ -17,78 +17,53 @@ export interface PaymentMethodsListProps {
   className?: string;
 }
 
-const DEFAULT_METHODS: PaymentMethod[] = [
-  {
-    id: 'apple-pay',
-    type: 'apple-pay',
-    title: 'Apple Pay',
-    subtitle: 'Основний спосіб',
-    isPrimary: true,
-  },
-  {
-    id: 'mastercard-4821',
-    type: 'card',
-    title: '•••• 4821',
-    subtitle: 'Термін: 08/28',
-    isPrimary: false,
-  },
-];
-
 export const PaymentMethodsList: FC<PaymentMethodsListProps> = ({
-  methods = DEFAULT_METHODS,
-  selectedId = 'apple-pay',
+  methods = [],
+  selectedId,
   onSelect,
   onDelete,
   className = '',
 }) => {
-  const [selected, setSelected] = useState(selectedId);
+  const [internalSelected, setInternalSelected] = useState(selectedId);
+
+  const selected = selectedId !== undefined ? selectedId : internalSelected;
+
+  useEffect(() => {
+    if (selectedId !== undefined) {
+      setInternalSelected(selectedId);
+    }
+  }, [selectedId]);
+
+  const handleSelect = (id: string) => {
+    if (selectedId === undefined) {
+      setInternalSelected(id);
+    }
+    onSelect?.(id);
+  };
 
   return (
-    <div
-      className={`ui-payment-methods ${className}`}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        width: '100%',
-        maxWidth: '345px',
-      }}
-    >
+    <div className={`ui-payment-methods flex flex-col gap-3 w-full max-w-[345px] ${className}`}>
       {methods.map((method) => {
         const isSelected = method.id === selected;
 
         return (
           <div
             key={method.id}
-            onClick={() => {
-              setSelected(method.id);
-              onSelect?.(method.id);
+            role="button"
+            tabIndex={0}
+            onClick={() => handleSelect(method.id)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleSelect(method.id);
+              }
             }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '16px',
-              backgroundColor: 'var(--color-surface-white)',
-              borderRadius: '16px',
-              border: '0.8px solid var(--color-interactive-lightgray)',
-              boxShadow: 'var(--shadow-card)',
-              cursor: 'pointer',
-            }}
+            className={`flex items-center justify-between p-4 bg-white rounded-2xl border shadow-card cursor-pointer transition-colors ${
+              isSelected ? 'border-terracotta' : 'border-visit-gray hover:border-soft-blue'
+            }`}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                style={{
-                  width: '64px',
-                  height: '32px',
-                  borderRadius: '4px',
-                  backgroundColor: 'var(--color-surface-white)',
-                  border: '1px solid var(--color-content-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
+            <div className="flex items-center gap-3">
+              <div className="w-16 h-8 rounded bg-white border border-content-dark flex items-center justify-center">
                 <Icon
                   name={method.type === 'card' ? 'fi-rr-credit-card' : 'fi-rr-record'}
                   size={20}
@@ -96,40 +71,34 @@ export const PaymentMethodsList: FC<PaymentMethodsListProps> = ({
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 500, color: 'var(--color-content-primary)' }}>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-base font-medium text-content-dark">
                   {method.title}
                 </span>
                 <span
-                  style={{
-                    fontSize: '12px',
-                    color: method.isPrimary ? 'var(--color-status-success)' : 'var(--color-content-primary)',
-                  }}
+                  className={`text-xs ${
+                    method.isPrimary ? 'text-green-600 font-medium' : 'text-content-dark'
+                  }`}
                 >
                   {method.subtitle}
                 </span>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="flex items-center gap-2">
               {isSelected ? (
                 <Icon name="fi-rr-record" size={20} color="var(--color-interactive-primary)" />
               ) : (
                 <button
                   type="button"
+                  aria-label="Видалити спосіб оплати"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete?.(method.id);
                   }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    color: 'var(--color-content-primary)',
-                  }}
+                  className="bg-transparent border-0 cursor-pointer p-1 text-content-dark hover:text-red-500 transition-colors"
                 >
-                  <Icon name="fi-rr-trash" size={20} color="var(--color-content-primary)" />
+                  <Icon name="fi-rr-trash" size={20} color="currentColor" />
                 </button>
               )}
             </div>

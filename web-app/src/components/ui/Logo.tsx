@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import type { FC, CSSProperties } from 'react';
 
 export type LogoVariant =
   | 'logo-01'
@@ -10,7 +10,7 @@ export type LogoVariant =
   | 'logo-without-fon-01'
   | 'logo-without-fon-02';
 
-interface LogoProps {
+export interface LogoProps {
   variant?: LogoVariant;
   alt?: string;
   width?: number | string;
@@ -33,18 +33,22 @@ export const Logo: FC<LogoProps> = ({
   variant = 'logo-without-fon-01',
   alt = 'Стильний Зубець Logo',
   width,
-  height,
+  height = 44,
   className = '',
 }) => {
   const src = logoFileMap[variant] || logoFileMap['logo-without-fon-01'];
+
+  const customStyle: CSSProperties = {
+    height: typeof height === 'number' ? `${height}px` : height,
+    width: width ? (typeof width === 'number' ? `${width}px` : width) : 'auto',
+  };
 
   return (
     <img
       src={src}
       alt={alt}
-      width={width}
-      height={height}
-      className={`object-contain ${className}`}
+      style={customStyle}
+      className={`object-contain max-h-none ${className}`}
       loading="lazy"
     />
   );

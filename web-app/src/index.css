@@ -1,7 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-terracotta: #ec643a;
+  --color-soft-blue: #96b3e2;
+  --color-soft-ice: #e8effa;
+  --color-surface-cream: #fffbf6;
+  --color-content-dark: #242f35;
+  --color-visit-gray: #eceef1;
+  --color-advice-gray: #dde2e7;
+  --font-accented: 'Comfortaa', cursive, sans-serif;
+  --font-primary: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
 
 :root {
-  /* Color Tokens */
+ 
   --color-content-primary: #242f35;
   --color-interactive-primary: #ec643a;
   --color-surface-main: #fffbf6;
@@ -13,23 +26,23 @@
   --color-text-muted: #b2b2b2;
   --color-accent-purple: #8a38f5;
 
-  /* Typography Fonts */
+ 
   --font-primary: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-accented: 'Comfortaa', cursive, sans-serif;
 
-  /* Shadows */
+ 
   --shadow-card: 0px 4px 20px 0px rgba(36, 47, 53, 0.06);
   --shadow-modal: 0px 0px 32px 2px rgba(0, 0, 0, 0.25);
   --shadow-subtle: 0px 2px 8px 0px rgba(36, 47, 53, 0.04);
 
-  /* Radii in rem */
-  --radius-xs: 0.3125rem; /* 5px */
-  --radius-sm: 0.5rem;    /* 8px */
-  --radius-md: 0.75rem;   /* 12px */
-  --radius-lg: 1.5rem;    /* 24px */
+ 
+  --radius-xs: 0.3125rem;
+  --radius-sm: 0.5rem;   
+  --radius-md: 0.75rem;  
+  --radius-lg: 1.5rem;   
   --radius-full: 9999px;
 
-  /* Transitions */
+ 
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -68,16 +81,14 @@ body {
   box-shadow: var(--shadow-modal);
 }
 
-/* ==========================================================================
-   Design System UI Components (rem Units)
-   ========================================================================== */
 
-/* --- Button Component --- */
+
+
 .ui-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem; /* 8px */
+  gap: 0.5rem;
   border-radius: var(--radius-md);
   font-family: var(--font-accented);
   font-weight: 600;
@@ -132,39 +143,39 @@ body {
 }
 
 .ui-button--sm {
-  height: 2.1875rem; /* 35px */
-  padding: 0 0.875rem; /* 14px */
-  font-size: 0.875rem; /* 14px */
+  height: 2.1875rem;
+  padding: 0 0.875rem;
+  font-size: 0.875rem;
 }
 
 .ui-button--md {
-  height: 2.5rem; /* 40px */
-  padding: 0 1rem; /* 16px */
-  font-size: 1rem; /* 16px */
+  height: 2.5rem;
+  padding: 0 1rem;
+  font-size: 1rem;
 }
 
 .ui-button--lg {
-  height: 3rem; /* 48px */
-  padding: 0 1.5rem; /* 24px */
-  font-size: 1rem; /* 16px */
+  height: 3rem;
+  padding: 0 1.5rem;
+  font-size: 1rem;
 }
 
-/* --- Switch Component --- */
+
 .ui-switch {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem; /* 12px */
+  gap: 0.75rem;
 }
 
 .ui-switch__track {
-  width: 3.25rem; /* 52px */
-  height: 1.75rem; /* 28px */
+  width: 3.25rem;
+  height: 1.75rem;
   border-radius: var(--radius-full);
   background-color: var(--color-interactive-lightgray);
   position: relative;
   cursor: pointer;
   transition: background-color var(--transition-fast);
-  padding: 0.125rem; /* 2px */
+  padding: 0.125rem;
   display: inline-flex;
   align-items: center;
   border: none;
@@ -181,8 +192,8 @@ body {
 }
 
 .ui-switch__handle {
-  width: 1.5rem; /* 24px */
-  height: 1.5rem; /* 24px */
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: 50%;
   background-color: var(--color-surface-white);
   transform: translateX(0rem);
@@ -191,28 +202,28 @@ body {
 }
 
 .ui-switch__handle--checked {
-  transform: translateX(1.5rem); /* 24px */
+  transform: translateX(1.5rem);
 }
 
 .ui-switch__label {
-  font-size: 0.875rem; /* 14px */
+  font-size: 0.875rem;
   font-family: var(--font-primary);
   color: var(--color-content-primary);
   cursor: pointer;
   user-select: none;
 }
 
-/* --- Checkbox Component --- */
+
 .ui-checkbox {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem; /* 8px */
+  gap: 0.5rem;
 }
 
 .ui-checkbox__box {
-  width: 1.25rem; /* 20px */
-  height: 1.25rem; /* 20px */
-  border-radius: 0.25rem; /* 4px */
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.25rem;
   background-color: var(--color-surface-white);
   border: 1px solid var(--color-text-muted);
   display: inline-flex;
@@ -234,23 +245,23 @@ body {
 }
 
 .ui-checkbox__label {
-  font-size: 0.875rem; /* 14px */
+  font-size: 0.875rem;
   font-family: var(--font-primary);
   color: var(--color-content-primary);
   cursor: pointer;
   user-select: none;
 }
 
-/* --- Rating Component --- */
+
 .ui-rating {
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem; /* 6px */
+  gap: 0.375rem;
 }
 
 .ui-rating__stars {
   display: inline-flex;
-  gap: 0.25rem; /* 4px */
+  gap: 0.25rem;
 }
 
 .ui-rating__star {
@@ -266,35 +277,35 @@ body {
 }
 
 .ui-rating__score {
-  font-size: 0.875rem; /* 14px */
+  font-size: 0.875rem;
   font-family: var(--font-accented);
   font-weight: 600;
   color: var(--color-content-primary);
 }
 
-/* --- Notification Card Component --- */
+
 .ui-notification-card {
   width: 100%;
-  max-width: 22.0625rem; /* 353px */
+  max-width: 22.0625rem;
   background-color: var(--color-surface-white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  padding: 1.25rem; /* 20px */
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem; /* 16px */
+  gap: 1rem;
   box-sizing: border-box;
 }
 
 .ui-notification-card__header {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem; /* 12px */
+  gap: 0.75rem;
 }
 
 .ui-notification-card__avatar {
-  width: 2.5rem; /* 40px */
-  height: 2.5rem; /* 40px */
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
   background-color: var(--color-interactive-lightgray);
   display: flex;
@@ -311,20 +322,20 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem; /* 8px */
+  gap: 0.5rem;
 }
 
 .ui-notification-card__title {
   margin: 0;
-  font-size: 1rem; /* 16px */
+  font-size: 1rem;
   font-weight: 500;
   font-family: var(--font-primary);
   color: var(--color-content-primary);
 }
 
 .ui-notification-card__badge {
-  width: 0.625rem; /* 10px */
-  height: 0.625rem; /* 10px */
+  width: 0.625rem;
+  height: 0.625rem;
   border-radius: 50%;
   background-color: var(--color-interactive-primary);
   display: inline-block;
@@ -332,8 +343,8 @@ body {
 }
 
 .ui-notification-card__message {
-  margin: 0.25rem 0 0 0; /* 4px */
-  font-size: 0.875rem; /* 14px */
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
   font-family: var(--font-primary);
   color: var(--color-content-primary);
   line-height: 1.4;
@@ -341,22 +352,21 @@ body {
 
 .ui-notification-card__time {
   display: block;
-  margin-top: 0.375rem; /* 6px */
-  font-size: 0.75rem; /* 12px */
+  margin-top: 0.375rem;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
 }
 
-/* --- Filter Menu Component --- */
 .ui-filter-menu {
   position: relative;
   width: 100%;
-  max-width: 22.0625rem; /* 353px */
+  max-width: 22.0625rem;
 }
 
 .ui-filter-menu__trigger {
   width: 100%;
-  height: 2.5rem; /* 40px */
-  padding: 0 1rem; /* 16px */
+  height: 2.5rem;
+  padding: 0 1rem;
   border-radius: var(--radius-md);
   background-color: var(--color-surface-white);
   border: 1px solid var(--color-interactive-lightgray);
@@ -366,7 +376,7 @@ body {
   justify-content: space-between;
   cursor: pointer;
   font-family: var(--font-primary);
-  font-size: 0.875rem; /* 14px */
+  font-size: 0.875rem;
   color: var(--color-content-primary);
   transition: all var(--transition-fast);
 }
@@ -377,7 +387,7 @@ body {
 
 .ui-filter-menu__dropdown {
   position: absolute;
-  top: calc(100% + 0.375rem); /* 6px */
+  top: calc(100% + 0.375rem);
   left: 0;
   right: 0;
   z-index: 50;
@@ -389,13 +399,13 @@ body {
 }
 
 .ui-filter-menu__item {
-  height: 3.125rem; /* 50px */
-  padding: 0 1rem; /* 16px */
+  height: 3.125rem;
+  padding: 0 1rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem; /* 12px */
+  gap: 0.75rem;
   cursor: pointer;
-  font-size: 1rem; /* 16px */
+  font-size: 1rem;
   font-family: var(--font-primary);
   font-weight: 500;
   color: var(--color-content-primary);
@@ -417,17 +427,16 @@ body {
   background-color: var(--color-surface-main);
 }
 
-/* --- Input Component --- */
 .ui-input {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem; /* 6px */
+  gap: 0.375rem;
   width: 100%;
-  max-width: 22.0625rem; /* 353px */
+  max-width: 22rem;
 }
 
 .ui-input__label {
-  font-size: 0.875rem; /* 14px */
+  font-size: 0.875rem;
   font-family: var(--font-primary);
   font-weight: 500;
   color: var(--color-content-primary);
@@ -436,9 +445,9 @@ body {
 .ui-input__wrapper {
   display: flex;
   align-items: center;
-  gap: 0.75rem; /* 12px */
-  height: 3.5rem; /* 56px */
-  padding: 0 1rem; /* 16px */
+  gap: 0.75rem;
+  height: 3.5rem;
+  padding: 0 1rem;
   border-radius: var(--radius-md);
   background-color: var(--color-surface-white);
   border: 1px solid var(--color-content-primary);
@@ -464,12 +473,12 @@ body {
   outline: none;
   background-color: transparent;
   font-family: var(--font-primary);
-  font-size: 1rem; /* 16px */
+  font-size: 1rem;
   color: var(--color-content-primary);
 }
 
 .ui-input__helper {
-  font-size: 0.75rem; /* 12px */
+  font-size: 0.75rem;
   color: var(--color-text-muted);
 }
 
@@ -477,20 +486,19 @@ body {
   color: var(--color-status-error);
 }
 
-/* --- Address List Component --- */
 .ui-address-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem; /* 12px */
+  gap: 0.75rem;
   width: 100%;
-  max-width: 22.0625rem; /* 353px */
+  max-width: 22rem;
 }
 
 .ui-address-card {
   display: flex;
   align-items: center;
-  gap: 0.75rem; /* 12px */
-  padding: 1rem 0.75rem; /* 16px 12px */
+  gap: 0.75rem;
+  padding: 1rem 0.75rem;
   border-radius: var(--radius-md);
   background-color: var(--color-surface-white);
   border: 1px solid var(--color-interactive-lightgray);
@@ -509,8 +517,8 @@ body {
 }
 
 .ui-address-card__icon {
-  width: 2.25rem; /* 36px */
-  height: 2.25rem; /* 36px */
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 50%;
   background-color: var(--color-interactive-lightgray);
   display: flex;
@@ -536,24 +544,24 @@ body {
 }
 
 .ui-address-card__title {
-  font-size: 1rem; /* 16px */
+  font-size: 1rem;
   font-family: var(--font-primary);
   font-weight: 600;
   color: var(--color-content-primary);
 }
 
 .ui-address-card__badge {
-  font-size: 0.75rem; /* 12px */
-  padding: 0.125rem 0.5rem; /* 2px 8px */
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
   border-radius: var(--radius-full);
   background-color: var(--color-interactive-primary);
   color: var(--color-surface-white);
 }
 
 .ui-address-card__subtitle {
-  font-size: 0.8125rem; /* 13px */
+  font-size: 0.8125rem;
   font-family: var(--font-primary);
   color: var(--color-text-muted);
   display: block;
-  margin-top: 0.125rem; /* 2px */
+  margin-top: 0.125rem;
 }

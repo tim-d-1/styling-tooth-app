@@ -9,7 +9,6 @@ export function calculateTotalPrice(basePrice: number, transferPrice: number, tr
 }
 
 export function runMainPageSuite(): boolean {
-  // Test component exports
   const components = [Header, LocationBar, UpcomingVisitCard, PromoBannersGrid, ExpertAdviceGrid];
   for (const comp of components) {
     if (!comp) {
@@ -17,7 +16,6 @@ export function runMainPageSuite(): boolean {
     }
   }
 
-  // Test visit pricing calculation with transfer toggle
   const basePrice = 1300;
   const transferPrice = 100;
 
@@ -35,4 +33,3 @@ export function runMainPageSuite(): boolean {
 }
 
 runMainPageSuite();
-console.log('Main page component test suite PASSED clean!');

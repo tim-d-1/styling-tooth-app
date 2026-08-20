@@ -20,60 +20,42 @@ export const UserProfileCard: FC<UserProfileCardProps> = ({
 }) => {
   return (
     <div
-      className={`ui-user-profile-card ${className}`}
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '16px 8px',
-        borderRadius: '12px',
-        backgroundColor: isSelected ? 'var(--color-interactive-lightgray)' : 'transparent',
-        border: isSelected ? '1px solid var(--color-surface-accent)' : '1px solid transparent',
-        width: '100%',
-        maxWidth: '342px',
-        cursor: 'pointer',
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick?.();
+        }
       }}
+      className={`ui-user-profile-card flex items-center gap-3 p-4 rounded-xl w-full max-w-[342px] cursor-pointer transition-colors text-left ${
+        isSelected
+          ? 'bg-visit-gray border border-soft-blue'
+          : 'bg-transparent border border-transparent hover:bg-visit-gray/50'
+      } ${className}`}
     >
-      <div
-        style={{
-          width: '40px',
-          height: '40px',
-          borderRadius: '9999px',
-          backgroundColor: 'var(--color-interactive-lightgray)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
+      <div className="w-10 h-10 rounded-full bg-visit-gray flex items-center justify-center shrink-0">
         <Icon name="fi-rr-user" size={20} color="var(--color-content-primary)" />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '2px' }}>
-        <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontFamily: 'var(--font-primary)' }}>
+      <div className="flex flex-col flex-1 gap-0.5">
+        <span className="text-xs text-gray-500 font-primary">
           {roleLabel}
         </span>
-        <span style={{ fontSize: '16px', fontWeight: 500, color: 'var(--color-content-primary)', fontFamily: 'var(--font-primary)' }}>
+        <span className="text-base font-medium text-content-dark font-primary">
           {name}
         </span>
       </div>
 
       <button
         type="button"
+        aria-label="Редагувати профіль"
         onClick={(e) => {
           e.stopPropagation();
           onEdit?.();
         }}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          padding: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+        className="bg-transparent border-0 cursor-pointer p-1 flex items-center justify-center text-content-dark hover:opacity-80 transition-opacity"
       >
         <Icon name="fi-rr-pencil" size={18} color="var(--color-content-primary)" />
       </button>

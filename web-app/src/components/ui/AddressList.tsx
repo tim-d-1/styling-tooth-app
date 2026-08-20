@@ -9,14 +9,14 @@ export interface MethodItem {
 }
 
 export interface AddressListProps {
-  items: MethodItem[];
+  items?: MethodItem[];
   selectedId?: string;
   onSelect?: (item: MethodItem) => void;
   className?: string;
 }
 
 export const AddressList: FC<AddressListProps> = ({
-  items,
+  items = [],
   selectedId,
   onSelect,
   className = '',
@@ -29,8 +29,16 @@ export const AddressList: FC<AddressListProps> = ({
         return (
           <div
             key={item.id}
+            role="button"
+            tabIndex={0}
             onClick={() => onSelect?.(item)}
-            className={`ui-address-card ${isSelected ? 'ui-address-card--selected' : ''}`}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelect?.(item);
+              }
+            }}
+            className={`ui-address-card cursor-pointer ${isSelected ? 'ui-address-card--selected' : ''}`}
           >
             <div className="ui-address-card__icon">
               {item.icon || (
