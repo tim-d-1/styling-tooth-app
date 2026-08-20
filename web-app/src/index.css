@@ -3,18 +3,25 @@
 
 @theme {
   --color-terracotta: #ec643a;
+  --color-terracotta-hover: #d8552d;
   --color-soft-blue: #96b3e2;
   --color-soft-ice: #e8effa;
   --color-surface-cream: #fffbf6;
   --color-content-dark: #242f35;
   --color-visit-gray: #eceef1;
   --color-advice-gray: #dde2e7;
+  --color-advice-gray-hover: #d5dbe1;
+  --color-navy-dark: #1a2938;
+  --color-banner-navy: #09151d;
+  --color-banner-brown-start: #4e2417;
+  --color-banner-brown-mid: #321910;
+  --color-banner-brown-end: #1a0e0a;
+  --color-text-muted: #b2b2b2;
   --font-accented: 'Comfortaa', cursive, sans-serif;
   --font-primary: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 :root {
- 
   --color-content-primary: #242f35;
   --color-interactive-primary: #ec643a;
   --color-surface-main: #fffbf6;
@@ -25,6 +32,19 @@
   --color-status-error: #ff383c;
   --color-text-muted: #b2b2b2;
   --color-accent-purple: #8a38f5;
+  --color-terracotta: #ec643a;
+  --color-terracotta-hover: #d8552d;
+  --color-content-dark: #242f35;
+  --color-visit-gray: #eceef1;
+  --color-soft-blue: #96b3e2;
+  --color-soft-ice: #e8effa;
+  --color-advice-gray: #dde2e7;
+  --color-advice-gray-hover: #d5dbe1;
+  --color-navy-dark: #1a2938;
+  --color-banner-navy: #09151d;
+  --color-banner-brown-start: #4e2417;
+  --color-banner-brown-mid: #321910;
+  --color-banner-brown-end: #1a0e0a;
 
  
   --font-primary: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

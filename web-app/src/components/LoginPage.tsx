@@ -52,8 +52,9 @@ export const LoginPage: FC<LoginPageProps> = ({
       } else {
         onSuccess?.();
       }
-    } catch {
-      onSuccess?.();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Помилка авторизації через соціальну мережу';
+      setErrorMessage(message);
     } finally {
       setIsLoading(false);
     }
@@ -91,15 +92,16 @@ export const LoginPage: FC<LoginPageProps> = ({
       }
 
       onSuccess?.();
-    } catch {
-      onSuccess?.();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Помилка входу в систему';
+      setErrorMessage(message);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#FFFBF6] flex flex-col lg:flex-row relative text-content-dark font-primary">
+    <div className="min-h-screen w-full bg-surface-cream flex flex-col lg:flex-row relative text-content-dark font-primary">
       <div className="w-full lg:w-[710px] min-h-[21.25rem] sm:min-h-[26.25rem] h-auto lg:min-h-screen relative shrink-0 overflow-hidden select-none">
         <img
           src="/assets/images/cat_photo_1.png"
@@ -107,7 +109,7 @@ export const LoginPage: FC<LoginPageProps> = ({
           className="w-full h-full object-cover object-center"
         />
 
-        <div className="absolute inset-x-0 bottom-0 min-h-[13.75rem] sm:min-h-[17.5rem] lg:min-h-[32rem] h-auto bg-gradient-to-b from-transparent to-[#09151D] flex items-end p-6 sm:p-10 lg:p-[60px]" />
+        <div className="absolute inset-x-0 bottom-0 min-h-[13.75rem] sm:min-h-[17.5rem] lg:min-h-[32rem] h-auto bg-gradient-to-b from-transparent to-banner-navy flex items-end p-6 sm:p-10 lg:p-[60px]" />
 
         <button
           type="button"
@@ -125,7 +127,7 @@ export const LoginPage: FC<LoginPageProps> = ({
             type="button"
             onClick={toggleLanguage}
             aria-label="Змінити мову інтерфейсу"
-            className="inline-flex items-center gap-2 text-[#B2B2B2] hover:text-content-dark font-sans text-[17px] leading-none transition-colors cursor-pointer bg-transparent border-0 p-0 outline-none"
+            className="inline-flex items-center gap-2 text-text-muted hover:text-content-dark font-sans text-[17px] leading-none transition-colors cursor-pointer bg-transparent border-0 p-0 outline-none"
           >
             <i className="fi fi-rr-globe text-[15px] flex items-center justify-center leading-none" />
             <span>{language}</span>
@@ -140,10 +142,10 @@ export const LoginPage: FC<LoginPageProps> = ({
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-14">
               <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-1.5 border-b border-[#B2B2B2] focus-within:border-terracotta transition-colors pb-1">
+                <div className="flex flex-col gap-1.5 border-b border-text-muted focus-within:border-terracotta transition-colors pb-1">
                   <label
                     htmlFor="login-username"
-                    className="font-primary font-semibold text-[11px] leading-[1.5em] tracking-[-0.011em] uppercase text-[#B2B2B2]"
+                    className="font-primary font-semibold text-[11px] leading-[1.5em] tracking-[-0.011em] uppercase text-text-muted"
                   >
                     ім’я користувача
                   </label>
@@ -155,14 +157,14 @@ export const LoginPage: FC<LoginPageProps> = ({
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Marichka_bkk"
-                    className="w-full bg-transparent font-primary font-medium text-[15px] leading-[1.5em] tracking-[-0.011em] text-content-dark outline-none placeholder:text-[#B2B2B2]/60"
+                    className="w-full bg-transparent font-primary font-medium text-[15px] leading-[1.5em] tracking-[-0.011em] text-content-dark outline-none placeholder:text-text-muted/60"
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5 border-b border-[#B2B2B2] focus-within:border-terracotta transition-colors pb-1">
+                <div className="flex flex-col gap-1.5 border-b border-text-muted focus-within:border-terracotta transition-colors pb-1">
                   <label
                     htmlFor="login-identifier"
-                    className="font-primary font-semibold text-[11px] leading-[1.5em] tracking-[-0.011em] uppercase text-[#B2B2B2]"
+                    className="font-primary font-semibold text-[11px] leading-[1.5em] tracking-[-0.011em] uppercase text-text-muted"
                   >
                     Email/номер телефону
                   </label>
@@ -174,14 +176,14 @@ export const LoginPage: FC<LoginPageProps> = ({
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     placeholder="bulakhmaria@gmail.com"
-                    className="w-full bg-transparent font-primary font-medium text-[15px] leading-[1.5em] tracking-[-0.011em] text-content-dark outline-none placeholder:text-[#B2B2B2]/60"
+                    className="w-full bg-transparent font-primary font-medium text-[15px] leading-[1.5em] tracking-[-0.011em] text-content-dark outline-none placeholder:text-text-muted/60"
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5 border-b border-[#B2B2B2] focus-within:border-terracotta transition-colors pb-1 relative">
+                <div className="flex flex-col gap-1.5 border-b border-text-muted focus-within:border-terracotta transition-colors pb-1 relative">
                   <label
                     htmlFor="login-password"
-                    className="font-primary font-semibold text-[11px] leading-[1.5em] tracking-[-0.011em] uppercase text-[#B2B2B2]"
+                    className="font-primary font-semibold text-[11px] leading-[1.5em] tracking-[-0.011em] uppercase text-text-muted"
                   >
                     Пароль
                   </label>
@@ -194,13 +196,13 @@ export const LoginPage: FC<LoginPageProps> = ({
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••••••••"
-                      className="w-full bg-transparent font-primary font-medium text-[15px] leading-[1.5em] tracking-[-0.011em] text-content-dark outline-none placeholder:text-[#B2B2B2]/60"
+                      className="w-full bg-transparent font-primary font-medium text-[15px] leading-[1.5em] tracking-[-0.011em] text-content-dark outline-none placeholder:text-text-muted/60"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       aria-label={showPassword ? 'Сховати пароль' : 'Показати пароль'}
-                      className="text-[#B2B2B2] hover:text-content-dark transition-colors cursor-pointer bg-transparent border-0 p-1 flex items-center justify-center outline-none"
+                      className="text-text-muted hover:text-content-dark transition-colors cursor-pointer bg-transparent border-0 p-1 flex items-center justify-center outline-none"
                     >
                       <i className={`fi ${showPassword ? 'fi-rr-eye-crossed' : 'fi-rr-eye'} text-lg leading-none`} />
                     </button>
@@ -223,7 +225,7 @@ export const LoginPage: FC<LoginPageProps> = ({
                     type="button"
                     onClick={() => handleSocialLogin('Google')}
                     aria-label="Увійти за допомогою Google"
-                    className="w-12 h-12 rounded-full border border-[#B2B2B2] hover:border-content-dark hover:bg-black/5 transition-all flex items-center justify-center cursor-pointer bg-transparent p-0 shrink-0 outline-none"
+                    className="w-12 h-12 rounded-full border border-text-muted hover:border-content-dark hover:bg-black/5 transition-all flex items-center justify-center cursor-pointer bg-transparent p-0 shrink-0 outline-none"
                   >
                     <img
                       src="/assets/social_icons/google-original.svg"
@@ -238,7 +240,7 @@ export const LoginPage: FC<LoginPageProps> = ({
                     type="button"
                     onClick={() => handleSocialLogin('Apple')}
                     aria-label="Увійти за допомогою Apple"
-                    className="w-12 h-12 rounded-full border border-[#B2B2B2] hover:border-content-dark hover:bg-black/5 transition-all flex items-center justify-center cursor-pointer bg-transparent p-0 shrink-0 outline-none"
+                    className="w-12 h-12 rounded-full border border-text-muted hover:border-content-dark hover:bg-black/5 transition-all flex items-center justify-center cursor-pointer bg-transparent p-0 shrink-0 outline-none"
                   >
                     <img
                       src="/assets/social_icons/apple-original.svg"
@@ -270,7 +272,7 @@ export const LoginPage: FC<LoginPageProps> = ({
                 <button
                   type="button"
                   onClick={onNavigateRegister}
-                  className="text-xs font-primary text-[#B2B2B2] hover:text-terracotta transition-colors bg-transparent border-0 cursor-pointer outline-none"
+                  className="text-xs font-primary text-text-muted hover:text-terracotta transition-colors bg-transparent border-0 cursor-pointer outline-none"
                 >
                   Ще не маєте акаунту? <span className="underline">Зареєструватися</span>
                 </button>

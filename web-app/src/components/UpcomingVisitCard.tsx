@@ -104,7 +104,7 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
             size="md"
             onClick={onReschedule}
             aria-label="Перенести запланований візит"
-            className="w-full bg-terracotta rounded-xl shadow-xs hover:bg-[#d8552d] transition-colors"
+            className="w-full bg-terracotta rounded-xl shadow-xs hover:bg-terracotta-hover transition-colors"
           >
             Перенести
           </Button>

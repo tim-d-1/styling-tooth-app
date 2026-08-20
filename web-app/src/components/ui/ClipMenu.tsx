@@ -67,8 +67,8 @@ export const ClipMenu: FC<ClipMenuProps> = ({ items = [], onSelect, className })
               Немає доступних дій
             </div>
           ) : (
-            items.map((item, index) => {
-              const itemId = item.id || `clip-item-${index}`;
+            items.map((item) => {
+              const itemId = item.id || `clip-${item.icon}-${item.label.trim().toLowerCase().replace(/\s+/g, '-')}`;
 
               return (
                 <button

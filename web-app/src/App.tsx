@@ -13,7 +13,7 @@ const EXPERT_ARTICLES: ArticleItem[] = [
     id: 'shampoo-guide',
     title: 'ЯК ОБРАТИ ПРАВИЛЬНИЙ ШАМПУНЬ?',
     bgImage: '/assets/images/golden_retriever_bath.png',
-    bgColor: '#E8EFFA',
+    bgColor: 'var(--color-soft-ice)',
     type: 'shampoo',
   },
   {
@@ -21,7 +21,7 @@ const EXPERT_ARTICLES: ArticleItem[] = [
     title: '5 ПОРАД',
     subtitle: 'для здорових лап',
     bgImage: '/assets/images/dog_paw_close_up.png',
-    bgColor: '#96B3E2',
+    bgColor: 'var(--color-soft-blue)',
     type: 'paw',
   },
 ];

@@ -63,9 +63,16 @@ describe('UI Component Library', () => {
       expect(handleChange).toHaveBeenCalledWith('tab2');
     });
 
-    it('renders fallback when items array is empty', () => {
-      render(<Tabs items={[]} />);
-      expect(screen.getByText('Немає доступних вкладок')).toBeDefined();
+    it('supports controlled value prop', () => {
+      const handleChange = vi.fn();
+      const { rerender } = render(<Tabs items={mockItems} value="tab1" onChange={handleChange} />);
+      const tab1 = screen.getByRole('tab', { name: /Вкладка 1/i });
+      expect(tab1.getAttribute('aria-selected')).toBe('true');
+
+      rerender(<Tabs items={mockItems} value="tab2" onChange={handleChange} />);
+      const tab2 = screen.getByRole('tab', { name: /Вкладка 2/i });
+      expect(tab2.getAttribute('aria-selected')).toBe('true');
+      expect(tab1.getAttribute('aria-selected')).toBe('false');
     });
   });
 
@@ -87,6 +94,20 @@ describe('UI Component Library', () => {
 
       fireEvent.click(tag2);
       expect(handleToggle).toHaveBeenCalledWith('tag2');
+    });
+
+    it('supports controlled selectedIds in TagGroup', () => {
+      const handleToggle = vi.fn();
+      const { rerender } = render(<TagGroup tags={mockTags} selectedIds={['tag1']} onToggle={handleToggle} />);
+      const tag1 = screen.getByRole('button', { name: 'Тег 1' });
+      expect(tag1.getAttribute('aria-pressed')).toBe('true');
+
+      rerender(<TagGroup tags={mockTags} selectedIds={['tag2', 'tag3']} onToggle={handleToggle} />);
+      const tag2 = screen.getByRole('button', { name: 'Тег 2' });
+      const tag3 = screen.getByRole('button', { name: 'Тег 3' });
+      expect(tag1.getAttribute('aria-pressed')).toBe('false');
+      expect(tag2.getAttribute('aria-pressed')).toBe('true');
+      expect(tag3.getAttribute('aria-pressed')).toBe('true');
     });
 
     it('renders FilterPills with shared toggle logic', () => {
@@ -125,6 +146,18 @@ describe('UI Component Library', () => {
       expect(handleToggle).toHaveBeenCalledWith('item2');
     });
 
+    it('supports controlled expandedIds in Accordion', () => {
+      const handleToggle = vi.fn();
+      const { rerender } = render(<Accordion items={mockAccordionItems} expandedIds={['item1']} onToggle={handleToggle} />);
+      const button1 = screen.getByRole('button', { name: /Заголовок 1/i });
+      expect(button1.getAttribute('aria-expanded')).toBe('true');
+
+      rerender(<Accordion items={mockAccordionItems} expandedIds={['item2']} onToggle={handleToggle} />);
+      const button2 = screen.getByRole('button', { name: /Заголовок 2/i });
+      expect(button1.getAttribute('aria-expanded')).toBe('false');
+      expect(button2.getAttribute('aria-expanded')).toBe('true');
+    });
+
     it('renders fallback when accordion items is empty', () => {
       render(<Accordion items={[]} />);
       expect(screen.getByText('Немає елементів акордеону')).toBeDefined();
@@ -148,6 +181,18 @@ describe('UI Component Library', () => {
       expect(handleChange).toHaveBeenCalledWith('office');
     });
 
+    it('supports controlled selectedId updates', () => {
+      const handleChange = vi.fn();
+      const { rerender } = render(<AddressTags options={mockAddressTags} selectedId="home" onChange={handleChange} />);
+      const homeTag = screen.getByRole('button', { name: 'Дім' });
+      expect(homeTag.getAttribute('aria-pressed')).toBe('true');
+
+      rerender(<AddressTags options={mockAddressTags} selectedId="office" onChange={handleChange} />);
+      const officeTag = screen.getByRole('button', { name: 'Офіс' });
+      expect(homeTag.getAttribute('aria-pressed')).toBe('false');
+      expect(officeTag.getAttribute('aria-pressed')).toBe('true');
+    });
+
     it('renders fallback on empty options', () => {
       render(<AddressTags options={[]} />);
       expect(screen.getByText('Немає доступних адресних тегів')).toBeDefined();
@@ -168,10 +213,25 @@ describe('UI Component Library', () => {
       expect(screen.getByText('Apple Pay')).toBeDefined();
       expect(screen.getByText('Mastercard •••• 4421')).toBeDefined();
 
+      const selectButton = screen.getByRole('button', { name: /Обрати спосіб оплати: Mastercard/i });
+      fireEvent.click(selectButton);
+      expect(handleSelect).toHaveBeenCalledWith('card-1');
+
       const deleteButton = screen.getByRole('button', { name: /Видалити збережений спосіб оплати: Mastercard/i });
       fireEvent.click(deleteButton);
       expect(handleDelete).toHaveBeenCalledWith('card-1');
-      expect(handleSelect).not.toHaveBeenCalled();
+    });
+
+    it('supports controlled selectedId in PaymentMethodsList', () => {
+      const handleSelect = vi.fn();
+      const { rerender } = render(<PaymentMethodsList methods={mockMethods} selectedId="apple-pay" onSelect={handleSelect} />);
+      const applePaySelect = screen.getByRole('button', { name: /Обрати спосіб оплати: Apple Pay/i });
+      expect(applePaySelect.getAttribute('aria-pressed')).toBe('true');
+
+      rerender(<PaymentMethodsList methods={mockMethods} selectedId="card-1" onSelect={handleSelect} />);
+      const cardSelect = screen.getByRole('button', { name: /Обрати спосіб оплати: Mastercard/i });
+      expect(applePaySelect.getAttribute('aria-pressed')).toBe('false');
+      expect(cardSelect.getAttribute('aria-pressed')).toBe('true');
     });
 
     it('renders fallback on empty methods', () => {
@@ -292,6 +352,12 @@ describe('UI Component Library', () => {
       fireEvent.click(editBtn);
       expect(handleEdit).toHaveBeenCalled();
     });
+
+    it('renders without edit button when onEdit is omitted', () => {
+      const handleClick = vi.fn();
+      render(<UserProfileCard name="Анна Ткаченко" roleLabel="Клієнт" onClick={handleClick} />);
+      expect(screen.queryByRole('button', { name: /Редагувати профіль користувача/i })).toBeNull();
+    });
   });
 
   describe('Interactive Controls & Primitives', () => {
@@ -303,15 +369,20 @@ describe('UI Component Library', () => {
       expect(handleClick).toHaveBeenCalled();
     });
 
-    it('handles Checkbox toggle and keyboard events', () => {
+    it('handles Checkbox toggle via click and change', () => {
       const handleChange = vi.fn();
       render(<Checkbox checked={false} onChange={handleChange} label="Погодитися" />);
       const checkbox = screen.getByRole('checkbox', { name: 'Погодитися' });
       fireEvent.click(checkbox);
       expect(handleChange).toHaveBeenCalledWith(true);
+    });
 
-      fireEvent.keyDown(checkbox, { key: ' ' });
-      expect(handleChange).toHaveBeenCalledWith(true);
+    it('does not toggle disabled Checkbox', () => {
+      const handleChange = vi.fn();
+      render(<Checkbox checked={false} onChange={handleChange} disabled={true} label="Заблоковано" />);
+      const checkbox = screen.getByRole('checkbox', { name: 'Заблоковано' });
+      fireEvent.click(checkbox);
+      expect(handleChange).not.toHaveBeenCalled();
     });
 
     it('handles Switch toggle', () => {

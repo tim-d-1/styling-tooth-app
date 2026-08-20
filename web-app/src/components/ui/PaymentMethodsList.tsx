@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC } from 'react';
+import { useState, type FC } from 'react';
 import Icon from './Icon';
 
 export interface PaymentMethod {
@@ -31,12 +31,6 @@ export const PaymentMethodsList: FC<PaymentMethodsListProps> = ({
 
   const selected = controlledSelectedId !== undefined ? controlledSelectedId : internalSelected;
 
-  useEffect(() => {
-    if (controlledSelectedId !== undefined) {
-      setInternalSelected(controlledSelectedId);
-    }
-  }, [controlledSelectedId]);
-
   const handleSelect = (id: string) => {
     if (controlledSelectedId === undefined) {
       setInternalSelected(id);
@@ -54,32 +48,27 @@ export const PaymentMethodsList: FC<PaymentMethodsListProps> = ({
 
   return (
     <div className={['ui-payment-methods flex flex-col gap-3 w-full max-w-[345px]', className].filter(Boolean).join(' ')}>
-      {methods.map((method, index) => {
-        const methodId = method.id || `method-${index}`;
+      {methods.map((method) => {
+        const methodId = method.id || `payment-${method.type}-${method.title.trim().toLowerCase().replace(/\s+/g, '-')}`;
         const isSelected = methodId === selected;
 
         return (
-          <div
+          <article
             key={methodId}
-            role="button"
-            tabIndex={0}
-            aria-label={`Обрати спосіб оплати: ${method.title}`}
-            aria-pressed={isSelected}
-            onClick={() => handleSelect(methodId)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
-                e.preventDefault();
-                handleSelect(methodId);
-              }
-            }}
             className={[
-              'flex items-center justify-between p-4 bg-white rounded-2xl border shadow-card cursor-pointer transition-colors min-h-[4.5rem] h-auto outline-none',
+              'flex items-center justify-between p-4 bg-white rounded-2xl border shadow-card transition-colors min-h-[4.5rem] h-auto',
               isSelected ? 'border-terracotta' : 'border-visit-gray hover:border-soft-blue',
             ]
               .filter(Boolean)
               .join(' ')}
           >
-            <div className="flex items-center gap-3">
+            <button
+              type="button"
+              aria-label={`Обрати спосіб оплати: ${method.title}`}
+              aria-pressed={isSelected}
+              onClick={() => handleSelect(methodId)}
+              className="flex items-center gap-3 flex-1 bg-transparent border-0 p-0 text-left cursor-pointer outline-none"
+            >
               <div className="w-16 min-h-[2rem] h-auto py-1 rounded bg-white border border-content-dark flex items-center justify-center">
                 <Icon
                   name={method.type === 'card' ? 'fi-rr-credit-card' : 'fi-rr-record'}
@@ -100,26 +89,23 @@ export const PaymentMethodsList: FC<PaymentMethodsListProps> = ({
                   {method.subtitle}
                 </span>
               </div>
-            </div>
+            </button>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pl-2">
               {isSelected ? (
                 <Icon name="fi-rr-record" size={20} color="var(--color-interactive-primary)" />
               ) : (
                 <button
                   type="button"
                   aria-label={`Видалити збережений спосіб оплати: ${method.title}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete?.(methodId);
-                  }}
-                  className="bg-transparent border-0 cursor-pointer p-1 text-content-dark hover:text-red-500 transition-colors"
+                  onClick={() => onDelete?.(methodId)}
+                  className="bg-transparent border-0 cursor-pointer p-1 text-content-dark hover:text-red-500 transition-colors outline-none"
                 >
                   <Icon name="fi-rr-trash" size={20} color="currentColor" />
                 </button>
               )}
             </div>
-          </div>
+          </article>
         );
       })}
     </div>

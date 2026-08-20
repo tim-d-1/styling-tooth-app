@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC } from 'react';
+import { useState, type FC } from 'react';
 
 export interface TagItem {
   id: string;
@@ -29,12 +29,6 @@ export const TagGroup: FC<TagGroupProps> = ({
   const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>(defaultSelectedIds);
 
   const selectedIds = controlledSelectedIds !== undefined ? controlledSelectedIds : internalSelectedIds;
-
-  useEffect(() => {
-    if (controlledSelectedIds !== undefined) {
-      setInternalSelectedIds(controlledSelectedIds);
-    }
-  }, [controlledSelectedIds]);
 
   const handleToggle = (id: string) => {
     if (controlledSelectedIds === undefined) {
@@ -79,15 +73,14 @@ export const TagGroup: FC<TagGroupProps> = ({
         .filter(Boolean)
         .join(' ')}
     >
-      {tags.map((tag, index) => {
-        const tagId = tag.id || `tag-${index}`;
+      {tags.map((tag) => {
+        const tagId = tag.id || `tag-${tag.label.trim().toLowerCase().replace(/\s+/g, '-')}`;
         const isSelected = selectedIds.includes(tagId);
 
         return (
           <button
             key={tagId}
             type="button"
-            role="button"
             aria-pressed={isSelected}
             disabled={tag.disabled}
             onClick={() => handleToggle(tagId)}

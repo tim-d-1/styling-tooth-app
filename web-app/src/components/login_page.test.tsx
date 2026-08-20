@@ -122,5 +122,89 @@ describe('LoginPage and Login Utilities', () => {
       fireEvent.click(hideBtn);
       expect(passwordInput.type).toBe('password');
     });
+
+    it('handles social login error without calling onSuccess', async () => {
+      const { supabase } = await import('../lib/supabase');
+      vi.spyOn(supabase.auth, 'signInWithOAuth').mockResolvedValueOnce({
+        data: { provider: 'google', url: null },
+        error: { name: 'AuthError', message: 'OAuth failed' } as never,
+      });
+
+      const handleSuccess = vi.fn();
+      render(<LoginPage onSuccess={handleSuccess} />);
+
+      const googleBtn = screen.getByRole('button', { name: /Увійти за допомогою Google/i });
+      fireEvent.click(googleBtn);
+
+      const alert = await screen.findByRole('alert');
+      expect(alert.textContent).toBe('OAuth failed');
+      expect(handleSuccess).not.toHaveBeenCalled();
+    });
+
+    it('handles social login exception without calling onSuccess', async () => {
+      const { supabase } = await import('../lib/supabase');
+      vi.spyOn(supabase.auth, 'signInWithOAuth').mockRejectedValueOnce(new Error('Network error'));
+
+      const handleSuccess = vi.fn();
+      render(<LoginPage onSuccess={handleSuccess} />);
+
+      const appleBtn = screen.getByRole('button', { name: /Увійти за допомогою Apple/i });
+      fireEvent.click(appleBtn);
+
+      const alert = await screen.findByRole('alert');
+      expect(alert.textContent).toBe('Network error');
+      expect(handleSuccess).not.toHaveBeenCalled();
+    });
+
+    it('handles password login error without calling onSuccess', async () => {
+      const { supabase } = await import('../lib/supabase');
+      vi.spyOn(supabase.auth, 'signInWithPassword').mockResolvedValueOnce({
+        data: { user: null, session: null },
+        error: { name: 'AuthError', message: 'Invalid login credentials' } as never,
+      });
+
+      const handleSuccess = vi.fn();
+      render(
+        <LoginPage
+          onSuccess={handleSuccess}
+          defaultUsername="testuser"
+          defaultIdentifier="user@example.com"
+        />
+      );
+
+      const passwordInput = screen.getByLabelText('Пароль');
+      fireEvent.change(passwordInput, { target: { value: 'wrongpass123' } });
+
+      const submitBtn = screen.getByRole('button', { name: 'Далі' });
+      fireEvent.click(submitBtn);
+
+      const alert = await screen.findByRole('alert');
+      expect(alert.textContent).toBe('Невірний логін або пароль');
+      expect(handleSuccess).not.toHaveBeenCalled();
+    });
+
+    it('handles password login exception without calling onSuccess', async () => {
+      const { supabase } = await import('../lib/supabase');
+      vi.spyOn(supabase.auth, 'signInWithPassword').mockRejectedValueOnce(new Error('Connection timed out'));
+
+      const handleSuccess = vi.fn();
+      render(
+        <LoginPage
+          onSuccess={handleSuccess}
+          defaultUsername="testuser"
+          defaultIdentifier="user@example.com"
+        />
+      );
+
+      const passwordInput = screen.getByLabelText('Пароль');
+      fireEvent.change(passwordInput, { target: { value: 'secretpass123' } });
+
+      const submitBtn = screen.getByRole('button', { name: 'Далі' });
+      fireEvent.click(submitBtn);
+
+      const alert = await screen.findByRole('alert');
+      expect(alert.textContent).toBe('Connection timed out');
+      expect(handleSuccess).not.toHaveBeenCalled();
+    });
   });
 });

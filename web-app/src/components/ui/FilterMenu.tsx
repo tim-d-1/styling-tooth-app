@@ -87,8 +87,8 @@ export const FilterMenu: FC<FilterMenuProps> = ({
               Немає доступних опцій
             </div>
           ) : (
-            options.map((option, index) => {
-              const optionId = option.id || `filter-${index}`;
+            options.map((option) => {
+              const optionId = option.id || `filter-${option.label.trim().toLowerCase().replace(/\s+/g, '-')}`;
               const isSelected = optionId === selectedId;
 
               return (

@@ -44,7 +44,7 @@ export const VisitSection: FC<VisitSectionProps> = ({
             size="md"
             onClick={onBookClick}
             aria-label="Запланувати візит"
-            className="bg-terracotta rounded-xl shadow-xs hover:bg-[#d8552d] transition-colors px-6 mt-2"
+            className="bg-terracotta rounded-xl shadow-xs hover:bg-terracotta-hover transition-colors px-6 mt-2"
           >
             Запланувати візит
           </Button>

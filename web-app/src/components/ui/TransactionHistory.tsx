@@ -95,8 +95,8 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {filteredItems.map((item, index) => {
-            const itemId = item.id || `transaction-${index}`;
+          {filteredItems.map((item) => {
+            const itemId = item.id || `transaction-${item.title.trim().toLowerCase().replace(/\s+/g, '-')}-${item.date.replace(/\./g, '-')}`;
 
             return (
               <div

@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC } from 'react';
+import { useState, type FC } from 'react';
 
 export interface AddressTagOption {
   id: string;
@@ -38,14 +38,6 @@ export const AddressTags: FC<AddressTagsProps> = ({
     ? controlledSelectedId
     : (controlledSelectedIds?.[0] !== undefined ? controlledSelectedIds[0] : internalSelected);
 
-  useEffect(() => {
-    if (controlledSelectedId !== undefined) {
-      setInternalSelected(controlledSelectedId);
-    } else if (controlledSelectedIds?.[0] !== undefined) {
-      setInternalSelected(controlledSelectedIds[0]);
-    }
-  }, [controlledSelectedId, controlledSelectedIds]);
-
   const handleSelect = (id: string) => {
     if (controlledSelectedId === undefined && controlledSelectedIds === undefined) {
       setInternalSelected(id);
@@ -70,15 +62,14 @@ export const AddressTags: FC<AddressTagsProps> = ({
         .filter(Boolean)
         .join(' ')}
     >
-      {items.map((opt, index) => {
-        const optId = opt.id || `address-tag-${index}`;
+      {items.map((opt) => {
+        const optId = opt.id || `address-tag-${opt.label.trim().toLowerCase().replace(/\s+/g, '-')}`;
         const isActive = optId === activeSelected;
 
         return (
           <button
             key={optId}
             type="button"
-            role="button"
             aria-pressed={isActive}
             onClick={() => handleSelect(optId)}
             className={[

@@ -17,18 +17,8 @@ export const PromoBannersGrid: FC<PromoBannersGridProps> = ({
   return (
     <section className={['max-w-[1200px] mx-auto mb-12 px-6 sm:px-8', className].filter(Boolean).join(' ')}>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={onBanner1Click}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
-              e.preventDefault();
-              onBanner1Click?.();
-            }
-          }}
-          aria-label="Знижка 25% на перший грумінг"
-          className="relative min-h-[15rem] h-auto rounded-3xl overflow-hidden cursor-pointer shadow-md flex flex-col justify-between p-6 hover:scale-[1.01] transition-transform duration-200 text-left outline-none"
+        <article
+          className="relative min-h-[15rem] h-auto rounded-3xl overflow-hidden shadow-md flex flex-col justify-between p-6 hover:scale-[1.01] transition-transform duration-200 text-left"
         >
           <img
             src="/assets/images/promo_grooming_tools.png"
@@ -51,30 +41,20 @@ export const PromoBannersGrid: FC<PromoBannersGridProps> = ({
             <Button
               variant="primary"
               size="sm"
-              aria-label="Детальніше про знижку 25% на перший грумінг"
-              onClick={(e) => {
-                e.stopPropagation();
-                onBanner1Click?.();
-              }}
-              className="bg-terracotta rounded-xl px-5 py-2 hover:bg-[#d8552d] transition-colors"
+              aria-label="Знижка 25% на перший грумінг: Детальніше"
+              onClick={onBanner1Click}
+              className="bg-terracotta rounded-xl px-5 py-2 hover:bg-terracotta-hover transition-colors"
             >
               Детальніше
             </Button>
           </div>
-        </div>
+        </article>
 
-        <div
-          role="button"
-          tabIndex={0}
+        <button
+          type="button"
           onClick={onBanner2Click}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
-              e.preventDefault();
-              onBanner2Click?.();
-            }
-          }}
           aria-label="Безкоштовне підстригання кігтів при комплексному грумінгу"
-          className="relative min-h-[15rem] h-auto rounded-3xl overflow-hidden cursor-pointer shadow-md flex flex-col justify-end p-6 hover:scale-[1.01] transition-transform duration-200 text-left outline-none"
+          className="relative min-h-[15rem] h-auto rounded-3xl overflow-hidden cursor-pointer shadow-md flex flex-col justify-end p-6 hover:scale-[1.01] transition-transform duration-200 text-left outline-none border-0 bg-transparent"
         >
           <img
             src="/assets/images/promo_nail_trimming.png"
@@ -92,20 +72,13 @@ export const PromoBannersGrid: FC<PromoBannersGridProps> = ({
               підстригання кігтів при комплексному грумінгу
             </p>
           </div>
-        </div>
+        </button>
 
-        <div
-          role="button"
-          tabIndex={0}
+        <button
+          type="button"
           onClick={onBanner3Click}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
-              e.preventDefault();
-              onBanner3Click?.();
-            }
-          }}
           aria-label="Мобільний застосунок: Керуйте візитами та бонусами 24/7"
-          className="relative min-h-[15rem] h-auto rounded-3xl overflow-hidden bg-advice-gray shadow-md flex items-center justify-center p-6 cursor-pointer hover:bg-[#d5dbe1] transition-colors text-center outline-none"
+          className="relative min-h-[15rem] h-auto rounded-3xl overflow-hidden bg-advice-gray shadow-md flex items-center justify-center p-6 cursor-pointer hover:bg-advice-gray-hover transition-colors text-center outline-none border-0"
         >
           <div>
             <span className="text-3xl block mb-2" role="img" aria-hidden="true">📱</span>
@@ -116,7 +89,7 @@ export const PromoBannersGrid: FC<PromoBannersGridProps> = ({
               Керуйте візитами та бонусами 24/7
             </span>
           </div>
-        </div>
+        </button>
       </div>
     </section>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC, type ReactNode } from 'react';
+import { useState, type FC, type ReactNode } from 'react';
 import Icon from './Icon';
 
 export interface AccordionItem {
@@ -29,12 +29,6 @@ export const Accordion: FC<AccordionProps> = ({
 
   const expandedIds = controlledExpandedIds !== undefined ? controlledExpandedIds : internalExpandedIds;
 
-  useEffect(() => {
-    if (controlledExpandedIds !== undefined) {
-      setInternalExpandedIds(controlledExpandedIds);
-    }
-  }, [controlledExpandedIds]);
-
   const handleToggle = (id: string) => {
     if (controlledExpandedIds === undefined) {
       setInternalExpandedIds((prev) => {
@@ -58,8 +52,8 @@ export const Accordion: FC<AccordionProps> = ({
 
   return (
     <div className={['ui-accordion flex flex-col gap-3 w-full max-w-[353px]', className].filter(Boolean).join(' ')}>
-      {items.map((item, index) => {
-        const itemId = item.id || `accordion-item-${index}`;
+      {items.map((item) => {
+        const itemId = item.id || `accordion-${item.title.trim().toLowerCase().replace(/\s+/g, '-')}`;
         const isExpanded = expandedIds.includes(itemId);
         const headerId = `accordion-header-${itemId}`;
         const panelId = `accordion-panel-${itemId}`;

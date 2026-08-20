@@ -31,15 +31,14 @@ export const AddressList: FC<AddressListProps> = ({
 
   return (
     <div className={['ui-address-list flex flex-col gap-3 w-full max-w-[353px]', className].filter(Boolean).join(' ')}>
-      {items.map((item, index) => {
-        const itemId = item.id || `address-${index}`;
+      {items.map((item) => {
+        const itemId = item.id || `address-${item.title.trim().toLowerCase().replace(/\s+/g, '-')}`;
         const isSelected = itemId === selectedId;
 
         return (
           <button
             key={itemId}
             type="button"
-            role="button"
             aria-pressed={isSelected}
             onClick={() => onSelect?.(item)}
             className={[

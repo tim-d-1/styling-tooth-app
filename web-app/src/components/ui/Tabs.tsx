@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type FC, type KeyboardEvent } from 'react';
+import { useState, useRef, type FC, type KeyboardEvent } from 'react';
 
 export interface TabItem {
   id: string;
@@ -16,6 +16,9 @@ export interface TabsProps {
   ariaLabel?: string;
 }
 
+const getTabId = (item: TabItem) =>
+  item.id || `tab-${item.label.trim().toLowerCase().replace(/\s+/g, '-')}`;
+
 export const Tabs: FC<TabsProps> = ({
   value: controlledValue,
   defaultValue,
@@ -24,17 +27,11 @@ export const Tabs: FC<TabsProps> = ({
   className,
   ariaLabel = 'Вкладки',
 }) => {
-  const initialValue = defaultValue ?? (items.length > 0 ? items[0].id : '');
+  const initialValue = defaultValue ?? (items.length > 0 ? getTabId(items[0]) : '');
   const [internalValue, setInternalValue] = useState<string>(initialValue);
   const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
   const activeValue = controlledValue !== undefined ? controlledValue : internalValue;
-
-  useEffect(() => {
-    if (controlledValue !== undefined) {
-      setInternalValue(controlledValue);
-    }
-  }, [controlledValue]);
 
   const enabledItems = items.filter((item) => !item.disabled);
 
@@ -45,17 +42,19 @@ export const Tabs: FC<TabsProps> = ({
     onChange?.(id);
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLButtonElement>, itemId: string) => {
     if (enabledItems.length === 0) return;
 
+    const currentIndex = enabledItems.findIndex((it) => getTabId(it) === itemId);
+    const validIndex = currentIndex >= 0 ? currentIndex : 0;
     let targetIndex = -1;
 
     if (e.key === 'ArrowRight') {
       e.preventDefault();
-      targetIndex = (currentIndex + 1) % enabledItems.length;
+      targetIndex = (validIndex + 1) % enabledItems.length;
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      targetIndex = (currentIndex - 1 + enabledItems.length) % enabledItems.length;
+      targetIndex = (validIndex - 1 + enabledItems.length) % enabledItems.length;
     } else if (e.key === 'Home') {
       e.preventDefault();
       targetIndex = 0;
@@ -66,7 +65,7 @@ export const Tabs: FC<TabsProps> = ({
 
     if (targetIndex >= 0) {
       const nextItem = enabledItems[targetIndex];
-      const nextId = nextItem.id || `tab-${targetIndex}`;
+      const nextId = getTabId(nextItem);
       handleSelect(nextId);
       tabRefs.current.get(nextId)?.focus();
     }
@@ -91,10 +90,9 @@ export const Tabs: FC<TabsProps> = ({
         .filter(Boolean)
         .join(' ')}
     >
-      {items.map((item, index) => {
-        const itemId = item.id || `tab-${index}`;
+      {items.map((item) => {
+        const itemId = getTabId(item);
         const isSelected = itemId === activeValue;
-        const enabledIndex = enabledItems.findIndex((it) => (it.id || `tab-${index}`) === itemId);
 
         return (
           <button
@@ -114,7 +112,7 @@ export const Tabs: FC<TabsProps> = ({
             tabIndex={isSelected ? 0 : -1}
             disabled={item.disabled}
             onClick={() => handleSelect(itemId)}
-            onKeyDown={(e) => handleKeyDown(e, enabledIndex >= 0 ? enabledIndex : 0)}
+            onKeyDown={(e) => handleKeyDown(e, itemId)}
             className={[
               'flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-primary font-medium transition-all cursor-pointer border-0 outline-none',
               isSelected

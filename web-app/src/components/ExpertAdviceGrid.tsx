@@ -32,8 +32,8 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {articles.map((article, index) => {
-            const articleId = article.id || `article-${index}`;
+          {articles.map((article) => {
+            const articleId = article.id || `article-${article.title.trim().toLowerCase().replace(/\s+/g, '-')}`;
             const effectiveBgImage = article.bgImage?.trim();
             const label = article.subtitle
               ? `${article.title} - ${article.subtitle}`
@@ -41,19 +41,12 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
 
             if (article.type === 'shampoo') {
               return (
-                <div
+                <button
                   key={articleId}
-                  role="button"
-                  tabIndex={0}
+                  type="button"
                   onClick={() => onArticleClick?.(articleId)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
-                      e.preventDefault();
-                      onArticleClick?.(articleId);
-                    }
-                  }}
                   aria-label={label}
-                  className="relative min-h-[13.25rem] h-auto rounded-xl overflow-hidden cursor-pointer shadow-md bg-soft-ice flex items-center p-6 hover:scale-[1.01] transition-transform duration-200 text-left outline-none"
+                  className="relative min-h-[13.25rem] h-auto rounded-xl overflow-hidden cursor-pointer shadow-md bg-soft-ice flex items-center p-6 hover:scale-[1.01] transition-transform duration-200 text-left outline-none border-0"
                 >
                   {effectiveBgImage && (
                     <img
@@ -70,24 +63,17 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
                       {article.title}
                     </h3>
                   </div>
-                </div>
+                </button>
               );
             }
 
             return (
-              <div
+              <button
                 key={articleId}
-                role="button"
-                tabIndex={0}
+                type="button"
                 onClick={() => onArticleClick?.(articleId)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
-                    e.preventDefault();
-                    onArticleClick?.(articleId);
-                  }
-                }}
                 aria-label={label}
-                className="relative min-h-[13.25rem] h-auto rounded-xl overflow-hidden cursor-pointer shadow-md bg-soft-blue flex flex-col justify-center p-6 hover:scale-[1.01] transition-transform duration-200 text-left outline-none"
+                className="relative min-h-[13.25rem] h-auto rounded-xl overflow-hidden cursor-pointer shadow-md bg-soft-blue flex flex-col justify-center p-6 hover:scale-[1.01] transition-transform duration-200 text-left outline-none border-0"
               >
                 {effectiveBgImage && (
                   <img
@@ -97,16 +83,16 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
                   />
                 )}
                 <div className="relative z-20 max-w-[200px]">
-                  <div className="text-3xl font-extrabold text-[#1A2938] leading-none font-accented">
+                  <div className="text-3xl font-extrabold text-navy-dark leading-none font-accented">
                     {article.title}
                   </div>
                   {article.subtitle && (
-                    <p className="mt-1 mb-0 text-lg font-medium text-[#1A2938] font-primary">
+                    <p className="mt-1 mb-0 text-lg font-medium text-navy-dark font-primary">
                       {article.subtitle}
                     </p>
                   )}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
