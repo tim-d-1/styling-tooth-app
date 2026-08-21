@@ -245,3 +245,23 @@ test("9. Monobank Webhook Processor RPC (handle_monobank_webhook_event)", async 
     "Error message should report missing invoice",
   );
 });
+
+test("10. Pet Double-Booking Protection (is_pet_available RPC)", async () => {
+  const dummyPetId = "00000000-0000-0000-0000-000000000000";
+  const startsAt = "2026-08-10T10:00:00Z";
+  const endsAt = "2026-08-10T11:00:00Z";
+
+  const { data: isAvailable, error } = await supabase.rpc("is_pet_available", {
+    p_pet_id: dummyPetId,
+    p_starts_at: startsAt,
+    p_ends_at: endsAt,
+  });
+
+  assert.equal(error, null, `is_pet_available error: ${error?.message}`);
+  assert.equal(
+    isAvailable,
+    true,
+    "Pet with no existing appointments must be available",
+  );
+});
+

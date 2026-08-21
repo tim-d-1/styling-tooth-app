@@ -83,10 +83,15 @@ The ТЗ asks for SQL-trigger-level overbooking detection. Rather than a trigger
 constraint appointments_no_overlap exclude using gist (
   master_id with =,
   tstzrange(starts_at, ends_at) with &&
-) where (status <> 'cancelled')
+) where (status <> 'cancelled');
+
+constraint appointments_pet_no_overlap exclude using gist (
+  pet_id with =,
+  tstzrange(starts_at, ends_at) with &&
+) where (status <> 'cancelled');
 ```
 
-Two overlapping active visits for the same master are **physically impossible to commit**, even under concurrent bookings from mobile + web + CRM at once. `is_master_available()` gives the friendly "slot taken" message; the constraint is the guarantee. Cancelled visits are excluded so a freed slot reopens.
+Two overlapping active visits for the same master or the same pet are **physically impossible to commit**, even under concurrent bookings from mobile + web + CRM at once. `is_master_available()` and `is_pet_available()` give friendly validation messages; the constraints are the database guarantee. Cancelled visits are excluded so freed slots reopen.
 
 ---
 
@@ -114,14 +119,20 @@ Private bucket, images only, 10 MB cap. Object path convention: **`{pet_id}/{uui
 | File | Contents |
 |------|----------|
 | `0001_extensions_and_enums.sql` | `pgcrypto`, `btree_gist`; enums (role, status, species, sex, photo type, source) |
-| `0002_core_tables.sql` | all tables, indexes, the overbooking EXCLUDE constraint |
+| `0002_core_tables.sql` | all tables, indexes, the overbooking EXCLUDE constraint for masters |
 | `0003_functions.sql` | role helpers, `resolve_service`, `is_master_available`, `get_available_slots`, `create_appointment`, `client_stats` view |
 | `0004_triggers.sql` | `updated_at`, role guard, new-user → profile |
 | `0005_rls.sql` | enable RLS + all policies |
 | `0006_storage.sql` | `pet-media` bucket + storage policies |
 | `0007_seed.sql` | optional sample catalog (dev only) |
+| `0008_all_masters_slots.sql` | `get_available_slots_all_masters` RPC |
+| `0009_appointment_state_machine.sql` | status transition validation trigger |
+| `0010_multi_service_booking.sql` | `appointment_services` table and multi-service RPCs |
+| `0011_payments_and_monobank.sql` | `payments` table and monobank webhook RPC |
+| `0012_secure_client_stats.sql` | secure `client_stats` security definer view/function |
+| `0013_pet_double_booking_guard.sql` | pet exclusion constraint `appointments_pet_no_overlap` and `is_pet_available` |
 
-**Apply order matters** (0001 → 0007). With the Supabase CLI, drop these in `supabase/migrations/` and `supabase db push`; or paste each into the SQL editor in order. The `handle_new_user` trigger on `auth.users` needs to run as the migration/`postgres` role (it does in Supabase).
+**Apply order matters** (0001 → 0013). With the Supabase CLI, drop these in `supabase/migrations/` and `supabase db push`; or paste each into the SQL editor in order. The `handle_new_user` trigger on `auth.users` needs to run as the migration/`postgres` role (it does in Supabase).
 
 ---
 
