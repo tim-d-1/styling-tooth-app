@@ -156,7 +156,9 @@ describe('Main Page Components', () => {
       fireEvent.click(banner2);
       expect(handle2).toHaveBeenCalled();
 
-      const banner3 = screen.getByRole('button', { name: /Мобільний застосунок: Керуйте візитами та бонусами 24\/7/i });
+      const banner3 = screen.getByRole('button', {
+        name: /-20% на комплексний грумінг у будні/i,
+      });
       fireEvent.click(banner3);
       expect(handle3).toHaveBeenCalled();
     });
@@ -173,12 +175,17 @@ describe('Main Page Components', () => {
       const mockArticles = [
         { id: 'art1', title: 'Порада 1', type: 'shampoo' as const },
         { id: 'art2', title: 'Порада 2', subtitle: 'Підзаголовок', type: 'paw' as const },
+        { id: 'art3', title: 'Порада 3', type: 'walk' as const },
       ];
       render(<ExpertAdviceGrid articles={mockArticles} onArticleClick={handleClick} />);
 
       const article1 = screen.getByRole('button', { name: 'Порада 1' });
       fireEvent.click(article1);
       expect(handleClick).toHaveBeenCalledWith('art1');
+
+      const article3 = screen.getByRole('button', { name: 'Порада 3' });
+      fireEvent.click(article3);
+      expect(handleClick).toHaveBeenCalledWith('art3');
     });
   });
 });

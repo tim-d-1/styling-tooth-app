@@ -6,7 +6,8 @@ export interface ArticleItem {
   subtitle?: string;
   bgImage?: string;
   bgColor?: string;
-  type: 'shampoo' | 'paw';
+  logo?: string;
+  type: 'shampoo' | 'paw' | 'walk';
 }
 
 export interface ExpertAdviceGridProps {
@@ -60,6 +61,38 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
 
                   <div className="relative z-30 max-w-[200px]">
                     <h3 className="m-0 text-xl font-bold text-content-dark leading-snug font-primary">
+                      {article.title}
+                    </h3>
+                  </div>
+                </button>
+              );
+            }
+
+            if (article.type === 'walk') {
+              return (
+                <button
+                  key={articleId}
+                  type="button"
+                  onClick={() => onArticleClick?.(articleId)}
+                  aria-label={label}
+                  className="relative min-h-[13.25rem] h-auto rounded-xl overflow-hidden cursor-pointer shadow-md bg-gradient-to-r from-terracotta to-[#D63A0A] flex flex-col justify-between p-5 hover:scale-[1.01] transition-transform duration-200 text-left outline-none border-0"
+                >
+                  {article.logo && (
+                    <img
+                      src={article.logo}
+                      alt=""
+                      className="w-12 h-12 object-contain select-none pointer-events-none z-20"
+                    />
+                  )}
+                  {effectiveBgImage && (
+                    <img
+                      src={effectiveBgImage}
+                      alt=""
+                      className="absolute right-0 top-0 h-full max-h-[13.25rem] w-auto object-cover object-right z-10 select-none pointer-events-none"
+                    />
+                  )}
+                  <div className="relative z-20 max-w-[200px] mt-auto">
+                    <h3 className="m-0 text-lg font-bold text-surface-cream leading-snug font-accented">
                       {article.title}
                     </h3>
                   </div>

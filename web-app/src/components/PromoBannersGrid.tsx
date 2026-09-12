@@ -77,17 +77,21 @@ export const PromoBannersGrid: FC<PromoBannersGridProps> = ({
         <button
           type="button"
           onClick={onBanner3Click}
-          aria-label="Мобільний застосунок: Керуйте візитами та бонусами 24/7"
-          className="relative min-h-[15rem] h-auto rounded-3xl overflow-hidden bg-advice-gray shadow-md flex items-center justify-center p-6 cursor-pointer hover:bg-advice-gray-hover transition-colors text-center outline-none border-0"
+          aria-label="-20% на комплексний грумінг у будні"
+          className="relative min-h-[15rem] h-auto rounded-3xl overflow-hidden bg-gradient-to-r from-[#ECEEF1] to-[#D1DCEE] cursor-pointer shadow-md flex flex-col justify-center p-6 hover:scale-[1.01] transition-transform duration-200 text-left outline-none border-0"
         >
-          <div>
-            <span className="text-3xl block mb-2" role="img" aria-hidden="true">📱</span>
-            <strong className="text-base block text-content-dark font-accented font-bold">
-              Мобільний застосунок
-            </strong>
-            <span className="text-sm text-gray-600 font-primary block mt-1">
-              Керуйте візитами та бонусами 24/7
+          <img
+            src="/assets/images/promo_weekday_grooming-701240.png"
+            alt=""
+            className="absolute right-0 top-0 h-full w-auto object-contain object-right z-10 select-none pointer-events-none"
+          />
+          <div className="relative z-20 max-w-[170px]">
+            <span className="text-4xl font-bold text-terracotta block mb-1 font-primary">
+              -20%
             </span>
+            <p className="m-0 text-base font-bold text-content-dark leading-snug font-accented">
+              на комплексний грумінг у будні
+            </p>
           </div>
         </button>
       </div>

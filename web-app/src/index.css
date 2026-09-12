@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -17,8 +17,10 @@
   --color-banner-brown-mid: #321910;
   --color-banner-brown-end: #1a0e0a;
   --color-text-muted: #b2b2b2;
-  --font-accented: 'Comfortaa', cursive, sans-serif;
-  --font-primary: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-accented: "Comfortaa", cursive, sans-serif;
+  --font-primary:
+    "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
 }
 
 :root {
@@ -46,23 +48,21 @@
   --color-banner-brown-mid: #321910;
   --color-banner-brown-end: #1a0e0a;
 
- 
-  --font-primary: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-accented: 'Comfortaa', cursive, sans-serif;
+  --font-primary:
+    "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  --font-accented: "Comfortaa", cursive, sans-serif;
 
- 
   --shadow-card: 0px 4px 20px 0px rgba(36, 47, 53, 0.06);
   --shadow-modal: 0px 0px 32px 2px rgba(0, 0, 0, 0.25);
   --shadow-subtle: 0px 2px 8px 0px rgba(36, 47, 53, 0.04);
 
- 
   --radius-xs: 0.3125rem;
-  --radius-sm: 0.5rem;   
-  --radius-md: 0.75rem;  
-  --radius-lg: 1.5rem;   
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.5rem;
   --radius-full: 9999px;
 
- 
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -100,9 +100,6 @@ body {
 .shadow-modal {
   box-shadow: var(--shadow-modal);
 }
-
-
-
 
 .ui-button {
   display: inline-flex;
@@ -180,7 +177,6 @@ body {
   font-size: 1rem;
 }
 
-
 .ui-switch {
   display: inline-flex;
   align-items: center;
@@ -233,7 +229,6 @@ body {
   user-select: none;
 }
 
-
 .ui-checkbox {
   display: inline-flex;
   align-items: center;
@@ -272,7 +267,6 @@ body {
   user-select: none;
 }
 
-
 .ui-rating {
   display: inline-flex;
   align-items: center;
@@ -302,7 +296,6 @@ body {
   font-weight: 600;
   color: var(--color-content-primary);
 }
-
 
 .ui-notification-card {
   width: 100%;
@@ -584,4 +577,68 @@ body {
   color: var(--color-text-muted);
   display: block;
   margin-top: 0.125rem;
+}
+
+.bg-landing-hero {
+  background: linear-gradient(180deg, #fefaf8 0%, #fef3e9 100%);
+}
+
+.bg-landing-page {
+  background-color: #fef3e9;
+}
+
+.icon-mask {
+  display: inline-block;
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+.icon-mask--confetti {
+  mask-image: url("/assets/icons/fi-rr-confetti.svg");
+  -webkit-mask-image: url("/assets/icons/fi-rr-confetti.svg");
+}
+
+.icon-mask--raindrops {
+  mask-image: url("/assets/icons/fi-rr-raindrops.svg");
+  -webkit-mask-image: url("/assets/icons/fi-rr-raindrops.svg");
+}
+
+.icon-mask--clock {
+  mask-image: url("/assets/icons/fi-rr-clock.svg");
+  -webkit-mask-image: url("/assets/icons/fi-rr-clock.svg");
+}
+
+.icon-mask--barber-shop {
+  mask-image: url("/assets/icons/fi-rr-barber-shop.svg");
+  -webkit-mask-image: url("/assets/icons/fi-rr-barber-shop.svg");
+}
+
+.icon-mask--magic-wand {
+  mask-image: url("/assets/icons/fi-rr-magic-wand.svg");
+  -webkit-mask-image: url("/assets/icons/fi-rr-magic-wand.svg");
+}
+
+.icon-mask--paw {
+  mask-image: url("/assets/icons/fi-rr-paw.svg");
+  -webkit-mask-image: url("/assets/icons/fi-rr-paw.svg");
+}
+
+.icon-mask--snowflake {
+  mask-image: url("/assets/icons/fi-rr-snowflake.svg");
+  -webkit-mask-image: url("/assets/icons/fi-rr-snowflake.svg");
+}
+
+.icon-mask--scissors {
+  mask-image: url("/assets/icons/fi-rr-scissors.svg");
+  -webkit-mask-image: url("/assets/icons/fi-rr-scissors.svg");
+}
+
+.icon-mask--paws {
+  mask-image: url("/assets/icons/paws-icon.svg");
+  -webkit-mask-image: url("/assets/icons/paws-icon.svg");
 }
