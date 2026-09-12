@@ -7,10 +7,10 @@ export interface LandingAboutProps {
 export const LandingAbout: FC<LandingAboutProps> = ({ onBookClick }) => {
   return (
     <section id="about" className="w-full py-20 bg-landing-page">
-      <div className="max-w-[1200px] mx-auto px-6 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-[122px]">
-        <div className="w-full lg:max-w-[489px] flex flex-col gap-10">
+      <div className="max-w-[75rem] mx-auto px-6 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-28">
+        <div className="w-full lg:max-w-lg flex flex-col gap-10">
           <div className="flex flex-col gap-6">
-            <h2 className="font-accented font-bold text-3xl md:text-[40px] leading-tight text-content-dark">
+            <h2 className="font-accented font-bold text-3xl md:text-4xl leading-tight text-content-dark">
               Хто ми
             </h2>
             <p className="font-accented text-base leading-relaxed text-content-dark">
@@ -36,7 +36,7 @@ export const LandingAbout: FC<LandingAboutProps> = ({ onBookClick }) => {
           </button>
         </div>
 
-        <div className="w-full lg:w-[559px] h-[300px] md:h-[349px] shrink-0 rounded-[10px] overflow-hidden shadow-card">
+        <div className="w-full lg:w-[35rem] h-72 md:h-88 shrink-0 rounded-xl overflow-hidden shadow-card">
           <picture>
             <source srcSet="/assets/images/landing-about-dog.webp" type="image/webp" />
             <img

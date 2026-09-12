@@ -5,7 +5,7 @@ import AppIcon from './icons';
 export const LandingFooter: FC = () => {
   return (
     <footer className="w-full bg-content-dark text-white px-6 md:px-28 py-14">
-      <div className="max-w-[1200px] mx-auto flex flex-col gap-12">
+      <div className="max-w-[75rem] mx-auto flex flex-col gap-12">
         <div className="flex flex-col lg:flex-row justify-between items-start gap-10 lg:gap-8">
           <div className="shrink-0">
             <img
@@ -15,7 +15,7 @@ export const LandingFooter: FC = () => {
             />
           </div>
 
-          <div className="flex flex-col gap-3 min-w-[150px]">
+          <div className="flex flex-col gap-3 min-w-36 sm:min-w-40">
             <h4 className="font-primary font-medium text-base text-white">
               Адреса
             </h4>
@@ -30,7 +30,7 @@ export const LandingFooter: FC = () => {
             </span>
           </div>
 
-          <div className="flex flex-col gap-3 min-w-[80px]">
+          <div className="flex flex-col gap-3 min-w-20">
             <h4 className="font-primary font-medium text-base text-white">
               Навігація
             </h4>
@@ -54,7 +54,7 @@ export const LandingFooter: FC = () => {
             </a>
           </div>
 
-          <div className="flex flex-col gap-3 min-w-[200px]">
+          <div className="flex flex-col gap-3 min-w-48">
             <h4 className="font-primary font-medium text-base text-white">
               Ми у соцмережах
             </h4>
@@ -114,7 +114,7 @@ export const LandingFooter: FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 min-w-[198px]">
+          <div className="flex flex-col gap-3 min-w-48">
             <h4 className="font-primary font-medium text-base text-white">
               Юридична інформація
             </h4>

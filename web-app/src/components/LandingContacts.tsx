@@ -5,9 +5,9 @@ import { CONTACT_ITEMS } from './landing_types';
 export const LandingContacts: FC = () => {
   return (
     <section id="contacts" className="w-full py-20 bg-landing-page">
-      <div className="max-w-[1200px] mx-auto px-6 flex flex-col gap-8">
+      <div className="max-w-[75rem] mx-auto px-6 flex flex-col gap-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-          <h2 className="font-accented font-bold text-3xl md:text-[40px] leading-tight text-content-dark">
+          <h2 className="font-accented font-bold text-3xl md:text-4xl leading-tight text-content-dark">
             Контакти
           </h2>
 
@@ -71,7 +71,7 @@ export const LandingContacts: FC = () => {
           {CONTACT_ITEMS.map((item) => (
             <div
               key={item.id}
-              className="bg-surface-cream rounded-[10px] shadow-card px-7 py-5 flex flex-col justify-center gap-2 min-h-[87px]"
+              className="bg-surface-cream rounded-xl shadow-card px-7 py-5 flex flex-col justify-center gap-2 min-h-[5.5rem]"
             >
               <span className="font-primary text-base text-content-dark">
                 {item.label}
