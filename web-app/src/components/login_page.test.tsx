@@ -72,6 +72,19 @@ describe('LoginPage and Login Utilities', () => {
       const identifierInput = screen.getByLabelText('Email/номер телефону');
       const passwordInput = screen.getByLabelText('Пароль');
 
+      expect(usernameInput.getAttribute('placeholder')).toBeNull();
+      expect(identifierInput.getAttribute('placeholder')).toBeNull();
+      expect(passwordInput.getAttribute('placeholder')).toBeNull();
+
+      expect(
+        screen.getByText(
+          'Входячи в акаунт або створюючи новий, ви погоджуєтеся з нашими Правилами й умовами та Політикою конфіденційності'
+        )
+      ).toBeDefined();
+      expect(
+        screen.getByText(/Усі права захищено\.\s*© 2026 Стильний зубець\./)
+      ).toBeDefined();
+
       fireEvent.change(usernameInput, { target: { value: 'testuser' } });
       fireEvent.change(identifierInput, { target: { value: 'user@example.com' } });
       fireEvent.change(passwordInput, { target: { value: 'secret123' } });

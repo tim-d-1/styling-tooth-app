@@ -92,4 +92,31 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Вхід' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Далі' })).toBeDefined();
   });
+
+  it('renders register page when current view is register', async () => {
+    window.location.hash = '#register';
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: { session: null },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-4',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Реєстрація' })).toBeDefined();
+    expect(screen.getByLabelText('ім’я')).toBeDefined();
+    expect(screen.getByLabelText('Прізвище')).toBeDefined();
+    expect(screen.getByLabelText('ім’я користувача')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Далі' })).toBeDefined();
+  });
 });

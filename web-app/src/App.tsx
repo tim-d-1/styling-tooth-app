@@ -7,6 +7,7 @@ import ExpertAdviceGrid, {
   type ArticleItem,
 } from "./components/ExpertAdviceGrid";
 import LoginPage from "./components/LoginPage";
+import RegisterPage from "./components/RegisterPage";
 import LandingPage from "./components/LandingPage";
 import { supabase } from "./lib/supabase";
 
@@ -37,7 +38,7 @@ const EXPERT_ARTICLES: ArticleItem[] = [
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentView, setCurrentView] = useState<"landing" | "main" | "login">("landing");
+  const [currentView, setCurrentView] = useState<"landing" | "main" | "login" | "register">("landing");
   const [visit] = useState<VisitData | null>(null);
   const [activeNav, setActiveNav] = useState("home");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -67,6 +68,11 @@ export default function App() {
         window.location.pathname === "/login"
       ) {
         setCurrentView("login");
+      } else if (
+        window.location.hash === "#register" ||
+        window.location.pathname === "/register"
+      ) {
+        setCurrentView("register");
       } else if (
         window.location.hash === "#main" ||
         window.location.pathname === "/main"
@@ -105,9 +111,20 @@ export default function App() {
     }
   };
 
+  const navigateToRegister = () => {
+    setCurrentView("register");
+    if (window.location.hash !== "#register") {
+      window.location.hash = "register";
+    }
+  };
+
   const navigateToMain = () => {
     setCurrentView("main");
-    if (window.location.hash === "#login" || window.location.hash === "#landing") {
+    if (
+      window.location.hash === "#login" ||
+      window.location.hash === "#register" ||
+      window.location.hash === "#landing"
+    ) {
       window.history.pushState(null, "", window.location.pathname);
     }
   };
@@ -121,7 +138,21 @@ export default function App() {
           navigateToMain();
           showToast("Успішний вхід у систему");
         }}
-        onNavigateRegister={() => {}}
+        onNavigateRegister={navigateToRegister}
+      />
+    );
+  }
+
+  if (currentView === "register") {
+    return (
+      <RegisterPage
+        onBack={navigateToMain}
+        onSuccess={() => {
+          setIsLoggedIn(true);
+          navigateToMain();
+          showToast("Успішна реєстрація");
+        }}
+        onNavigateLogin={navigateToLogin}
       />
     );
   }
@@ -136,7 +167,7 @@ export default function App() {
         )}
         <LandingPage
           onLoginClick={navigateToLogin}
-          onRegisterClick={navigateToLogin}
+          onRegisterClick={navigateToRegister}
           onBookClick={() => {
             if (isLoggedIn) {
               navigateToMain();
@@ -162,6 +193,7 @@ export default function App() {
         isLoggedIn={isLoggedIn}
         activeNav={activeNav}
         onLoginClick={navigateToLogin}
+        onRegisterClick={navigateToRegister}
         onNavClick={(nav) => {
           setActiveNav(nav);
         }}
