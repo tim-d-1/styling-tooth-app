@@ -20,8 +20,8 @@ export const LandingHero: FC<LandingHeroProps> = ({
             alt="Стильний зубець"
             className="w-11 h-11 object-contain shrink-0"
           />
-          <span className="font-primary font-bold text-xl uppercase tracking-[-0.011em] text-terracotta">
-            Стильний зубець
+          <span className="font-primary font-bold text-xl uppercase tracking-[-0.011em] leading-tight text-terracotta">
+            Стильний<br /> зубець
           </span>
         </div>
 
