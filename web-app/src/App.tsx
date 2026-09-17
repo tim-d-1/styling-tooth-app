@@ -8,7 +8,9 @@ import ExpertAdviceGrid, {
 } from "./components/ExpertAdviceGrid";
 import LoginPage from "./components/LoginPage";
 import RegisterPage from "./components/RegisterPage";
+import PetRegisterPage from "./components/PetRegisterPage";
 import LandingPage from "./components/LandingPage";
+import Footer from "./components/Footer";
 import { supabase } from "./lib/supabase";
 
 const EXPERT_ARTICLES: ArticleItem[] = [
@@ -38,7 +40,7 @@ const EXPERT_ARTICLES: ArticleItem[] = [
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentView, setCurrentView] = useState<"landing" | "main" | "login" | "register">("landing");
+  const [currentView, setCurrentView] = useState<"landing" | "main" | "login" | "register" | "pet-register">("landing");
   const [visit] = useState<VisitData | null>(null);
   const [activeNav, setActiveNav] = useState("home");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -73,6 +75,11 @@ export default function App() {
         window.location.pathname === "/register"
       ) {
         setCurrentView("register");
+      } else if (
+        window.location.hash === "#pet-register" ||
+        window.location.pathname === "/pet-register"
+      ) {
+        setCurrentView("pet-register");
       } else if (
         window.location.hash === "#main" ||
         window.location.pathname === "/main"
@@ -118,11 +125,19 @@ export default function App() {
     }
   };
 
+  const navigateToPetRegister = () => {
+    setCurrentView("pet-register");
+    if (window.location.hash !== "#pet-register") {
+      window.location.hash = "pet-register";
+    }
+  };
+
   const navigateToMain = () => {
     setCurrentView("main");
     if (
       window.location.hash === "#login" ||
       window.location.hash === "#register" ||
+      window.location.hash === "#pet-register" ||
       window.location.hash === "#landing"
     ) {
       window.history.pushState(null, "", window.location.pathname);
@@ -149,10 +164,23 @@ export default function App() {
         onBack={navigateToMain}
         onSuccess={() => {
           setIsLoggedIn(true);
-          navigateToMain();
-          showToast("Успішна реєстрація");
+          navigateToPetRegister();
+          showToast("Успішна реєстрація! Додайте вашого улюбленця");
         }}
         onNavigateLogin={navigateToLogin}
+      />
+    );
+  }
+
+  if (currentView === "pet-register") {
+    return (
+      <PetRegisterPage
+        onBack={navigateToMain}
+        onSuccess={() => {
+          navigateToMain();
+          showToast("Тваринку успішно зареєстровано");
+        }}
+        onSkip={navigateToMain}
       />
     );
   }
@@ -182,50 +210,54 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-cream text-content-dark font-primary pb-12">
+    <div className="min-h-screen bg-surface-cream text-content-dark font-primary flex flex-col justify-between">
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-[9999] bg-content-dark text-white px-5 py-3.5 rounded-xl shadow-2xl text-sm font-primary animate-fade-in">
           {toastMessage}
         </div>
       )}
 
-      <Header
-        isLoggedIn={isLoggedIn}
-        activeNav={activeNav}
-        onLoginClick={navigateToLogin}
-        onRegisterClick={navigateToRegister}
-        onNavClick={(nav) => {
-          setActiveNav(nav);
-        }}
-        onDeviceClick={() => showToast("")}
-        onProfileClick={() => showToast("")}
-      />
+      <div className="flex-1 pb-12">
+        <Header
+          isLoggedIn={isLoggedIn}
+          activeNav={activeNav}
+          onLoginClick={navigateToLogin}
+          onRegisterClick={navigateToRegister}
+          onNavClick={(nav) => {
+            setActiveNav(nav);
+          }}
+          onDeviceClick={() => showToast("")}
+          onProfileClick={() => showToast("")}
+        />
 
-      <LocationBar
-        location="м. Запоріжжя"
-        hasNotification={false}
-        onNotificationClick={() => showToast("")}
-      />
+        <LocationBar
+          location="м. Запоріжжя"
+          hasNotification={false}
+          onNotificationClick={() => showToast("")}
+        />
 
-      <VisitSection
-        visit={visit}
-        onBookClick={() => showToast("")}
-        onReschedule={() => showToast("")}
-        onCancel={() => showToast("")}
-      />
+        <VisitSection
+          visit={visit}
+          onBookClick={() => showToast("")}
+          onReschedule={() => showToast("")}
+          onCancel={() => showToast("")}
+        />
 
-      <PromoBannersGrid
-        onBanner1Click={() => showToast("")}
-        onBanner2Click={() => showToast("")}
-        onBanner3Click={() => showToast("")}
-      />
+        <PromoBannersGrid
+          onBanner1Click={() => showToast("")}
+          onBanner2Click={() => showToast("")}
+          onBanner3Click={() => showToast("")}
+        />
 
-      <ExpertAdviceGrid
-        articles={EXPERT_ARTICLES}
-        onArticleClick={(articleId) =>
-          showToast(`Відкрито статтю: ${articleId}`)
-        }
-      />
+        <ExpertAdviceGrid
+          articles={EXPERT_ARTICLES}
+          onArticleClick={(articleId) =>
+            showToast(`Відкрито статтю: ${articleId}`)
+          }
+        />
+      </div>
+
+      <Footer />
     </div>
   );
 }

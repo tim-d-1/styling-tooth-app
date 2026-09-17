@@ -66,6 +66,7 @@ describe('App Root and Auth Gating', () => {
         name: /Як доглядати за шерстю після прогулянок\?/i,
       })
     ).toBeDefined();
+    expect(screen.getByText('© 2026 Стильний зубець. Усі права захищено.')).toBeDefined();
     expect(screen.queryByRole('heading', { level: 2, name: 'Хто ми' })).toBeNull();
   });
 
@@ -118,5 +119,31 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByLabelText('Прізвище')).toBeDefined();
     expect(screen.getByLabelText('ім’я користувача')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Далі' })).toBeDefined();
+  });
+
+  it('renders pet register page when current view is pet-register', async () => {
+    window.location.hash = '#pet-register';
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: { session: null },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-5',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Реєстрація улюбленця' })).toBeDefined();
+    expect(screen.getByLabelText('Кличка тваринки')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Зберегти' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Пропустити' })).toBeDefined();
   });
 });

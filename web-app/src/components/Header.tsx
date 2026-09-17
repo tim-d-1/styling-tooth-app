@@ -28,7 +28,7 @@ export const Header: FC<HeaderProps> = ({
   onDeviceClick,
   onNotificationClick,
   hasNotification = false,
-  userAvatarUrl = '/assets/images/cat_photo_1.png',
+  userAvatarUrl = '/assets/images/default-avatar.svg',
   userName = 'Користувач',
   className,
 }) => {
@@ -88,7 +88,7 @@ export const Header: FC<HeaderProps> = ({
               aria-label="Завантажити мобільний застосунок"
               className="w-10 h-10 rounded-full bg-visit-gray border-0 flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-gray-200 outline-none"
             >
-              <Icon name="fi-rr-mobile" size={20} color="var(--color-content-primary)" />
+              <Icon name="fi-rr-smartphone" size={20} color="var(--color-interactive-primary)" />
             </button>
 
             {onNotificationClick && (

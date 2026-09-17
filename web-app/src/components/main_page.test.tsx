@@ -40,6 +40,8 @@ describe('Main Page Components', () => {
       );
 
       const profileBtn = screen.getByRole('button', { name: /Особистий профіль користувача: Марія Булах/i });
+      const avatarImg = screen.getByRole('img', { name: 'Марія Булах' });
+      expect(avatarImg.getAttribute('src')).toBe('/assets/images/default-avatar.svg');
       fireEvent.click(profileBtn);
       expect(handleProfile).toHaveBeenCalled();
 
