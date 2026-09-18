@@ -1,6 +1,6 @@
 import type { FC } from 'react';
-import Icon from './ui/Icon';
-import Button from './ui/Button';
+import Icon from '@/components/ui/Icon';
+import Button from '@/components/ui/Button';
 import UpcomingVisitCard, { type UpcomingVisitCardProps } from './UpcomingVisitCard';
 
 export type VisitData = Omit<UpcomingVisitCardProps, 'onReschedule' | 'onCancel'>;

@@ -1,7 +1,7 @@
 import type { FC } from 'react';
-import Logo from './ui/Logo';
-import Icon from './ui/Icon';
-import Button from './ui/Button';
+import Logo from '@/components/ui/Logo';
+import Icon from '@/components/ui/Icon';
+import Button from '@/components/ui/Button';
 
 export interface HeaderProps {
   isLoggedIn?: boolean;

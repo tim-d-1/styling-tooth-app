@@ -23,7 +23,7 @@ import {
   Tabs,
   TagGroup,
   FilterPills,
-} from './ui';
+} from './index';
 
 describe('UI Component Library', () => {
   describe('Tabs', () => {

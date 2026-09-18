@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import SocialIcon from './ui/SocialIcon';
+import SocialIcon from '@/components/ui/SocialIcon';
 import { CONTACT_ITEMS } from './landing_types';
 
 export const LandingContacts: FC = () => {

@@ -1,6 +1,6 @@
 import type { FC } from 'react';
-import SocialIcon from './ui/SocialIcon';
-import AppIcon from './icons';
+import SocialIcon from '@/components/ui/SocialIcon';
+import AppIcon from '@/components/icons';
 
 export const LandingFooter: FC = () => {
   return (

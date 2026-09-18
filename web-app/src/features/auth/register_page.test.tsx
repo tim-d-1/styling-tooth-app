@@ -168,7 +168,7 @@ describe('RegisterPage and Register Utilities', () => {
     });
 
     it('submits valid form and calls onSuccess on successful signup', async () => {
-      const { supabase } = await import('../lib/supabase');
+      const { supabase } = await import('@/lib/supabase');
       vi.spyOn(supabase.auth, 'signUp').mockResolvedValueOnce({
         data: { user: { id: 'user-new' }, session: null },
         error: null,
@@ -192,7 +192,7 @@ describe('RegisterPage and Register Utilities', () => {
     });
 
     it('displays error when signup fails', async () => {
-      const { supabase } = await import('../lib/supabase');
+      const { supabase } = await import('@/lib/supabase');
       vi.spyOn(supabase.auth, 'signUp').mockResolvedValueOnce({
         data: { user: null, session: null },
         error: { name: 'AuthError', message: 'User already exists' } as never,
@@ -218,7 +218,7 @@ describe('RegisterPage and Register Utilities', () => {
     });
 
     it('handles social login buttons', async () => {
-      const { supabase } = await import('../lib/supabase');
+      const { supabase } = await import('@/lib/supabase');
       vi.spyOn(supabase.auth, 'signInWithOAuth').mockResolvedValueOnce({
         data: { provider: 'google', url: 'https://accounts.google.com' },
         error: null,

@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import AppIcon from './icons';
+import AppIcon from '@/components/icons';
 import { LANDING_SERVICES } from './landing_types';
 
 export interface LandingServicesProps {

@@ -141,7 +141,7 @@ describe('PetRegisterPage and Pet Register Utilities', () => {
     });
 
     it('saves pet and triggers onSuccess for valid submission', async () => {
-      const { supabase } = await import('../lib/supabase');
+      const { supabase } = await import('@/lib/supabase');
       vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
         data: { session: { user: { id: 'user-789' } } },
         error: null,

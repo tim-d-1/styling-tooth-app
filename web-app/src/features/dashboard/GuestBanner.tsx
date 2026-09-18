@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import Button from './ui/Button';
+import Button from '@/components/ui/Button';
 
 export interface GuestBannerProps {
   onQuickBookClick?: () => void;

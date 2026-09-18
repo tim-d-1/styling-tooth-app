@@ -7,6 +7,7 @@ describe('App Root and Auth Gating', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     window.location.hash = '';
+    window.history.pushState(null, '', '/');
   });
 
   it('renders landing page when user is not authenticated', async () => {
@@ -145,5 +146,53 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByLabelText('Кличка тваринки')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Зберегти' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Пропустити' })).toBeDefined();
+  });
+
+  it('renders login page via pathname /login', async () => {
+    window.history.pushState(null, '', '/login');
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: { session: null },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-6',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Вхід' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Далі' })).toBeDefined();
+  });
+
+  it('renders register page via pathname /register', async () => {
+    window.history.pushState(null, '', '/register');
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: { session: null },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-7',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Реєстрація' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Далі' })).toBeDefined();
   });
 });

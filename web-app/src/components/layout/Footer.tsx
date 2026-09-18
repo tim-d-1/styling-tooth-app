@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import LandingFooter from './LandingFooter';
+import LandingFooter from '@/features/landing/LandingFooter';
 
 export const Footer: FC = () => {
   return <LandingFooter />;

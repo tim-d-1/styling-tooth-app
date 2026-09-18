@@ -1,5 +1,5 @@
 import { useState, type FC, type FormEvent, type ChangeEvent } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/lib/supabase';
 import {
   validatePetRegisterForm,
   type PetSpecies,

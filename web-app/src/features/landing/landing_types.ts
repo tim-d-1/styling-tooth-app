@@ -1,4 +1,4 @@
-import type { AppIconName } from './icons';
+import type { AppIconName } from '@/components/icons';
 
 export interface ServiceItem {
   id: string;

@@ -1,6 +1,6 @@
 import type { FC } from 'react';
-import Icon from './ui/Icon';
-import NotificationBell from './ui/NotificationBell';
+import Icon from '@/components/ui/Icon';
+import NotificationBell from '@/components/ui/NotificationBell';
 
 export interface LocationBarProps {
   location?: string;

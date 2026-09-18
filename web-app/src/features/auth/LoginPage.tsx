@@ -1,28 +1,25 @@
-import { useState, type FC, type FormEvent, type ChangeEvent } from 'react';
-import { supabase } from '../lib/supabase';
-import { validateRegisterForm, isEmailIdentifier } from './register_utils';
+import { useState, type FC, type FormEvent } from 'react';
+import { supabase } from '@/lib/supabase';
+import { validateLoginForm, isEmailIdentifier } from './login_utils';
 
-export interface RegisterPageProps {
+export interface LoginPageProps {
   onBack?: () => void;
   onSuccess?: () => void;
-  onNavigateLogin?: () => void;
-  defaultCity?: string;
+  onNavigateRegister?: () => void;
+  defaultUsername?: string;
+  defaultIdentifier?: string;
 }
 
-export const RegisterPage: FC<RegisterPageProps> = ({
+export const LoginPage: FC<LoginPageProps> = ({
   onBack,
   onSuccess,
-  onNavigateLogin,
-  defaultCity = 'м. Київ',
+  onNavigateRegister,
+  defaultUsername = '',
+  defaultIdentifier = '',
 }) => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [username, setUsername] = useState('');
-  const [identifier, setIdentifier] = useState('');
+  const [username, setUsername] = useState(defaultUsername);
+  const [identifier, setIdentifier] = useState(defaultIdentifier);
   const [password, setPassword] = useState('');
-  const [city, setCity] = useState(defaultCity);
-  const [petPhoto, setPetPhoto] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -40,23 +37,6 @@ export const RegisterPage: FC<RegisterPageProps> = ({
 
   const toggleLanguage = () => {
     setLanguage((prev) => (prev === 'UA' ? 'EN' : 'UA'));
-  };
-
-  const handlePhotoSelect = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPetPhoto(file);
-      const previewUrl = URL.createObjectURL(file);
-      setPhotoPreview(previewUrl);
-    }
-  };
-
-  const clearPhoto = () => {
-    if (photoPreview) {
-      URL.revokeObjectURL(photoPreview);
-    }
-    setPetPhoto(null);
-    setPhotoPreview(null);
   };
 
   const handleSocialLogin = async (provider: 'Google' | 'Apple') => {
@@ -89,16 +69,7 @@ export const RegisterPage: FC<RegisterPageProps> = ({
     e.preventDefault();
     setErrorMessage(null);
 
-    const validation = validateRegisterForm({
-      firstName,
-      lastName,
-      username,
-      identifier,
-      password,
-      city,
-      petPhoto,
-    });
-
+    const validation = validateLoginForm(username, identifier, password);
     if (!validation.isValid) {
       setErrorMessage(validation.error);
       return;
@@ -110,28 +81,24 @@ export const RegisterPage: FC<RegisterPageProps> = ({
       const isEmail = isEmailIdentifier(trimmedIdentifier);
 
       if (isEmail) {
-        const { error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signInWithPassword({
           email: trimmedIdentifier,
           password,
-          options: {
-            data: {
-              first_name: firstName.trim(),
-              last_name: lastName.trim(),
-              username: username.trim(),
-              city: city.trim(),
-            },
-          },
         });
 
         if (error) {
-          setErrorMessage(error.message);
+          if (error.message.includes('Invalid login credentials') || error.message.includes('invalid_grant')) {
+            setErrorMessage('Невірний логін або пароль');
+          } else {
+            setErrorMessage(error.message);
+          }
           return;
         }
       }
 
       onSuccess?.();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Помилка реєстрації';
+      const message = err instanceof Error ? err.message : 'Помилка входу в систему';
       setErrorMessage(message);
     } finally {
       setIsLoading(false);
@@ -151,7 +118,7 @@ export const RegisterPage: FC<RegisterPageProps> = ({
 
       <div className="hidden lg:block lg:w-[44.375rem] lg:min-h-screen relative shrink-0 overflow-hidden select-none">
         <img
-          src="/assets/images/doberman_portrait.png"
+          src="/assets/images/cat_photo_1.png"
           alt="Стильний Зубець"
           className="w-full h-full object-cover object-center"
         />
@@ -172,59 +139,23 @@ export const RegisterPage: FC<RegisterPageProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 flex items-center justify-center py-8 lg:py-12">
-          <div className="w-full max-w-[24.125rem] flex flex-col gap-9">
+        <div className="flex-1 flex items-center justify-center py-8 lg:py-0">
+          <div className="w-full max-w-[24.125rem] flex flex-col gap-11">
             <h1 className="font-accented font-bold text-2xl text-center text-black">
-              Реєстрація
+              Вхід
             </h1>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-              <div className="flex flex-col gap-5">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-14">
+              <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-1.5 border-b border-text-muted focus-within:border-terracotta transition-colors pb-1">
                   <label
-                    htmlFor="register-first-name"
-                    className="font-primary font-semibold text-[0.6875rem] leading-[1.5em] tracking-[-0.011em] uppercase text-text-muted"
-                  >
-                    ім’я
-                  </label>
-                  <input
-                    id="register-first-name"
-                    name="firstName"
-                    type="text"
-                    autoComplete="given-name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full bg-transparent font-primary font-medium text-[0.9375rem] leading-[1.5em] tracking-[-0.011em] text-content-dark outline-none"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5 border-b border-text-muted focus-within:border-terracotta transition-colors pb-1">
-                  <label
-                    htmlFor="register-last-name"
-                    className="font-primary font-semibold text-[0.6875rem] leading-[1.5em] tracking-[-0.011em] uppercase text-text-muted"
-                  >
-                    Прізвище
-                  </label>
-                  <input
-                    id="register-last-name"
-                    name="lastName"
-                    type="text"
-                    autoComplete="family-name"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="w-full bg-transparent font-primary font-medium text-[0.9375rem] leading-[1.5em] tracking-[-0.011em] text-content-dark outline-none"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5 border-b border-text-muted focus-within:border-terracotta transition-colors pb-1">
-                  <label
-                    htmlFor="register-username"
+                    htmlFor="login-username"
                     className="font-primary font-semibold text-[0.6875rem] leading-[1.5em] tracking-[-0.011em] uppercase text-text-muted"
                   >
                     ім’я користувача
                   </label>
                   <input
-                    id="register-username"
+                    id="login-username"
                     name="username"
                     type="text"
                     autoComplete="username"
@@ -236,13 +167,13 @@ export const RegisterPage: FC<RegisterPageProps> = ({
 
                 <div className="flex flex-col gap-1.5 border-b border-text-muted focus-within:border-terracotta transition-colors pb-1">
                   <label
-                    htmlFor="register-identifier"
+                    htmlFor="login-identifier"
                     className="font-primary font-semibold text-[0.6875rem] leading-[1.5em] tracking-[-0.011em] uppercase text-text-muted"
                   >
                     Email/номер телефону
                   </label>
                   <input
-                    id="register-identifier"
+                    id="login-identifier"
                     name="identifier"
                     type="text"
                     autoComplete="email"
@@ -254,17 +185,17 @@ export const RegisterPage: FC<RegisterPageProps> = ({
 
                 <div className="flex flex-col gap-1.5 border-b border-text-muted focus-within:border-terracotta transition-colors pb-1 relative">
                   <label
-                    htmlFor="register-password"
+                    htmlFor="login-password"
                     className="font-primary font-semibold text-[0.6875rem] leading-[1.5em] tracking-[-0.011em] uppercase text-text-muted"
                   >
                     Пароль
                   </label>
                   <div className="flex items-center justify-between gap-2">
                     <input
-                      id="register-password"
+                      id="login-password"
                       name="password"
                       type={showPassword ? 'text' : 'password'}
-                      autoComplete="new-password"
+                      autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full bg-transparent font-primary font-medium text-[0.9375rem] leading-[1.5em] tracking-[-0.011em] text-content-dark outline-none"
@@ -277,80 +208,6 @@ export const RegisterPage: FC<RegisterPageProps> = ({
                     >
                       <i className={`fi ${showPassword ? 'fi-rr-eye-crossed' : 'fi-rr-eye'} text-lg leading-none`} />
                     </button>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1.5 border-b border-text-muted focus-within:border-terracotta transition-colors pb-1">
-                  <label
-                    htmlFor="register-city"
-                    className="font-primary font-semibold text-[0.6875rem] leading-[1.5em] tracking-[-0.011em] uppercase text-text-muted"
-                  >
-                    місто
-                  </label>
-                  <input
-                    id="register-city"
-                    name="city"
-                    type="text"
-                    autoComplete="address-level2"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full bg-transparent font-primary font-medium text-[0.9375rem] leading-[1.5em] tracking-[-0.011em] text-content-dark outline-none"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="register-pet-photo"
-                    className="font-primary font-semibold text-[0.6875rem] leading-[1.5em] tracking-[-0.011em] uppercase text-text-muted"
-                  >
-                    Фото тваринки
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="register-pet-photo"
-                      name="petPhoto"
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoSelect}
-                      className="sr-only"
-                    />
-                    <label
-                      htmlFor="register-pet-photo"
-                      className="w-full h-[6.75rem] rounded-[10px] border border-dashed border-[#B2B2B2] hover:border-terracotta transition-colors bg-white/40 flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group"
-                    >
-                      {photoPreview ? (
-                        <div className="flex items-center gap-3 p-2 w-full h-full justify-center">
-                          <img
-                            src={photoPreview}
-                            alt="Фото тваринки"
-                            className="w-16 h-16 rounded-lg object-cover border border-text-muted/20 shrink-0"
-                          />
-                          <div className="flex flex-col">
-                            <span className="text-xs font-medium text-content-dark truncate max-w-[10rem]">
-                              {petPhoto?.name}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                clearPhoto();
-                              }}
-                              className="text-[0.6875rem] text-terracotta hover:underline mt-1 bg-transparent border-0 p-0 text-left cursor-pointer"
-                            >
-                              Видалити фото
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-1.5">
-                          <i className="fi fi-rr-camera text-2xl text-text-muted group-hover:text-terracotta transition-colors leading-none" />
-                          <span className="font-primary text-xs text-text-muted group-hover:text-content-dark transition-colors">
-                            Завантажити фото
-                          </span>
-                        </div>
-                      )}
-                    </label>
                   </div>
                 </div>
 
@@ -412,14 +269,14 @@ export const RegisterPage: FC<RegisterPageProps> = ({
               </div>
             </form>
 
-            {onNavigateLogin && (
+            {onNavigateRegister && (
               <div className="text-center">
                 <button
                   type="button"
-                  onClick={onNavigateLogin}
+                  onClick={onNavigateRegister}
                   className="text-xs font-primary text-text-muted hover:text-terracotta transition-colors bg-transparent border-0 cursor-pointer outline-none"
                 >
-                  Вже маєте акаунт? <span className="underline">Увійти</span>
+                  Ще не маєте акаунту? <span className="underline">Зареєструватися</span>
                 </button>
               </div>
             )}
@@ -440,4 +297,4 @@ export const RegisterPage: FC<RegisterPageProps> = ({
   );
 };
 
-export default RegisterPage;
+export default LoginPage;

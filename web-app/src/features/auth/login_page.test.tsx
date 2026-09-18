@@ -137,7 +137,7 @@ describe('LoginPage and Login Utilities', () => {
     });
 
     it('handles social login error without calling onSuccess', async () => {
-      const { supabase } = await import('../lib/supabase');
+      const { supabase } = await import('@/lib/supabase');
       vi.spyOn(supabase.auth, 'signInWithOAuth').mockResolvedValueOnce({
         data: { provider: 'google', url: null },
         error: { name: 'AuthError', message: 'OAuth failed' } as never,
@@ -155,7 +155,7 @@ describe('LoginPage and Login Utilities', () => {
     });
 
     it('handles social login exception without calling onSuccess', async () => {
-      const { supabase } = await import('../lib/supabase');
+      const { supabase } = await import('@/lib/supabase');
       vi.spyOn(supabase.auth, 'signInWithOAuth').mockRejectedValueOnce(new Error('Network error'));
 
       const handleSuccess = vi.fn();
@@ -170,7 +170,7 @@ describe('LoginPage and Login Utilities', () => {
     });
 
     it('initiates social login without immediately triggering onSuccess callback', async () => {
-      const { supabase } = await import('../lib/supabase');
+      const { supabase } = await import('@/lib/supabase');
       vi.spyOn(supabase.auth, 'signInWithOAuth').mockResolvedValueOnce({
         data: { provider: 'google', url: 'https://accounts.google.com/o/oauth2/v2/auth' },
         error: null,
@@ -202,7 +202,7 @@ describe('LoginPage and Login Utilities', () => {
     });
 
     it('handles password login error without calling onSuccess', async () => {
-      const { supabase } = await import('../lib/supabase');
+      const { supabase } = await import('@/lib/supabase');
       vi.spyOn(supabase.auth, 'signInWithPassword').mockResolvedValueOnce({
         data: { user: null, session: null },
         error: { name: 'AuthError', message: 'Invalid login credentials' } as never,
@@ -229,7 +229,7 @@ describe('LoginPage and Login Utilities', () => {
     });
 
     it('handles password login exception without calling onSuccess', async () => {
-      const { supabase } = await import('../lib/supabase');
+      const { supabase } = await import('@/lib/supabase');
       vi.spyOn(supabase.auth, 'signInWithPassword').mockRejectedValueOnce(new Error('Connection timed out'));
 
       const handleSuccess = vi.fn();

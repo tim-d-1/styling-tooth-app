@@ -1,6 +1,6 @@
 import { useState, type FC } from 'react';
-import Button from './ui/Button';
-import Switch from './ui/Switch';
+import Button from '@/components/ui/Button';
+import Switch from '@/components/ui/Switch';
 
 export interface UpcomingVisitCardProps {
   dayOfWeek?: string;
@@ -91,7 +91,7 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
             </div>
             <Switch
               checked={transferEnabled}
-              onChange={(checked) => setTransferEnabled(checked)}
+              onChange={(checked: boolean) => setTransferEnabled(checked)}
               id="pet-transfer-switch"
               ariaLabel="Увімкнути або вимкнути трансфер улюбленця"
             />
