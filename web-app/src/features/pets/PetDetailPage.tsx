@@ -23,6 +23,7 @@ export interface PetDetailPageProps {
   onAddPetClick?: () => void;
   onBookClick?: (petId?: string) => void;
   onRecommendationsClick?: (petId?: string) => void;
+  onScheduleClick?: (petId?: string) => void;
   onEditPetClick?: (petId: string) => void;
   onToast?: (message: string) => void;
   initialPets?: PetSwitcherItem[];
@@ -37,6 +38,7 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
   onAddPetClick,
   onBookClick,
   onRecommendationsClick,
+  onScheduleClick,
   onEditPetClick,
   onToast,
   initialPets,
@@ -289,6 +291,16 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
     }
   };
 
+  const handleScheduleClick = () => {
+    if (onScheduleClick) {
+      onScheduleClick(petDetail?.id);
+    } else if (petDetail?.id) {
+      navigate(`/pets/${petDetail.id}/schedule`);
+    } else {
+      navigate('/pets/schedule');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-surface-cream text-content-dark font-primary flex flex-col justify-between">
       <div className="flex-1 pb-16">
@@ -421,7 +433,7 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
               <div className="lg:col-span-8 flex flex-col gap-6">
                 <PetCareScheduleCard
                   scheduleItems={schedule}
-                  onDetailsClick={() => showToast('Графік обробок')}
+                  onDetailsClick={handleScheduleClick}
                 />
 
                 <PetProcedureHistoryCard

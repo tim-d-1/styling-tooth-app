@@ -27,6 +27,23 @@ export interface CareScheduleItem {
   drugName?: string;
   validUntilFormatted?: string;
   iconName: string;
+  category?: 'parasites' | 'vaccines';
+  statusText?: string;
+  statusType?: 'success' | 'neutral' | 'warning';
+}
+
+export interface CareScheduleNotification {
+  id: string;
+  title: string;
+  drugInfo: string;
+  dueDateText: string;
+  isRead: boolean;
+}
+
+export interface PetMedicalDocument {
+  id: string;
+  title: string;
+  fileCount: number;
 }
 
 export interface PetProcedureHistory {

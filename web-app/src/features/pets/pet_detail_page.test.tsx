@@ -129,38 +129,60 @@ describe('Pet Feature Components', () => {
   });
 
   describe('PetCareScheduleCard', () => {
-    it('renders schedule items and handles details click', () => {
+    it('renders empty state when no schedule items are provided and handles details click', () => {
       const handleDetails = vi.fn();
       render(<PetCareScheduleCard onDetailsClick={handleDetails} />);
 
       expect(screen.getByRole('heading', { level: 3, name: 'Графік обробок' })).toBeDefined();
-      expect(screen.getByText('Від кліщів та бліх')).toBeDefined();
-      expect(screen.getByText('Через 14 днів')).toBeDefined();
-      expect(screen.getByText('Вакцинація')).toBeDefined();
-      expect(screen.getByText('В нормі')).toBeDefined();
+      expect(screen.getByText('Немає запланованих обробок')).toBeDefined();
+      expect(screen.getByText('Натисніть, щоб відкрити або налаштувати графік')).toBeDefined();
+
+      fireEvent.click(screen.getByTestId('empty-care-schedule'));
+      expect(handleDetails).toHaveBeenCalledTimes(1);
 
       fireEvent.click(
         screen.getByRole('button', { name: 'Деталі графіка обробок' })
       );
-      expect(handleDetails).toHaveBeenCalledTimes(1);
+      expect(handleDetails).toHaveBeenCalledTimes(2);
     });
 
-    it('renders custom schedule items when passed as prop', () => {
+    it('renders custom schedule items when passed as prop and handles click', () => {
+      const handleDetails = vi.fn();
       const customItems: CareScheduleItem[] = [
         {
           id: 'custom-1',
           title: 'Огляд стоматолога',
           badgeText: 'Рекомендовано',
+          statusType: 'neutral',
           drugName: 'Чистка ультразвуком',
           validUntilFormatted: 'до 1 вересня 2026',
           iconName: 'fi-rr-paw',
         },
+        {
+          id: 'custom-2',
+          title: 'Від кліщів та бліх',
+          badgeText: 'Через 14 днів',
+          statusType: 'warning',
+          drugName: 'Bravecto',
+          validUntilFormatted: 'до 15 Серпня 2026',
+          iconName: 'fi-rr-shield-check',
+        },
       ];
 
-      render(<PetCareScheduleCard scheduleItems={customItems} />);
+      render(
+        <PetCareScheduleCard
+          scheduleItems={customItems}
+          onDetailsClick={handleDetails}
+        />
+      );
       expect(screen.getByText('Огляд стоматолога')).toBeDefined();
       expect(screen.getByText('Рекомендовано')).toBeDefined();
       expect(screen.getByText('Препарат: Чистка ультразвуком')).toBeDefined();
+      expect(screen.getByText('Від кліщів та бліх')).toBeDefined();
+      expect(screen.getByText('Через 14 днів')).toBeDefined();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Деталі графіка обробок' }));
+      expect(handleDetails).toHaveBeenCalledTimes(1);
     });
   });
 

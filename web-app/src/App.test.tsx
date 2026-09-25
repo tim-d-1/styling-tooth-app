@@ -267,4 +267,35 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Мої улюбленці' })).toBeDefined();
     expect(screen.getByRole('navigation', { name: 'Навігація по сайту' })).toBeDefined();
   });
+
+  it('renders pet care schedule page via pathname /pets/:petId/schedule', async () => {
+    window.history.pushState(null, '', '/pets/p-test-1/schedule');
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-profile-3', email: 'katya@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-8',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Графік профілактичних обробок' })
+    ).toBeDefined();
+    expect(screen.getByText('Найближча обробка')).toBeDefined();
+    expect(screen.getByText('Медичні документи')).toBeDefined();
+  });
 });

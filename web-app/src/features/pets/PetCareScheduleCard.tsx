@@ -7,27 +7,8 @@ export interface PetCareScheduleCardProps {
   onDetailsClick?: () => void;
 }
 
-const defaultScheduleItems: CareScheduleItem[] = [
-  {
-    id: 'flea-tick',
-    title: 'Від кліщів та бліх',
-    badgeText: 'Через 14 днів',
-    drugName: 'Bravecto',
-    validUntilFormatted: 'до 15 серпня 2026',
-    iconName: 'fi-rr-shield-check',
-  },
-  {
-    id: 'vaccine',
-    title: 'Вакцинація',
-    badgeText: 'В нормі',
-    drugName: 'Комплексна + Сказ',
-    validUntilFormatted: 'до 15 жовтня 2026',
-    iconName: 'fi-rr-syringe',
-  },
-];
-
 export const PetCareScheduleCard: FC<PetCareScheduleCardProps> = ({
-  scheduleItems = defaultScheduleItems,
+  scheduleItems = [],
   onDetailsClick,
 }) => {
   return (
@@ -39,7 +20,8 @@ export const PetCareScheduleCard: FC<PetCareScheduleCardProps> = ({
       <div className="flex items-center justify-between">
         <h3
           id="care-schedule-heading"
-          className="font-accented font-bold text-xl text-content-dark"
+          onClick={onDetailsClick}
+          className="font-accented font-bold text-xl text-content-dark cursor-pointer hover:text-terracotta transition-colors"
         >
           Графік обробок
         </h3>
@@ -47,41 +29,59 @@ export const PetCareScheduleCard: FC<PetCareScheduleCardProps> = ({
           type="button"
           onClick={onDetailsClick}
           aria-label="Деталі графіка обробок"
-          className="text-soft-blue hover:text-soft-blue/80 transition-colors p-1"
+          className="text-soft-blue hover:text-soft-blue/80 transition-colors p-1 cursor-pointer outline-none"
         >
           <Icon name="fi-rr-angle-small-right" size={24} />
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {scheduleItems.map((item) => (
-          <div
-            key={item.id}
-            className="bg-[#f9fafb] rounded-2xl p-4 border border-black/5 flex flex-col justify-between gap-4"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-terracotta flex items-center justify-center">
-                  <Icon name={item.iconName} size={18} />
-                </span>
-                <span className="font-primary font-semibold text-sm text-content-dark">
-                  {item.title}
+      {scheduleItems.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {scheduleItems.map((item) => (
+            <div
+              key={item.id}
+              className="bg-[#f9fafb] rounded-2xl p-4 border border-black/5 flex flex-col justify-between gap-4"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-terracotta flex items-center justify-center">
+                    <Icon name={item.iconName} size={18} />
+                  </span>
+                  <span className="font-primary font-semibold text-sm text-content-dark">
+                    {item.title}
+                  </span>
+                </div>
+                <span className="bg-interactive-lightgray text-content-dark/70 text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap">
+                  {item.badgeText}
                 </span>
               </div>
-              <span className="bg-interactive-lightgray text-content-dark/70 text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap">
-                {item.badgeText}
-              </span>
-            </div>
 
-            <div className="flex flex-col gap-0.5 text-xs text-content-dark/80 font-primary">
-              {item.drugName && <span>Препарат: {item.drugName}</span>}
-              {item.validUntilFormatted && (
-                <span>Термін: {item.validUntilFormatted}</span>
-              )}
+              <div className="flex flex-col gap-0.5 text-xs text-content-dark/80 font-primary">
+                {item.drugName && <span>Препарат: {item.drugName}</span>}
+                {item.validUntilFormatted && (
+                  <span>Термін: {item.validUntilFormatted}</span>
+                )}
+              </div>
             </div>
+          ))}
+        </div>
+      ) : (
+        <div
+          data-testid="empty-care-schedule"
+          onClick={onDetailsClick}
+          className="bg-[#f9fafb] rounded-2xl p-6 border border-black/5 flex flex-col items-center justify-center text-center gap-2 cursor-pointer hover:bg-slate-100 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-full bg-soft-blue/20 text-terracotta flex items-center justify-center">
+            <Icon name="fi-rr-calendar" size={18} />
           </div>
-        ))}
-      </div>
+          <span className="font-accented font-semibold text-sm text-content-dark">
+            Немає запланованих обробок
+          </span>
+          <span className="font-primary text-xs text-text-muted">
+            Натисніть, щоб відкрити або налаштувати графік
+          </span>
+        </div>
+      )}
     </section>
   );
 };
