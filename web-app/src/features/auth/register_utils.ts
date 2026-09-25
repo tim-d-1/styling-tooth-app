@@ -1,4 +1,4 @@
-import { isEmailIdentifier } from './login_utils';
+import { isEmailIdentifier, isPhoneIdentifier, normalizePhoneNumber } from './login_utils';
 
 export interface RegisterFormData {
   firstName: string;
@@ -23,7 +23,8 @@ export function validateRegisterForm(data: RegisterFormData): { isValid: boolean
   if (data.username.trim().length < 3) {
     return { isValid: false, error: 'Ім’я користувача повинно містити не менше 3 символів' };
   }
-  if (!data.identifier.trim()) {
+  const trimmedId = data.identifier.trim();
+  if (!trimmedId) {
     return { isValid: false, error: 'Введіть Email або номер телефону' };
   }
   if (!data.password.trim()) {
@@ -32,10 +33,13 @@ export function validateRegisterForm(data: RegisterFormData): { isValid: boolean
   if (data.password.length < 6) {
     return { isValid: false, error: 'Пароль повинен містити не менше 6 символів' };
   }
+  if (!isEmailIdentifier(trimmedId) && !normalizePhoneNumber(trimmedId)) {
+    return { isValid: false, error: 'Введіть коректний Email або номер телефону' };
+  }
   if (!data.city.trim()) {
     return { isValid: false, error: 'Вкажіть місто' };
   }
   return { isValid: true, error: null };
 }
 
-export { isEmailIdentifier };
+export { isEmailIdentifier, isPhoneIdentifier, normalizePhoneNumber };

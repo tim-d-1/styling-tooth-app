@@ -185,16 +185,28 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
 
         if (mediaItems && mediaItems.length > 0) {
           for (const item of mediaItems) {
-            const publicUrl = supabase.storage
-              .from('pet-media')
-              .getPublicUrl(item.storage_path).data.publicUrl;
+            let itemUrl: string | null = null;
+            try {
+              const { data: signedData } = await supabase.storage
+                .from('pet-media')
+                .createSignedUrl(item.storage_path, 3600);
+              itemUrl = signedData?.signedUrl || null;
+            } catch {
+              itemUrl = null;
+            }
+
+            if (!itemUrl) {
+              itemUrl = supabase.storage
+                .from('pet-media')
+                .getPublicUrl(item.storage_path).data.publicUrl;
+            }
 
             if (item.photo_type === 'before' && !beforeUrl) {
-              beforeUrl = publicUrl;
+              beforeUrl = itemUrl;
             } else if (item.photo_type === 'after' && !afterUrl) {
-              afterUrl = publicUrl;
+              afterUrl = itemUrl;
             } else if (item.photo_type === 'general' && !generalAvatarUrl) {
-              generalAvatarUrl = publicUrl;
+              generalAvatarUrl = itemUrl;
             }
           }
         }

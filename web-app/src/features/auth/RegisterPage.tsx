@@ -1,6 +1,10 @@
 import { useState, type FC, type FormEvent, type ChangeEvent } from 'react';
 import { supabase } from '@/lib/supabase';
-import { validateRegisterForm, isEmailIdentifier } from './register_utils';
+import {
+  validateRegisterForm,
+  isEmailIdentifier,
+  normalizePhoneNumber,
+} from './register_utils';
 
 export interface RegisterPageProps {
   onBack?: () => void;
@@ -108,18 +112,23 @@ export const RegisterPage: FC<RegisterPageProps> = ({
       setIsLoading(true);
       const trimmedIdentifier = identifier.trim();
       const isEmail = isEmailIdentifier(trimmedIdentifier);
+      const normalizedPhone = normalizePhoneNumber(trimmedIdentifier);
+
+      const metadata = {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        full_name: `${firstName.trim()} ${lastName.trim()}`.trim(),
+        username: username.trim(),
+        city: city.trim(),
+        phone: isEmail ? undefined : normalizedPhone,
+      };
 
       if (isEmail) {
         const { error } = await supabase.auth.signUp({
           email: trimmedIdentifier,
           password,
           options: {
-            data: {
-              first_name: firstName.trim(),
-              last_name: lastName.trim(),
-              username: username.trim(),
-              city: city.trim(),
-            },
+            data: metadata,
           },
         });
 
@@ -127,6 +136,22 @@ export const RegisterPage: FC<RegisterPageProps> = ({
           setErrorMessage(error.message);
           return;
         }
+      } else if (normalizedPhone) {
+        const { error } = await supabase.auth.signUp({
+          phone: normalizedPhone,
+          password,
+          options: {
+            data: metadata,
+          },
+        });
+
+        if (error) {
+          setErrorMessage(error.message);
+          return;
+        }
+      } else {
+        setErrorMessage('Введіть коректний Email або номер телефону');
+        return;
       }
 
       onSuccess?.();

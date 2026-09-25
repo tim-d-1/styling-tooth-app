@@ -1,6 +1,10 @@
 import { useState, type FC, type FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
-import { validateLoginForm, isEmailIdentifier } from './login_utils';
+import {
+  validateLoginForm,
+  isEmailIdentifier,
+  normalizePhoneNumber,
+} from './login_utils';
 
 export interface LoginPageProps {
   onBack?: () => void;
@@ -79,6 +83,7 @@ export const LoginPage: FC<LoginPageProps> = ({
       setIsLoading(true);
       const trimmedIdentifier = identifier.trim();
       const isEmail = isEmailIdentifier(trimmedIdentifier);
+      const normalizedPhone = normalizePhoneNumber(trimmedIdentifier);
 
       if (isEmail) {
         const { error } = await supabase.auth.signInWithPassword({
@@ -87,13 +92,37 @@ export const LoginPage: FC<LoginPageProps> = ({
         });
 
         if (error) {
-          if (error.message.includes('Invalid login credentials') || error.message.includes('invalid_grant')) {
+          if (
+            error.message.includes('Invalid login credentials') ||
+            error.message.includes('invalid_grant')
+          ) {
             setErrorMessage('Невірний логін або пароль');
           } else {
             setErrorMessage(error.message);
           }
           return;
         }
+      } else if (normalizedPhone) {
+        const { error } = await supabase.auth.signInWithPassword({
+          phone: normalizedPhone,
+          password,
+        });
+
+        if (error) {
+          if (
+            error.message.includes('Invalid login credentials') ||
+            error.message.includes('invalid_grant') ||
+            error.message.includes('User not found')
+          ) {
+            setErrorMessage('Невірний логін або пароль');
+          } else {
+            setErrorMessage(error.message);
+          }
+          return;
+        }
+      } else {
+        setErrorMessage('Введіть коректний Email або номер телефону');
+        return;
       }
 
       onSuccess?.();

@@ -235,5 +235,75 @@ describe('RegisterPage and Register Utilities', () => {
         expect.objectContaining({ provider: 'google' })
       );
     });
+
+    it('registers user with normalized phone number and triggers onSuccess on success', async () => {
+      const { supabase } = await import('@/lib/supabase');
+      const signUpSpy = vi.spyOn(supabase.auth, 'signUp').mockResolvedValueOnce({
+        data: { user: { id: 'user-new' }, session: {} } as never,
+        error: null,
+      });
+
+      const handleSuccess = vi.fn();
+      render(<RegisterPage onSuccess={handleSuccess} />);
+
+      fireEvent.change(screen.getByLabelText('ім’я'), { target: { value: 'Оксана' } });
+      fireEvent.change(screen.getByLabelText('Прізвище'), { target: { value: 'Лисенко' } });
+      fireEvent.change(screen.getByLabelText('ім’я користувача'), { target: { value: 'oksana' } });
+      fireEvent.change(screen.getByLabelText('Email/номер телефону'), { target: { value: '0501234567' } });
+      fireEvent.change(screen.getByLabelText('Пароль'), { target: { value: 'password123' } });
+
+      const submitBtn = screen.getByRole('button', { name: 'Далі' });
+      await act(async () => {
+        fireEvent.click(submitBtn);
+      });
+
+      expect(signUpSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          phone: '+380501234567',
+          password: 'password123',
+          options: expect.objectContaining({
+            data: expect.objectContaining({
+              first_name: 'Оксана',
+              last_name: 'Лисенко',
+              full_name: 'Оксана Лисенко',
+              phone: '+380501234567',
+            }),
+          }),
+        })
+      );
+      expect(handleSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('blocks phone registration on error and does NOT trigger onSuccess (auth bypass regression test)', async () => {
+      const { supabase } = await import('@/lib/supabase');
+      const signUpSpy = vi.spyOn(supabase.auth, 'signUp').mockResolvedValueOnce({
+        data: { user: null, session: null },
+        error: { name: 'AuthError', message: 'Phone number already registered' } as never,
+      });
+
+      const handleSuccess = vi.fn();
+      render(<RegisterPage onSuccess={handleSuccess} />);
+
+      fireEvent.change(screen.getByLabelText('ім’я'), { target: { value: 'Оксана' } });
+      fireEvent.change(screen.getByLabelText('Прізвище'), { target: { value: 'Лисенко' } });
+      fireEvent.change(screen.getByLabelText('ім’я користувача'), { target: { value: 'oksana' } });
+      fireEvent.change(screen.getByLabelText('Email/номер телефону'), { target: { value: '+380501234567' } });
+      fireEvent.change(screen.getByLabelText('Пароль'), { target: { value: 'password123' } });
+
+      const submitBtn = screen.getByRole('button', { name: 'Далі' });
+      await act(async () => {
+        fireEvent.click(submitBtn);
+      });
+
+      expect(signUpSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          phone: '+380501234567',
+          password: 'password123',
+        })
+      );
+      expect(handleSuccess).not.toHaveBeenCalled();
+      const errorAlert = await screen.findByRole('alert');
+      expect(errorAlert.textContent).toBe('Phone number already registered');
+    });
   });
 });

@@ -87,24 +87,49 @@ export const PetRegisterPage: FC<PetRegisterPageProps> = ({
       const { data: sessionData } = await supabase.auth.getSession();
       const currentUserId = sessionData?.session?.user?.id;
 
-      if (currentUserId) {
-        const parsedWeight = weight.trim()
-          ? parseFloat(weight.replace(',', '.'))
-          : null;
+      if (!currentUserId) {
+        setErrorMessage('Необхідно авторизуватися для реєстрації тваринки');
+        return;
+      }
 
-        const { error: insertError } = await supabase.from('pets').insert({
+      const parsedWeight = weight.trim()
+        ? parseFloat(weight.replace(',', '.'))
+        : null;
+
+      const { data: insertedPet, error: insertError } = await supabase
+        .from('pets')
+        .insert({
           owner_id: currentUserId,
           name: name.trim(),
           species,
           breed: breed.trim() || null,
           sex,
+          birth_date: birthDate.trim() || null,
           weight_kg: parsedWeight,
           behavior_notes: notes.trim() || null,
-        });
+        })
+        .select()
+        .maybeSingle();
 
-        if (insertError) {
-          setErrorMessage(insertError.message);
-          return;
+      if (insertError) {
+        setErrorMessage(insertError.message);
+        return;
+      }
+
+      if (petPhoto && insertedPet?.id) {
+        const fileExt = petPhoto.name.split('.').pop() || 'jpg';
+        const storagePath = `${insertedPet.id}/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('pet-media')
+          .upload(storagePath, petPhoto);
+
+        if (!uploadError) {
+          await supabase.from('pet_media').insert({
+            pet_id: insertedPet.id,
+            storage_path: storagePath,
+            photo_type: 'general',
+            created_by: currentUserId,
+          });
         }
       }
 

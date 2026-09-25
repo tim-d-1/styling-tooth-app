@@ -251,5 +251,69 @@ describe('LoginPage and Login Utilities', () => {
       expect(alert.textContent).toBe('Connection timed out');
       expect(handleSuccess).not.toHaveBeenCalled();
     });
+
+    it('authenticates with normalized phone number and triggers onSuccess on success', async () => {
+      const { supabase } = await import('@/lib/supabase');
+      const signInSpy = vi.spyOn(supabase.auth, 'signInWithPassword').mockResolvedValueOnce({
+        data: { user: { id: 'user-phone' }, session: {} } as never,
+        error: null,
+      });
+
+      const handleSuccess = vi.fn();
+      render(
+        <LoginPage
+          onSuccess={handleSuccess}
+          defaultUsername="testuser"
+          defaultIdentifier="0501234567"
+        />
+      );
+
+      const passwordInput = screen.getByLabelText('Пароль');
+      fireEvent.change(passwordInput, { target: { value: 'password123' } });
+
+      const submitBtn = screen.getByRole('button', { name: 'Далі' });
+      await act(async () => {
+        fireEvent.click(submitBtn);
+      });
+
+      expect(signInSpy).toHaveBeenCalledWith({
+        phone: '+380501234567',
+        password: 'password123',
+      });
+      expect(handleSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('blocks phone login on error and does NOT trigger onSuccess (auth bypass regression test)', async () => {
+      const { supabase } = await import('@/lib/supabase');
+      const signInSpy = vi.spyOn(supabase.auth, 'signInWithPassword').mockResolvedValueOnce({
+        data: { user: null, session: null },
+        error: { name: 'AuthError', message: 'Invalid login credentials' } as never,
+      });
+
+      const handleSuccess = vi.fn();
+      render(
+        <LoginPage
+          onSuccess={handleSuccess}
+          defaultUsername="testuser"
+          defaultIdentifier="+380501234567"
+        />
+      );
+
+      const passwordInput = screen.getByLabelText('Пароль');
+      fireEvent.change(passwordInput, { target: { value: 'wrongpass' } });
+
+      const submitBtn = screen.getByRole('button', { name: 'Далі' });
+      await act(async () => {
+        fireEvent.click(submitBtn);
+      });
+
+      expect(signInSpy).toHaveBeenCalledWith({
+        phone: '+380501234567',
+        password: 'wrongpass',
+      });
+      expect(handleSuccess).not.toHaveBeenCalled();
+      const alert = await screen.findByRole('alert');
+      expect(alert.textContent).toBe('Невірний логін або пароль');
+    });
   });
 });

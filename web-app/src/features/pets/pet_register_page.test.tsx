@@ -147,7 +147,12 @@ describe('PetRegisterPage and Pet Register Utilities', () => {
         error: null,
       } as never);
 
-      const insertMock = vi.fn().mockResolvedValue({ data: null, error: null });
+      const selectMock = vi.fn().mockReturnValue({
+        maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'pet-123' }, error: null }),
+      });
+      const insertMock = vi.fn().mockReturnValue({
+        select: selectMock,
+      });
       vi.spyOn(supabase, 'from').mockReturnValue({
         insert: insertMock,
       } as never);
@@ -173,6 +178,29 @@ describe('PetRegisterPage and Pet Register Utilities', () => {
         })
       );
       expect(handleSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('blocks submission when unauthenticated and displays error', async () => {
+      const { supabase } = await import('@/lib/supabase');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+        error: null,
+      } as never);
+
+      const handleSuccess = vi.fn();
+      render(<PetRegisterPage onSuccess={handleSuccess} />);
+
+      fireEvent.change(screen.getByLabelText('Кличка тваринки'), { target: { value: 'Арчі' } });
+      fireEvent.change(screen.getByLabelText('Порода'), { target: { value: 'Коргі' } });
+
+      const submitBtn = screen.getByRole('button', { name: 'Зберегти' });
+      await act(async () => {
+        fireEvent.click(submitBtn);
+      });
+
+      const errorAlert = await screen.findByRole('alert');
+      expect(errorAlert.textContent).toBe('Необхідно авторизуватися для реєстрації тваринки');
+      expect(handleSuccess).not.toHaveBeenCalled();
     });
   });
 });
