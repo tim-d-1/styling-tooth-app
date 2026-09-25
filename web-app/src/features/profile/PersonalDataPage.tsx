@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, type FC, type ChangeEvent } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Icon from '@/components/ui/Icon';
+import ProfileAccountSidebar from './ProfileAccountSidebar';
 import type { PersonalDataForm } from './profile_types';
 import { supabase } from '@/lib/supabase';
 
@@ -38,7 +39,6 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
   initialData,
 }) => {
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<PersonalDataForm>({
     ...defaultFormData,
@@ -130,7 +130,7 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
     if (onAddressesClick) {
       onAddressesClick();
     } else {
-      showToast('Мої адреси');
+      navigate('/profile/addresses');
     }
   };
 
@@ -152,17 +152,10 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
     showToast('Ви вийшли з акаунту');
   };
 
-  const handleAvatarTrigger = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      setFormData((prev) => ({ ...prev, avatarUrl: previewUrl }));
-      showToast('Аватар оновлено');
-    }
+  const handleAvatarChange = (file: File) => {
+    const previewUrl = URL.createObjectURL(file);
+    setFormData((prev) => ({ ...prev, avatarUrl: previewUrl }));
+    showToast('Аватар оновлено');
   };
 
   const handleSave = async () => {
@@ -256,105 +249,19 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
           </header>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <aside className="lg:col-span-4 flex flex-col gap-6 w-full">
-              <section
-                aria-label="Картка користувача"
-                className="bg-[#232a35] rounded-3xl p-6 text-white text-center flex flex-col items-center gap-4 shadow-sm"
-              >
-                <div className="relative w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-[#fbcfe8] to-[#f472b6] flex items-center justify-center">
-                  <img
-                    src={formData.avatarUrl || '/assets/images/default-avatar.svg'}
-                    alt={formData.fullName}
-                    className="w-full h-full object-cover rounded-full bg-slate-700"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/assets/images/default-avatar.svg';
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAvatarTrigger}
-                    aria-label="Змінити аватар"
-                    className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-terracotta hover:bg-terracotta-hover text-white flex items-center justify-center cursor-pointer shadow-md transition-colors outline-none"
-                  >
-                    <Icon name="fi-rr-edit" size={16} />
-                  </button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarChange}
-                  />
-                </div>
-
-                <div className="flex flex-col items-center gap-2">
-                  <h2 className="font-accented font-bold text-2xl text-white">
-                    {firstName}
-                  </h2>
-
-                  {formData.isVip && (
-                    <span
-                      data-testid="vip-badge"
-                      className="bg-terracotta text-white text-xs font-accented font-semibold px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs"
-                    >
-                      <span>★</span>
-                      <span>V.I.P Користувач</span>
-                    </span>
-                  )}
-                </div>
-              </section>
-
-              <nav
-                aria-label="Меню профілю"
-                className="bg-white rounded-3xl p-4 shadow-sm border border-black/5 flex flex-col gap-1 w-full"
-              >
-                <button
-                  type="button"
-                  className="w-full bg-soft-blue/10 text-terracotta font-accented font-semibold rounded-2xl p-3 flex items-center gap-3 cursor-pointer outline-none text-left"
-                >
-                  <div className="w-10 h-10 rounded-full bg-soft-blue/20 text-terracotta flex items-center justify-center shrink-0">
-                    <Icon name="fi-rr-user" size={18} />
-                  </div>
-                  <span className="text-sm">Особисті дані</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleAddressesClick}
-                  className="w-full text-content-dark hover:bg-interactive-lightgray font-accented font-medium rounded-2xl p-3 flex items-center gap-3 cursor-pointer transition-colors outline-none text-left"
-                >
-                  <div className="w-10 h-10 rounded-full bg-interactive-lightgray text-content-dark flex items-center justify-center shrink-0">
-                    <Icon name="fi-rr-marker" size={18} />
-                  </div>
-                  <span className="text-sm">Мої адреси</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handlePaymentMethodsClick}
-                  className="w-full text-content-dark hover:bg-interactive-lightgray font-accented font-medium rounded-2xl p-3 flex items-center gap-3 cursor-pointer transition-colors outline-none text-left"
-                >
-                  <div className="w-10 h-10 rounded-full bg-interactive-lightgray text-content-dark flex items-center justify-center shrink-0">
-                    <Icon name="fi-rr-credit-card" size={18} />
-                  </div>
-                  <span className="text-sm">Способи оплати</span>
-                </button>
-
-                <div className="border-t border-black/5 my-2" />
-
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  aria-label="Вийти з акаунту"
-                  className="w-full text-status-danger hover:bg-red-50 font-accented font-medium rounded-2xl p-3 flex items-center gap-3 cursor-pointer transition-colors outline-none text-left"
-                >
-                  <div className="w-10 h-10 rounded-full bg-red-50 text-status-danger flex items-center justify-center shrink-0">
-                    <Icon name="fi-rr-sign-out-alt" size={18} />
-                  </div>
-                  <span className="text-sm">Вийти з акаунту</span>
-                </button>
-              </nav>
-            </aside>
+            <ProfileAccountSidebar
+              activeTab="personal-data"
+              userData={{
+                fullName: formData.fullName,
+                avatarUrl: formData.avatarUrl,
+                isVip: formData.isVip,
+              }}
+              onAvatarChange={handleAvatarChange}
+              onPersonalDataClick={() => {}}
+              onAddressesClick={handleAddressesClick}
+              onPaymentMethodsClick={handlePaymentMethodsClick}
+              onLogout={handleLogout}
+            />
 
             <section
               aria-label="Форма особистих даних"

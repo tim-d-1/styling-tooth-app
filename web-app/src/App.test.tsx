@@ -360,4 +360,36 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByText('V.I.P Користувач')).toBeDefined();
     expect(screen.getByText('Зберегти зміни')).toBeDefined();
   });
+
+  it('renders my addresses page via pathname /profile/addresses', async () => {
+    window.history.pushState(null, '', '/profile/addresses');
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-profile-6', email: 'katya@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-11',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Мої Адреси' })
+    ).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'Деталі адреси' })).toBeDefined();
+    expect(screen.getByTestId('pet-taxi-map-card')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Обрати адресу' })).toBeDefined();
+  });
 });

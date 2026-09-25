@@ -330,6 +330,15 @@ describe('Profile Feature Components', () => {
       fireEvent.click(screen.getByText('Особисті дані'));
       expect(handlePersonalInfoClick).toHaveBeenCalledTimes(1);
     });
+
+    it('calls onAddressesClick when addresses setting card is clicked', async () => {
+      const handleAddressesClick = vi.fn();
+      await act(async () => {
+        render(<ProfilePage onAddressesClick={handleAddressesClick} />);
+      });
+      fireEvent.click(screen.getByText('Мої адреси'));
+      expect(handleAddressesClick).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('profile_utils', () => {

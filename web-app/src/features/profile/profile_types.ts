@@ -45,3 +45,12 @@ export interface PersonalDataForm {
   isVip?: boolean;
 }
 
+export interface UserAddress {
+  id?: string;
+  street: string;
+  apartment: string;
+  entranceFloor: string;
+  label: string;
+  isDefaultTransfer: boolean;
+}
+

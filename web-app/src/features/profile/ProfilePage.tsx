@@ -16,6 +16,7 @@ export interface ProfilePageProps {
   onAddPetClick?: () => void;
   onPetClick?: (pet: ProfilePet) => void;
   onPersonalInfoClick?: () => void;
+  onAddressesClick?: () => void;
   onToast?: (message: string) => void;
   initialUser?: ProfileUser;
   initialVisit?: UpcomingVisitData | null;
@@ -28,6 +29,7 @@ export const ProfilePage: FC<ProfilePageProps> = ({
   onAddPetClick,
   onPetClick,
   onPersonalInfoClick,
+  onAddressesClick,
   onToast,
   initialUser,
   initialVisit,
@@ -248,6 +250,10 @@ export const ProfilePage: FC<ProfilePageProps> = ({
             onSelectSetting={(settingId) => {
               if (settingId === 'personal_info' && onPersonalInfoClick) {
                 onPersonalInfoClick();
+                return;
+              }
+              if (settingId === 'addresses' && onAddressesClick) {
+                onAddressesClick();
                 return;
               }
               showToast(`Налаштування: ${settingId}`);
