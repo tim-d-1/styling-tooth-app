@@ -20,7 +20,8 @@ export const PetProcedureHistoryCard: FC<PetProcedureHistoryCardProps> = ({
       <div className="flex items-center justify-between">
         <h3
           id="procedure-history-heading"
-          className="font-accented font-bold text-xl text-content-dark"
+          onClick={onDetailsClick}
+          className="font-accented font-bold text-xl text-content-dark cursor-pointer hover:text-terracotta transition-colors"
         >
           Історія процедур
         </h3>
@@ -28,7 +29,7 @@ export const PetProcedureHistoryCard: FC<PetProcedureHistoryCardProps> = ({
           type="button"
           onClick={onDetailsClick}
           aria-label="Вся історія процедур"
-          className="text-soft-blue hover:text-soft-blue/80 transition-colors p-1"
+          className="text-soft-blue hover:text-soft-blue/80 transition-colors p-1 cursor-pointer outline-none"
         >
           <Icon name="fi-rr-angle-small-right" size={24} />
         </button>

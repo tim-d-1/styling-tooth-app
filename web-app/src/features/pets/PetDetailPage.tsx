@@ -24,6 +24,7 @@ export interface PetDetailPageProps {
   onBookClick?: (petId?: string) => void;
   onRecommendationsClick?: (petId?: string) => void;
   onScheduleClick?: (petId?: string) => void;
+  onHistoryClick?: (petId?: string) => void;
   onEditPetClick?: (petId: string) => void;
   onToast?: (message: string) => void;
   initialPets?: PetSwitcherItem[];
@@ -39,6 +40,7 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
   onBookClick,
   onRecommendationsClick,
   onScheduleClick,
+  onHistoryClick,
   onEditPetClick,
   onToast,
   initialPets,
@@ -313,6 +315,16 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
     }
   };
 
+  const handleHistoryClick = () => {
+    if (onHistoryClick) {
+      onHistoryClick(petDetail?.id);
+    } else if (petDetail?.id) {
+      navigate(`/pets/${petDetail.id}/history`);
+    } else {
+      navigate('/pets/history');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-surface-cream text-content-dark font-primary flex flex-col justify-between">
       <div className="flex-1 pb-16">
@@ -450,7 +462,7 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
 
                 <PetProcedureHistoryCard
                   history={history}
-                  onDetailsClick={() => showToast('Вся історія процедур')}
+                  onDetailsClick={handleHistoryClick}
                 />
               </div>
             </div>

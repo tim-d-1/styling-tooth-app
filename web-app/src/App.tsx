@@ -12,6 +12,7 @@ import RegisterPage from '@/features/auth/RegisterPage';
 import PetRegisterPage from '@/features/pets/PetRegisterPage';
 import PetDetailPage from '@/features/pets/PetDetailPage';
 import PetCareSchedulePage from '@/features/pets/PetCareSchedulePage';
+import PetProcedureHistoryPage from '@/features/pets/PetProcedureHistoryPage';
 import LandingPage from '@/features/landing/LandingPage';
 import MainPage from '@/features/dashboard/MainPage';
 import ProfilePage from '@/features/profile/ProfilePage';
@@ -263,6 +264,45 @@ export function AppRoutes() {
           path="/profile/pets/:petId/schedule"
           element={
             <PetCareSchedulePage
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onProfileClick={() => navigate('/profile')}
+              onPetsClick={() => navigate('/profile')}
+              onBookClick={() => navigate('/main')}
+              onToast={showToast}
+            />
+          }
+        />
+
+        <Route
+          path="/pets/:petId/history"
+          element={
+            <PetProcedureHistoryPage
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onProfileClick={() => navigate('/profile')}
+              onPetsClick={() => navigate('/profile')}
+              onBookClick={() => navigate('/main')}
+              onToast={showToast}
+            />
+          }
+        />
+
+        <Route
+          path="/pets/history"
+          element={
+            <PetProcedureHistoryPage
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onProfileClick={() => navigate('/profile')}
+              onPetsClick={() => navigate('/profile')}
+              onBookClick={() => navigate('/main')}
+              onToast={showToast}
+            />
+          }
+        />
+
+        <Route
+          path="/profile/pets/:petId/history"
+          element={
+            <PetProcedureHistoryPage
               onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
               onProfileClick={() => navigate('/profile')}
               onPetsClick={() => navigate('/profile')}

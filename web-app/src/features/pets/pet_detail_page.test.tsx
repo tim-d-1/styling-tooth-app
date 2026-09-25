@@ -223,6 +223,11 @@ describe('Pet Feature Components', () => {
         screen.getByRole('button', { name: 'Вся історія процедур' })
       );
       expect(handleDetails).toHaveBeenCalledTimes(1);
+
+      fireEvent.click(
+        screen.getByRole('heading', { level: 3, name: 'Історія процедур' })
+      );
+      expect(handleDetails).toHaveBeenCalledTimes(2);
     });
 
     it('renders uploaded before/after photos when provided', () => {
@@ -278,6 +283,9 @@ describe('PetDetailPage Integration', () => {
     const handleBook = vi.fn();
     const handleRecommendations = vi.fn();
 
+    const handleSchedule = vi.fn();
+    const handleHistory = vi.fn();
+
     render(
       <MemoryRouter initialEntries={['/pets/pet-1']}>
         <PetDetailPage
@@ -286,6 +294,8 @@ describe('PetDetailPage Integration', () => {
           onAddPetClick={handleAddPet}
           onBookClick={handleBook}
           onRecommendationsClick={handleRecommendations}
+          onScheduleClick={handleSchedule}
+          onHistoryClick={handleHistory}
           initialPets={mockPets}
           initialPetDetail={mockPetDetail}
         />
@@ -314,6 +324,12 @@ describe('PetDetailPage Integration', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Рекомендації' }));
     expect(handleRecommendations).toHaveBeenCalledWith('pet-1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Деталі графіка обробок' }));
+    expect(handleSchedule).toHaveBeenCalledWith('pet-1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Вся історія процедур' }));
+    expect(handleHistory).toHaveBeenCalledWith('pet-1');
   });
 
   it('renders empty state when initialPets is empty and no pet is available', () => {

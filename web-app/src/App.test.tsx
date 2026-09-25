@@ -298,4 +298,35 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByText('Найближча обробка')).toBeDefined();
     expect(screen.getByText('Медичні документи')).toBeDefined();
   });
+
+  it('renders pet procedure history page via pathname /pets/:petId/history', async () => {
+    window.history.pushState(null, '', '/pets/p-test-1/history');
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-profile-4', email: 'katya@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-9',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Історія процедур' })
+    ).toBeDefined();
+    expect(screen.getByText('СПА-комплекс + Гігієнічна стрижка')).toBeDefined();
+    expect(screen.getByText('Підсумок за 2026 рік')).toBeDefined();
+  });
 });

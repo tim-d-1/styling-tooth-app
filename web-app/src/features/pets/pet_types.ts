@@ -53,7 +53,19 @@ export interface PetProcedureHistory {
   price: number;
   dateFormatted: string;
   masterName: string;
+  durationFormatted?: string;
+  rating?: number;
+  statusText?: string;
+  category?: 'grooming' | 'spa' | 'transfer' | 'payment';
   tags: string[];
   beforePhotoUrl?: string | null;
   afterPhotoUrl?: string | null;
+  resultPhotoUrl?: string | null;
 }
+
+export interface ProcedureHistorySummary {
+  year: number;
+  totalProcedures: number;
+  favoriteMaster: string;
+}
+
