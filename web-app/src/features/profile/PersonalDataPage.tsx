@@ -19,7 +19,6 @@ export interface PersonalDataPageProps {
 
 const defaultFormData: PersonalDataForm = {
   fullName: 'Катерина Ковальчук',
-  gender: 'Жіноча',
   phone: '+380 (97) 123 45 67',
   isPhoneVerified: true,
   email: 'kateryna.pet@gmail.com',
@@ -47,7 +46,6 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
   });
 
   const [isEditingName, setIsEditingName] = useState(false);
-  const [isEditingGender, setIsEditingGender] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [isEditingBirthDate, setIsEditingBirthDate] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -99,7 +97,6 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
         email: resolvedEmail,
         phone: resolvedPhone,
         avatarUrl: resolvedAvatar || prev.avatarUrl,
-        gender: userMeta?.gender || prev.gender,
         birthDate: userMeta?.birth_date || prev.birthDate,
       }));
     }
@@ -188,7 +185,6 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
         await supabase.auth.updateUser({
           data: {
             full_name: formData.fullName,
-            gender: formData.gender,
             birth_date: formData.birthDate,
           },
         });
@@ -199,7 +195,6 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
       }
 
       setIsEditingName(false);
-      setIsEditingGender(false);
       setIsEditingEmail(false);
       setIsEditingBirthDate(false);
       showToast('Зміни успішно збережено');
@@ -398,44 +393,6 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
                     type="button"
                     onClick={() => setIsEditingName((prev) => !prev)}
                     aria-label="Редагувати Ім'я та Прізвище"
-                    className="text-text-muted hover:text-terracotta transition-colors p-2 cursor-pointer outline-none shrink-0"
-                  >
-                    <Icon name="fi-rr-edit" size={18} />
-                  </button>
-                </div>
-
-                <div className="py-5 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 min-w-0 flex-1">
-                    <div className="w-11 h-11 rounded-full bg-interactive-lightgray text-content-dark/80 flex items-center justify-center shrink-0">
-                      <Icon name="fi-rr-venus-mars" size={18} />
-                    </div>
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-xs text-text-muted font-primary">Стать</span>
-                      {isEditingGender ? (
-                        <select
-                          value={formData.gender}
-                          onChange={(e) =>
-                            setFormData((prev) => ({ ...prev, gender: e.target.value }))
-                          }
-                          aria-label="Стать"
-                          className="font-accented font-semibold text-base text-content-dark bg-[#f3f4f6] px-3 py-1 rounded-lg mt-1 outline-none border border-soft-blue"
-                        >
-                          <option value="Жіноча">Жіноча</option>
-                          <option value="Чоловіча">Чоловіча</option>
-                          <option value="Не вказано">Не вказано</option>
-                        </select>
-                      ) : (
-                        <span className="font-accented font-semibold text-base text-content-dark">
-                          {formData.gender}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingGender((prev) => !prev)}
-                    aria-label="Редагувати Стать"
                     className="text-text-muted hover:text-terracotta transition-colors p-2 cursor-pointer outline-none shrink-0"
                   >
                     <Icon name="fi-rr-edit" size={18} />

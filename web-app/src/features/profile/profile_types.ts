@@ -37,7 +37,6 @@ export interface SettingCardItem {
 
 export interface PersonalDataForm {
   fullName: string;
-  gender: string;
   phone: string;
   isPhoneVerified: boolean;
   email: string;

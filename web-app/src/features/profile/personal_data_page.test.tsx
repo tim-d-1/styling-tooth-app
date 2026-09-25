@@ -125,13 +125,12 @@ describe('PersonalDataPage', () => {
     return fn;
   }
 
-  it('toggles and edits form fields: name, gender, email, and birth date', async () => {
+  it('toggles and edits form fields: name, email, and birth date', async () => {
     render(
       <MemoryRouter>
         <PersonalDataPage
           initialData={{
             fullName: 'Катерина Ковальчук',
-            gender: 'Жіноча',
             email: 'kateryna@example.com',
             birthDate: '14 Травня 1995',
             phone: '+380 (97) 123 45 67',
@@ -142,7 +141,6 @@ describe('PersonalDataPage', () => {
     );
 
     expect(screen.getByText('Катерина Ковальчук')).toBeDefined();
-    expect(screen.getByText('Жіноча')).toBeDefined();
     expect(screen.getByText('+380 (97) 123 45 67')).toBeDefined();
     expect(screen.getByTestId('phone-verified-badge')).toBeDefined();
     expect(screen.getByText('kateryna@example.com')).toBeDefined();
@@ -152,11 +150,6 @@ describe('PersonalDataPage', () => {
     const nameInput = screen.getByLabelText("Ім'я та Прізвище") as HTMLInputElement;
     fireEvent.change(nameInput, { target: { value: 'Катерина Шевченко' } });
     expect(nameInput.value).toBe('Катерина Шевченко');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Редагувати Стать' }));
-    const genderSelect = screen.getByLabelText('Стать') as HTMLSelectElement;
-    fireEvent.change(genderSelect, { target: { value: 'Не вказано' } });
-    expect(genderSelect.value).toBe('Не вказано');
 
     fireEvent.click(screen.getByRole('button', { name: 'Редагувати Електронну пошту' }));
     const emailInput = screen.getByLabelText('Електронна пошта') as HTMLInputElement;
@@ -202,7 +195,6 @@ describe('PersonalDataPage', () => {
           onToast={handleToast}
           initialData={{
             fullName: 'Олена Сидоренко',
-            gender: 'Жіноча',
             email: 'olena@example.com',
             birthDate: '20 Січня 1998',
             phone: '+380 (50) 999 88 77',
@@ -222,7 +214,6 @@ describe('PersonalDataPage', () => {
     expect(updateUserSpy).toHaveBeenCalledWith({
       data: {
         full_name: 'Олена Сидоренко',
-        gender: 'Жіноча',
         birth_date: '20 Січня 1998',
       },
     });
@@ -230,7 +221,6 @@ describe('PersonalDataPage', () => {
     expect(handleSave).toHaveBeenCalledWith(
       expect.objectContaining({
         fullName: 'Олена Сидоренко',
-        gender: 'Жіноча',
         email: 'olena@example.com',
       })
     );
@@ -247,7 +237,6 @@ describe('PersonalDataPage', () => {
             email: 'fetched.auth@example.com',
             user_metadata: {
               full_name: 'Наталія Мельник',
-              gender: 'Жіноча',
               birth_date: '01 Травня 1992',
               avatar_url: 'https://example.com/avatar.jpg',
             },
