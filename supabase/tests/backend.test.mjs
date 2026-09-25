@@ -92,9 +92,11 @@ test("2. Availability RPC get_available_slots", async () => {
 
   assert.equal(error, null, `get_available_slots error: ${error?.message}`);
   assert.ok(
-    Array.isArray(slots),
-    "get_available_slots should return an array of slots",
+    Array.isArray(slots) && slots.length > 0,
+    "get_available_slots should return a non-empty array of slots",
   );
+  assert.ok(slots[0].slot_start, "slot should have slot_start");
+  assert.ok(slots[0].slot_end, "slot should have slot_end");
 });
 
 test("3. All Masters Availability RPC get_available_slots_all_masters", async () => {
@@ -121,9 +123,10 @@ test("3. All Masters Availability RPC get_available_slots_all_masters", async ()
     `get_available_slots_all_masters error: ${error?.message}`,
   );
   assert.ok(
-    Array.isArray(slots),
-    "get_available_slots_all_masters should return an array",
+    Array.isArray(slots) && slots.length > 0,
+    "get_available_slots_all_masters should return a non-empty array",
   );
+  assert.ok(slots[0].master_id, "slot should contain master_id");
 });
 
 test("4. Staff-Only Table Protection (master_time_off RLS)", async () => {
@@ -206,9 +209,11 @@ test("7. Multi-Service Availability RPC get_available_slots_multi_service", asyn
     `get_available_slots_multi_service error: ${error?.message}`,
   );
   assert.ok(
-    Array.isArray(slots),
-    "get_available_slots_multi_service should return an array of slots",
+    Array.isArray(slots) && slots.length > 0,
+    "get_available_slots_multi_service should return a non-empty array of slots",
   );
+  assert.ok(slots[0].slot_start, "multi-service slot should have slot_start");
+  assert.ok(slots[0].slot_end, "multi-service slot should have slot_end");
 });
 
 test("8. Payments Table Security & RLS Protection", async () => {
@@ -226,23 +231,22 @@ test("8. Payments Table Security & RLS Protection", async () => {
   );
 });
 
-test("9. Monobank Webhook Processor RPC (handle_monobank_webhook_event)", async () => {
-  // Attempting webhook handling with a non-existent invoice ID handles missing record gracefully
+test("9. Monobank Webhook Processor Security (Anon Execution Blocked)", async () => {
+  // Anonymous / public callers must be blocked from executing handle_monobank_webhook_event
   const { error } = await supabase.rpc("handle_monobank_webhook_event", {
     p_invoice_id: "non-existent-invoice-999",
     p_status: "success",
     p_raw_payload: { status: "success" },
   });
 
-  // Should fail with 'Payment record not found' exception
   assert.ok(
     error !== null,
-    "Webhook RPC must throw exception if invoice record does not exist",
+    "Anonymous execution of handle_monobank_webhook_event must be blocked",
   );
   assert.match(
     error.message,
-    /Payment record not found/,
-    "Error message should report missing invoice",
+    /permission denied/,
+    "Error message must indicate permission denied for unprivileged caller",
   );
 });
 
@@ -262,6 +266,44 @@ test("10. Pet Double-Booking Protection (is_pet_available RPC)", async () => {
     isAvailable,
     true,
     "Pet with no existing appointments must be available",
+  );
+});
+
+test("11. Safe Storage UUID Cast Helper (try_cast_uuid)", async () => {
+  const { data: validUuid, error: err1 } = await supabase.rpc("try_cast_uuid", {
+    p_val: "11111111-1111-1111-1111-111111111111",
+  });
+  assert.equal(err1, null, `try_cast_uuid error: ${err1?.message}`);
+  assert.equal(validUuid, "11111111-1111-1111-1111-111111111111");
+
+  const { data: invalidUuid, error: err2 } = await supabase.rpc(
+    "try_cast_uuid",
+    {
+      p_val: "not-a-valid-uuid-folder",
+    },
+  );
+  assert.equal(err2, null, `try_cast_uuid error: ${err2?.message}`);
+  assert.equal(
+    invalidUuid,
+    null,
+    "Invalid UUID string should return null without throwing",
+  );
+});
+
+test("12. Direct Appointment Insert Blocked by Staff-Only RLS", async () => {
+  const { error } = await supabase.from("appointments").insert([
+    {
+      client_id: "00000000-0000-0000-0000-000000000000",
+      pet_id: "00000000-0000-0000-0000-000000000000",
+      master_id: "11111111-1111-1111-1111-111111111111",
+      starts_at: "2026-08-10T09:00:00Z",
+      ends_at: "2026-08-10T10:30:00Z",
+      price: 0,
+    },
+  ]);
+  assert.ok(
+    error !== null,
+    "Direct insert on appointments by non-staff must be rejected by RLS",
   );
 });
 
