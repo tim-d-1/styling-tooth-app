@@ -16,6 +16,7 @@ import PetProcedureHistoryPage from '@/features/pets/PetProcedureHistoryPage';
 import LandingPage from '@/features/landing/LandingPage';
 import MainPage from '@/features/dashboard/MainPage';
 import ProfilePage from '@/features/profile/ProfilePage';
+import PersonalDataPage from '@/features/profile/PersonalDataPage';
 import { supabase } from '@/lib/supabase';
 
 export function AppRoutes() {
@@ -184,6 +185,43 @@ export function AppRoutes() {
                 navigate('/pet-register', { state: { from: '/profile' } })
               }
               onPetClick={(pet) => navigate(`/pets/${pet.id}`)}
+              onPersonalInfoClick={() => navigate('/profile/personal-data')}
+              onToast={showToast}
+            />
+          }
+        />
+
+        <Route
+          path="/profile/personal-data"
+          element={
+            <PersonalDataPage
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onProfileClick={() => navigate('/profile')}
+              onAddressesClick={() => showToast('Мої адреси')}
+              onPaymentMethodsClick={() => showToast('Способи оплати')}
+              onLogout={() => {
+                setIsLoggedIn(false);
+                navigate('/login');
+                showToast('Ви вийшли з акаунту');
+              }}
+              onToast={showToast}
+            />
+          }
+        />
+
+        <Route
+          path="/profile/personal-info"
+          element={
+            <PersonalDataPage
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onProfileClick={() => navigate('/profile')}
+              onAddressesClick={() => showToast('Мої адреси')}
+              onPaymentMethodsClick={() => showToast('Способи оплати')}
+              onLogout={() => {
+                setIsLoggedIn(false);
+                navigate('/login');
+                showToast('Ви вийшли з акаунту');
+              }}
               onToast={showToast}
             />
           }

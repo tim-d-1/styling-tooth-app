@@ -329,4 +329,35 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByText('СПА-комплекс + Гігієнічна стрижка')).toBeDefined();
     expect(screen.getByText('Підсумок за 2026 рік')).toBeDefined();
   });
+
+  it('renders personal data page via pathname /profile/personal-data', async () => {
+    window.history.pushState(null, '', '/profile/personal-data');
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-profile-5', email: 'katya@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-10',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Особисті дані' })
+    ).toBeDefined();
+    expect(screen.getByText('V.I.P Користувач')).toBeDefined();
+    expect(screen.getByText('Зберегти зміни')).toBeDefined();
+  });
 });

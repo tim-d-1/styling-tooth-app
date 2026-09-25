@@ -15,6 +15,7 @@ export interface ProfilePageProps {
   onBookClick?: () => void;
   onAddPetClick?: () => void;
   onPetClick?: (pet: ProfilePet) => void;
+  onPersonalInfoClick?: () => void;
   onToast?: (message: string) => void;
   initialUser?: ProfileUser;
   initialVisit?: UpcomingVisitData | null;
@@ -26,6 +27,7 @@ export const ProfilePage: FC<ProfilePageProps> = ({
   onBookClick,
   onAddPetClick,
   onPetClick,
+  onPersonalInfoClick,
   onToast,
   initialUser,
   initialVisit,
@@ -243,7 +245,13 @@ export const ProfilePage: FC<ProfilePageProps> = ({
           />
 
           <ProfileSettingsSection
-            onSelectSetting={(settingId) => showToast(`Налаштування: ${settingId}`)}
+            onSelectSetting={(settingId) => {
+              if (settingId === 'personal_info' && onPersonalInfoClick) {
+                onPersonalInfoClick();
+                return;
+              }
+              showToast(`Налаштування: ${settingId}`);
+            }}
           />
         </main>
       </div>

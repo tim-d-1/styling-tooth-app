@@ -321,6 +321,15 @@ describe('Profile Feature Components', () => {
       expect(screen.getByText('Повний комплекс')).toBeDefined();
       expect(screen.getByText(/Іван Т\./)).toBeDefined();
     });
+
+    it('calls onPersonalInfoClick when personal data setting card is clicked', async () => {
+      const handlePersonalInfoClick = vi.fn();
+      await act(async () => {
+        render(<ProfilePage onPersonalInfoClick={handlePersonalInfoClick} />);
+      });
+      fireEvent.click(screen.getByText('Особисті дані'));
+      expect(handlePersonalInfoClick).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('profile_utils', () => {
