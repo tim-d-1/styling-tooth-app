@@ -9,6 +9,7 @@ import {
 import LoginPage from '@/features/auth/LoginPage';
 import RegisterPage from '@/features/auth/RegisterPage';
 import PetRegisterPage from '@/features/pets/PetRegisterPage';
+import PetDetailPage from '@/features/pets/PetDetailPage';
 import LandingPage from '@/features/landing/LandingPage';
 import MainPage from '@/features/dashboard/MainPage';
 import ProfilePage from '@/features/profile/ProfilePage';
@@ -167,6 +168,46 @@ export function AppRoutes() {
               onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
               onBookClick={() => navigate('/main')}
               onAddPetClick={() => navigate('/pet-register')}
+              onPetClick={(pet) => navigate(`/pets/${pet.id}`)}
+              onToast={showToast}
+            />
+          }
+        />
+
+        <Route
+          path="/pets/:petId"
+          element={
+            <PetDetailPage
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onProfileClick={() => navigate('/profile')}
+              onAddPetClick={() => navigate('/pet-register')}
+              onBookClick={() => navigate('/main')}
+              onToast={showToast}
+            />
+          }
+        />
+
+        <Route
+          path="/pets"
+          element={
+            <PetDetailPage
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onProfileClick={() => navigate('/profile')}
+              onAddPetClick={() => navigate('/pet-register')}
+              onBookClick={() => navigate('/main')}
+              onToast={showToast}
+            />
+          }
+        />
+
+        <Route
+          path="/profile/pets/:petId"
+          element={
+            <PetDetailPage
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onProfileClick={() => navigate('/profile')}
+              onAddPetClick={() => navigate('/pet-register')}
+              onBookClick={() => navigate('/main')}
               onToast={showToast}
             />
           }

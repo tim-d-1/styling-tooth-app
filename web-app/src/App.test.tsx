@@ -175,4 +175,32 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Мої улюбленці' })).toBeDefined();
     expect(screen.getByRole('heading', { level: 2, name: 'Налаштування профілю' })).toBeDefined();
   });
+
+  it('renders pet detail page via pathname /pets/:petId', async () => {
+    window.history.pushState(null, '', '/pets/p-test-1');
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-profile-2', email: 'katya@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-7',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Мої улюбленці' })).toBeDefined();
+    expect(screen.getByRole('navigation', { name: 'Навігація по сайту' })).toBeDefined();
+  });
 });

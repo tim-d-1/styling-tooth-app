@@ -14,6 +14,7 @@ export interface ProfilePageProps {
   onHomeClick?: () => void;
   onBookClick?: () => void;
   onAddPetClick?: () => void;
+  onPetClick?: (pet: ProfilePet) => void;
   onToast?: (message: string) => void;
   initialUser?: ProfileUser;
   initialVisit?: UpcomingVisitData | null;
@@ -24,6 +25,7 @@ export const ProfilePage: FC<ProfilePageProps> = ({
   onHomeClick,
   onBookClick,
   onAddPetClick,
+  onPetClick,
   onToast,
   initialUser,
   initialVisit,
@@ -226,7 +228,13 @@ export const ProfilePage: FC<ProfilePageProps> = ({
           <MyPetsSection
             pets={pets}
             onAddPetClick={onAddPetClick}
-            onPetClick={(pet) => showToast(`Улюбленець: ${pet.name}`)}
+            onPetClick={(pet) => {
+              if (onPetClick) {
+                onPetClick(pet);
+              } else {
+                showToast(`Улюбленець: ${pet.name}`);
+              }
+            }}
           />
 
           <ProfileSettingsSection
