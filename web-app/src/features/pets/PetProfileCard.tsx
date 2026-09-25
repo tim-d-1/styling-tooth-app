@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import Icon from '@/components/ui/Icon';
 import type { PetDetail } from './pet_types';
 import { formatPetSubtitle, formatVisitsCount } from './pet_utils';
@@ -11,6 +11,11 @@ export interface PetProfileCardProps {
 export const PetProfileCard: FC<PetProfileCardProps> = ({ pet, onEditClick }) => {
   const subtitle = formatPetSubtitle(pet.breed, pet.ageFormatted, pet.weightKg);
   const visitsText = formatVisitsCount(pet.visitsCount);
+  const [avatarFailed, setAvatarFailed] = useState(false);
+
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [pet.avatarUrl]);
 
   return (
     <div
@@ -23,10 +28,12 @@ export const PetProfileCard: FC<PetProfileCardProps> = ({ pet, onEditClick }) =>
     >
       <div className="relative w-24 h-24 mx-auto">
         <div className="w-full h-full rounded-full overflow-hidden border-[3px] border-soft-blue shadow-md flex items-center justify-center bg-content-dark/60">
-          {pet.avatarUrl ? (
+          {pet.avatarUrl && !avatarFailed ? (
             <img
               src={pet.avatarUrl}
               alt={pet.name}
+              referrerPolicy="no-referrer"
+              onError={() => setAvatarFailed(true)}
               className="w-full h-full object-cover"
             />
           ) : (

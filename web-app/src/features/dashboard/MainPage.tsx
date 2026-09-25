@@ -1,10 +1,11 @@
-import { useState, type FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import Header from '@/components/layout/Header';
 import LocationBar from './LocationBar';
 import VisitSection, { type VisitData } from './VisitSection';
 import PromoBannersGrid from './PromoBannersGrid';
 import ExpertAdviceGrid, { type ArticleItem } from './ExpertAdviceGrid';
 import Footer from '@/components/layout/Footer';
+import { supabase } from '@/lib/supabase';
 
 const EXPERT_ARTICLES: ArticleItem[] = [
   {
@@ -48,6 +49,58 @@ export const MainPage: FC<MainPageProps> = ({
 }) => {
   const [visit] = useState<VisitData | null>(null);
   const [activeNav, setActiveNav] = useState('home');
+  const [userName, setUserName] = useState('');
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let isMounted = true;
+
+    async function loadUserData() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const currentUserId = sessionData?.session?.user?.id;
+      if (!currentUserId || !isMounted) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', currentUserId)
+        .maybeSingle();
+
+      if (isMounted) {
+        const resolvedName =
+          profile?.full_name?.trim() ||
+          sessionData?.session?.user?.user_metadata?.first_name ||
+          sessionData?.session?.user?.user_metadata?.full_name ||
+          sessionData?.session?.user?.user_metadata?.name ||
+          '';
+
+        const rawAvatar =
+          profile?.avatar_url ||
+          sessionData?.session?.user?.user_metadata?.avatar_url ||
+          sessionData?.session?.user?.user_metadata?.picture ||
+          null;
+
+        const resolvedAvatar =
+          rawAvatar &&
+          typeof rawAvatar === 'string' &&
+          rawAvatar.trim() &&
+          rawAvatar.trim() !== 'null' &&
+          rawAvatar.trim() !== 'undefined'
+            ? rawAvatar.trim()
+            : null;
+
+        if (resolvedName) setUserName(resolvedName);
+        if (resolvedAvatar) setUserAvatarUrl(resolvedAvatar);
+      }
+    }
+
+    loadUserData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isLoggedIn]);
 
   const showToast = (message: string) => {
     if (onToast && message) {
@@ -66,6 +119,8 @@ export const MainPage: FC<MainPageProps> = ({
           onNavClick={(nav: string) => setActiveNav(nav)}
           onDeviceClick={() => showToast('')}
           onProfileClick={onProfileClick || (() => showToast(''))}
+          userName={userName}
+          userAvatarUrl={userAvatarUrl || '/assets/images/default-avatar.svg'}
         />
 
         <LocationBar

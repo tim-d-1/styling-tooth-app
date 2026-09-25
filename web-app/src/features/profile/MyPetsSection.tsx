@@ -34,6 +34,11 @@ export const MyPetsSection: FC<MyPetsSectionProps> = ({
                 <img
                   src={pet.avatarUrl}
                   alt={pet.name}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/assets/images/default-avatar.svg';
+                  }}
                   className="w-full h-full object-cover"
                 />
               ) : (

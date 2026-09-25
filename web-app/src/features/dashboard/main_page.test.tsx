@@ -53,6 +53,24 @@ describe('Main Page Components', () => {
       fireEvent.click(notifyBtn);
       expect(handleNotification).toHaveBeenCalled();
     });
+
+    it('falls back to default avatar when user avatar fails to load', () => {
+      render(
+        <Header
+          isLoggedIn={true}
+          userName="Марія Булах"
+          userAvatarUrl="https://example.com/broken-google-avatar.png"
+        />
+      );
+
+      const avatarImg = screen.getByRole('img', { name: 'Марія Булах' });
+      expect(avatarImg.getAttribute('src')).toBe(
+        'https://example.com/broken-google-avatar.png'
+      );
+
+      fireEvent.error(avatarImg);
+      expect(avatarImg.getAttribute('src')).toBe('/assets/images/default-avatar.svg');
+    });
   });
 
   describe('LocationBar', () => {

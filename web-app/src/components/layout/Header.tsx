@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import Logo from '@/components/ui/Logo';
 import Icon from '@/components/ui/Icon';
 import Button from '@/components/ui/Button';
@@ -32,6 +32,14 @@ export const Header: FC<HeaderProps> = ({
   userName = 'Користувач',
   className,
 }) => {
+  const [avatarSrc, setAvatarSrc] = useState(
+    userAvatarUrl || '/assets/images/default-avatar.svg'
+  );
+
+  useEffect(() => {
+    setAvatarSrc(userAvatarUrl || '/assets/images/default-avatar.svg');
+  }, [userAvatarUrl]);
+
   const currentNav = activeNav?.trim() || 'home';
 
   const navItems = [
@@ -112,8 +120,12 @@ export const Header: FC<HeaderProps> = ({
               className="w-10 h-10 rounded-full overflow-hidden border-2 border-terracotta p-0 cursor-pointer bg-visit-gray hover:opacity-90 transition-opacity outline-none"
             >
               <img
-                src={userAvatarUrl}
+                src={avatarSrc}
                 alt={userName}
+                referrerPolicy="no-referrer"
+                onError={() => {
+                  setAvatarSrc('/assets/images/default-avatar.svg');
+                }}
                 className="w-full h-full object-cover"
               />
             </button>

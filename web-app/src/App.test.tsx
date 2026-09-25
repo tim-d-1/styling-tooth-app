@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import App from './App';
 import { supabase } from './lib/supabase';
 
@@ -145,6 +145,70 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByLabelText('Кличка тваринки')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Зберегти' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Пропустити' })).toBeDefined();
+  });
+
+  it('redirects to source page (/profile) when coming from profile and skipping pet register', async () => {
+    window.history.pushState({ from: '/profile' }, '', '/pet-register');
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-profile-redirect', email: 'katya@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-5b',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    const skipBtn = screen.getByRole('button', { name: 'Пропустити' });
+    await act(async () => {
+      fireEvent.click(skipBtn);
+    });
+
+    expect(window.location.pathname).toBe('/profile');
+  });
+
+  it('redirects to source page (/profile) via query param from=/profile when clicking back', async () => {
+    window.history.pushState(null, '', '/pet-register?from=/profile');
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-profile-redirect-2', email: 'katya@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-5c',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    const backBtn = screen.getByRole('button', { name: /Назад/i });
+    await act(async () => {
+      fireEvent.click(backBtn);
+    });
+
+    expect(window.location.pathname).toBe('/profile');
   });
 
   it('renders profile page via pathname /profile', async () => {

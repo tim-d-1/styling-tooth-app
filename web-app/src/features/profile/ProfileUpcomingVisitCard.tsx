@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import Icon from '@/components/ui/Icon';
 import type { UpcomingVisitData } from './profile_types';
 
@@ -15,6 +15,12 @@ export const ProfileUpcomingVisitCard: FC<ProfileUpcomingVisitCardProps> = ({
   onCancel,
   onBookClick,
 }) => {
+  const [petAvatarFailed, setPetAvatarFailed] = useState(false);
+
+  useEffect(() => {
+    setPetAvatarFailed(false);
+  }, [visit?.petAvatarUrl]);
+
   return (
     <article className="w-full lg:flex-1 bg-white rounded-3xl p-6 shadow-sm border border-black/5 flex flex-col justify-between gap-6 min-h-[15.625rem]">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -33,10 +39,12 @@ export const ProfileUpcomingVisitCard: FC<ProfileUpcomingVisitCardProps> = ({
       {visit ? (
         <div className="w-full bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-black/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            {visit.petAvatarUrl ? (
+            {visit.petAvatarUrl && !petAvatarFailed ? (
               <img
                 src={visit.petAvatarUrl}
                 alt={visit.petName}
+                referrerPolicy="no-referrer"
+                onError={() => setPetAvatarFailed(true)}
                 className="w-12 h-12 rounded-full object-cover shrink-0"
               />
             ) : (

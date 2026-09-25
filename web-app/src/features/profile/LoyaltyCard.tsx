@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import Icon from '@/components/ui/Icon';
 import type { ProfileUser } from './profile_types';
 
@@ -17,6 +17,14 @@ export const LoyaltyCard: FC<LoyaltyCardProps> = ({
   const loyaltyTier = user?.loyaltyTier || 'Базовий рівень';
   const bonusPoints = user?.bonusPoints ?? 0;
 
+  const [avatarSrc, setAvatarSrc] = useState(
+    avatarUrl || '/assets/images/default-avatar.svg'
+  );
+
+  useEffect(() => {
+    setAvatarSrc(avatarUrl || '/assets/images/default-avatar.svg');
+  }, [avatarUrl]);
+
   return (
     <article
       className="w-full lg:w-[24.1875rem] min-h-[15.625rem] rounded-3xl p-5 flex flex-col justify-between gap-4 text-white shadow-md relative overflow-hidden"
@@ -27,19 +35,15 @@ export const LoyaltyCard: FC<LoyaltyCardProps> = ({
     >
       <div className="flex items-center gap-4">
         <div className="w-20 h-20 rounded-full border-2 border-soft-blue p-0.5 shrink-0 overflow-hidden bg-content-dark flex items-center justify-center">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={name}
-              className="w-full h-full rounded-full object-cover"
-            />
-          ) : (
-            <img
-              src="/assets/images/default-avatar.svg"
-              alt={name}
-              className="w-full h-full rounded-full object-cover"
-            />
-          )}
+          <img
+            src={avatarSrc}
+            alt={name}
+            referrerPolicy="no-referrer"
+            onError={() => {
+              setAvatarSrc('/assets/images/default-avatar.svg');
+            }}
+            className="w-full h-full rounded-full object-cover"
+          />
         </div>
 
         <div className="flex flex-col min-w-0">

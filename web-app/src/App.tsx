@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
   useNavigate,
+  useLocation,
 } from 'react-router-dom';
 import LoginPage from '@/features/auth/LoginPage';
 import RegisterPage from '@/features/auth/RegisterPage';
@@ -19,6 +20,15 @@ export function AppRoutes() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const getReturnPath = (fallback = '/main') => {
+    const searchParams = new URLSearchParams(location.search);
+    const returnTo = searchParams.get('from') || searchParams.get('returnTo');
+    if (returnTo) return returnTo;
+    const state = location.state as { from?: string } | null;
+    return state?.from || fallback;
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -151,12 +161,13 @@ export function AppRoutes() {
           path="/pet-register"
           element={
             <PetRegisterPage
-              onBack={() => navigate('/')}
+              onBack={() => navigate(getReturnPath(isLoggedIn ? '/profile' : '/'))}
               onSuccess={() => {
-                navigate('/main');
+                const target = getReturnPath(isLoggedIn ? '/profile' : '/main');
+                navigate(target);
                 showToast('Тваринку успішно зареєстровано');
               }}
-              onSkip={() => navigate('/main')}
+              onSkip={() => navigate(getReturnPath(isLoggedIn ? '/profile' : '/main'))}
             />
           }
         />
@@ -167,7 +178,9 @@ export function AppRoutes() {
             <ProfilePage
               onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
               onBookClick={() => navigate('/main')}
-              onAddPetClick={() => navigate('/pet-register')}
+              onAddPetClick={() =>
+                navigate('/pet-register', { state: { from: '/profile' } })
+              }
               onPetClick={(pet) => navigate(`/pets/${pet.id}`)}
               onToast={showToast}
             />
@@ -180,7 +193,9 @@ export function AppRoutes() {
             <PetDetailPage
               onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
               onProfileClick={() => navigate('/profile')}
-              onAddPetClick={() => navigate('/pet-register')}
+              onAddPetClick={() =>
+                navigate('/pet-register', { state: { from: location.pathname } })
+              }
               onBookClick={() => navigate('/main')}
               onToast={showToast}
             />
@@ -193,7 +208,9 @@ export function AppRoutes() {
             <PetDetailPage
               onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
               onProfileClick={() => navigate('/profile')}
-              onAddPetClick={() => navigate('/pet-register')}
+              onAddPetClick={() =>
+                navigate('/pet-register', { state: { from: '/pets' } })
+              }
               onBookClick={() => navigate('/main')}
               onToast={showToast}
             />
@@ -206,7 +223,9 @@ export function AppRoutes() {
             <PetDetailPage
               onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
               onProfileClick={() => navigate('/profile')}
-              onAddPetClick={() => navigate('/pet-register')}
+              onAddPetClick={() =>
+                navigate('/pet-register', { state: { from: location.pathname } })
+              }
               onBookClick={() => navigate('/main')}
               onToast={showToast}
             />

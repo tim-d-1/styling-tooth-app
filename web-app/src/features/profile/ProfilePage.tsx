@@ -76,10 +76,16 @@ export const ProfilePage: FC<ProfilePageProps> = ({
           sessionUser?.user_metadata?.phone ||
           '';
 
-        const resolvedAvatar =
+        const rawAvatar =
           profileData?.avatar_url ||
           sessionUser?.user_metadata?.avatar_url ||
+          sessionUser?.user_metadata?.picture ||
           null;
+
+        const resolvedAvatar =
+          rawAvatar && typeof rawAvatar === 'string' && rawAvatar.trim() && rawAvatar.trim() !== 'null' && rawAvatar.trim() !== 'undefined'
+            ? rawAvatar.trim()
+            : null;
 
         const discountPct = profileData?.discount_pct ? Number(profileData.discount_pct) : 0;
         const resolvedTier = discountPct > 0 ? `${discountPct}% Знижка` : 'Базовий рівень';

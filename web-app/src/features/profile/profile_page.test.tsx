@@ -125,6 +125,22 @@ describe('Profile Feature Components', () => {
       const avatar = screen.getByRole('img', { name: 'Катерина' });
       expect(avatar.getAttribute('src')).toBe('https://example.com/uploaded-avatar.jpg');
     });
+
+    it('falls back to default avatar when user avatar fails to load in LoyaltyCard', () => {
+      render(
+        <LoyaltyCard
+          user={{
+            name: 'Катерина',
+            phone: '+380 97 000 00 00',
+            avatarUrl: 'https://example.com/broken-avatar.jpg',
+          }}
+        />
+      );
+
+      const avatar = screen.getByRole('img', { name: 'Катерина' });
+      fireEvent.error(avatar);
+      expect(avatar.getAttribute('src')).toBe('/assets/images/default-avatar.svg');
+    });
   });
 
   describe('MyPetsSection', () => {

@@ -89,9 +89,31 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
         .eq('id', currentUserId)
         .maybeSingle();
 
-      if (isMounted && profile) {
-        if (profile.full_name) setUserName(profile.full_name);
-        if (profile.avatar_url) setUserAvatarUrl(profile.avatar_url);
+      if (isMounted) {
+        const resolvedName =
+          profile?.full_name?.trim() ||
+          sessionData?.session?.user?.user_metadata?.first_name ||
+          sessionData?.session?.user?.user_metadata?.full_name ||
+          sessionData?.session?.user?.user_metadata?.name ||
+          '';
+
+        const rawAvatar =
+          profile?.avatar_url ||
+          sessionData?.session?.user?.user_metadata?.avatar_url ||
+          sessionData?.session?.user?.user_metadata?.picture ||
+          null;
+
+        const resolvedAvatar =
+          rawAvatar &&
+          typeof rawAvatar === 'string' &&
+          rawAvatar.trim() &&
+          rawAvatar.trim() !== 'null' &&
+          rawAvatar.trim() !== 'undefined'
+            ? rawAvatar.trim()
+            : null;
+
+        if (resolvedName) setUserName(resolvedName);
+        if (resolvedAvatar) setUserAvatarUrl(resolvedAvatar);
       }
 
       const { data: dbPets } = await supabase
@@ -261,7 +283,9 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
     if (onAddPetClick) {
       onAddPetClick();
     } else {
-      navigate('/pet-register');
+      navigate('/pet-register', {
+        state: { from: window.location.pathname },
+      });
     }
   };
 
