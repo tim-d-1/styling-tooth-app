@@ -1,46 +1,18 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   BrowserRouter,
   Routes,
   Route,
   Navigate,
   useNavigate,
-  useLocation,
 } from 'react-router-dom';
 import LoginPage from '@/features/auth/LoginPage';
 import RegisterPage from '@/features/auth/RegisterPage';
 import PetRegisterPage from '@/features/pets/PetRegisterPage';
 import LandingPage from '@/features/landing/LandingPage';
 import MainPage from '@/features/dashboard/MainPage';
+import ProfilePage from '@/features/profile/ProfilePage';
 import { supabase } from '@/lib/supabase';
-
-function HashSync() {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useLayoutEffect(() => {
-    const handleHash = () => {
-      const hash = window.location.hash.replace(/^#/, '');
-      if (hash === 'login' && location.pathname !== '/login') {
-        navigate('/login', { replace: true });
-      } else if (hash === 'register' && location.pathname !== '/register') {
-        navigate('/register', { replace: true });
-      } else if (hash === 'pet-register' && location.pathname !== '/pet-register') {
-        navigate('/pet-register', { replace: true });
-      } else if (hash === 'main' && location.pathname !== '/main') {
-        navigate('/main', { replace: true });
-      } else if (hash === 'landing' && location.pathname !== '/landing') {
-        navigate('/landing', { replace: true });
-      }
-    };
-
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
-  }, [navigate, location.pathname]);
-
-  return null;
-}
 
 export function AppRoutes() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -74,7 +46,6 @@ export function AppRoutes() {
 
   return (
     <>
-      <HashSync />
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-[9999] bg-content-dark text-white px-5 py-3.5 rounded-xl shadow-2xl text-sm font-primary animate-fade-in">
           {toastMessage}
@@ -90,6 +61,7 @@ export function AppRoutes() {
                 isLoggedIn={isLoggedIn}
                 onLoginClick={() => navigate('/login')}
                 onRegisterClick={() => navigate('/register')}
+                onProfileClick={() => navigate('/profile')}
                 onToast={showToast}
               />
             ) : (
@@ -135,6 +107,7 @@ export function AppRoutes() {
                 isLoggedIn={isLoggedIn}
                 onLoginClick={() => navigate('/login')}
                 onRegisterClick={() => navigate('/register')}
+                onProfileClick={() => navigate('/profile')}
                 onToast={showToast}
               />
             ) : (
@@ -183,6 +156,18 @@ export function AppRoutes() {
                 showToast('Тваринку успішно зареєстровано');
               }}
               onSkip={() => navigate('/main')}
+            />
+          }
+        />
+
+        <Route
+          path="/profile"
+          element={
+            <ProfilePage
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onBookClick={() => navigate('/main')}
+              onAddPetClick={() => navigate('/pet-register')}
+              onToast={showToast}
             />
           }
         />

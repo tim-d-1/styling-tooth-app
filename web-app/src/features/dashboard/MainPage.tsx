@@ -35,6 +35,7 @@ export interface MainPageProps {
   isLoggedIn?: boolean;
   onLoginClick?: () => void;
   onRegisterClick?: () => void;
+  onProfileClick?: () => void;
   onToast?: (message: string) => void;
 }
 
@@ -42,6 +43,7 @@ export const MainPage: FC<MainPageProps> = ({
   isLoggedIn = true,
   onLoginClick,
   onRegisterClick,
+  onProfileClick,
   onToast,
 }) => {
   const [visit] = useState<VisitData | null>(null);
@@ -63,7 +65,7 @@ export const MainPage: FC<MainPageProps> = ({
           onRegisterClick={onRegisterClick}
           onNavClick={(nav: string) => setActiveNav(nav)}
           onDeviceClick={() => showToast('')}
-          onProfileClick={() => showToast('')}
+          onProfileClick={onProfileClick || (() => showToast(''))}
         />
 
         <LocationBar

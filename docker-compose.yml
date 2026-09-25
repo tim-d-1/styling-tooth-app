@@ -15,21 +15,6 @@ services:
       - tooth_net
     restart: unless-stopped
 
-  mobile-web:
-    build:
-      context: ./mobile_app
-      dockerfile: Dockerfile.dev
-    container_name: tooth_mobile_web
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./mobile_app:/app
-      - /app/.dart_tool
-      - /app/build
-    networks:
-      - tooth_net
-    restart: unless-stopped
-
 networks:
   tooth_net:
     driver: bridge

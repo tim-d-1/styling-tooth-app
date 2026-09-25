@@ -6,7 +6,6 @@ import { supabase } from './lib/supabase';
 describe('App Root and Auth Gating', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    window.location.hash = '';
     window.history.pushState(null, '', '/');
   });
 
@@ -71,8 +70,8 @@ describe('App Root and Auth Gating', () => {
     expect(screen.queryByRole('heading', { level: 2, name: 'Хто ми' })).toBeNull();
   });
 
-  it('renders login page when current view is login', async () => {
-    window.location.hash = '#login';
+  it('renders login page via pathname /login', async () => {
+    window.history.pushState(null, '', '/login');
     vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
       data: { session: null },
       error: null,
@@ -95,8 +94,8 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByRole('button', { name: 'Далі' })).toBeDefined();
   });
 
-  it('renders register page when current view is register', async () => {
-    window.location.hash = '#register';
+  it('renders register page via pathname /register', async () => {
+    window.history.pushState(null, '', '/register');
     vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
       data: { session: null },
       error: null,
@@ -122,8 +121,8 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByRole('button', { name: 'Далі' })).toBeDefined();
   });
 
-  it('renders pet register page when current view is pet-register', async () => {
-    window.location.hash = '#pet-register';
+  it('renders pet register page via pathname /pet-register', async () => {
+    window.history.pushState(null, '', '/pet-register');
     vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
       data: { session: null },
       error: null,
@@ -148,10 +147,14 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByRole('button', { name: 'Пропустити' })).toBeDefined();
   });
 
-  it('renders login page via pathname /login', async () => {
-    window.history.pushState(null, '', '/login');
+  it('renders profile page via pathname /profile', async () => {
+    window.history.pushState(null, '', '/profile');
     vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
-      data: { session: null },
+      data: {
+        session: {
+          user: { id: 'user-profile-1', email: 'katya@example.com' },
+        },
+      },
       error: null,
     } as never);
     vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
@@ -168,31 +171,8 @@ describe('App Root and Auth Gating', () => {
       render(<App />);
     });
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Вхід' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Далі' })).toBeDefined();
-  });
-
-  it('renders register page via pathname /register', async () => {
-    window.history.pushState(null, '', '/register');
-    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
-      data: { session: null },
-      error: null,
-    } as never);
-    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
-      data: {
-        subscription: {
-          id: 'sub-7',
-          callback: vi.fn(),
-          unsubscribe: vi.fn(),
-        },
-      },
-    } as never);
-
-    await act(async () => {
-      render(<App />);
-    });
-
-    expect(screen.getByRole('heading', { level: 1, name: 'Реєстрація' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Далі' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: /Вітаємо, /i })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'Мої улюбленці' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'Налаштування профілю' })).toBeDefined();
   });
 });
