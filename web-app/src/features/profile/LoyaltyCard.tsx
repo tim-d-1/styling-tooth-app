@@ -11,11 +11,11 @@ export const LoyaltyCard: FC<LoyaltyCardProps> = ({
   user,
   onLoyaltyClick,
 }) => {
-  const name = user?.name || 'Катерина';
-  const phone = user?.phone || '+380 (97) *** ** 42';
+  const name = user?.name?.trim() || 'Користувач';
+  const phone = user?.phone?.trim() || '';
   const avatarUrl = user?.avatarUrl;
-  const loyaltyTier = user?.loyaltyTier || 'Gold Level • 25% Cashback';
-  const bonusPoints = user?.bonusPoints ?? 450;
+  const loyaltyTier = user?.loyaltyTier || 'Базовий рівень';
+  const bonusPoints = user?.bonusPoints ?? 0;
 
   return (
     <article
@@ -46,9 +46,15 @@ export const LoyaltyCard: FC<LoyaltyCardProps> = ({
           <span className="font-accented font-semibold text-xl text-white truncate">
             {name}
           </span>
-          <span className="font-primary text-sm text-white/80 tracking-wide">
-            {phone}
-          </span>
+          {phone ? (
+            <span className="font-primary text-sm text-white/80 tracking-wide">
+              {phone}
+            </span>
+          ) : (
+            <span className="font-primary text-xs text-white/60">
+              Номер не вказано
+            </span>
+          )}
         </div>
       </div>
 

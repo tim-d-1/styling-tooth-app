@@ -8,10 +8,12 @@ export interface ProfileHeroProps {
 }
 
 export const ProfileHero: FC<ProfileHeroProps> = ({
-  userName = 'Катерино',
+  userName,
   onBookClick,
   onHomeClick,
 }) => {
+  const greeting = userName?.trim() ? `Вітаємо, ${userName.trim()}! 👋` : 'Вітаємо! 👋';
+
   return (
     <div className="w-full flex flex-col gap-4">
       <nav aria-label="Хлібні крихти" className="flex items-center gap-1.5 text-xs font-primary">
@@ -30,7 +32,7 @@ export const ProfileHero: FC<ProfileHeroProps> = ({
 
       <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-6">
         <h1 className="font-accented font-bold text-3xl md:text-4xl text-content-dark tracking-tight">
-          Вітаємо, {userName}! 👋
+          {greeting}
         </h1>
 
         <button

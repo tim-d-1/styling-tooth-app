@@ -171,7 +171,7 @@ describe('App Root and Auth Gating', () => {
       render(<App />);
     });
 
-    expect(screen.getByRole('heading', { level: 1, name: /Вітаємо, /i })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: /Вітаємо/i })).toBeDefined();
     expect(screen.getByRole('heading', { level: 2, name: 'Мої улюбленці' })).toBeDefined();
     expect(screen.getByRole('heading', { level: 2, name: 'Налаштування профілю' })).toBeDefined();
   });

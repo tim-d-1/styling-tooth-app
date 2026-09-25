@@ -7,6 +7,7 @@ import LoyaltyCard from './LoyaltyCard';
 import MyPetsSection from './MyPetsSection';
 import ProfileSettingsSection from './ProfileSettingsSection';
 import type { ProfileUser, UpcomingVisitData, ProfilePet } from './profile_types';
+import { formatAppointmentDate, formatPetAge } from './profile_utils';
 import { supabase } from '@/lib/supabase';
 
 export interface ProfilePageProps {
@@ -30,58 +31,28 @@ export const ProfilePage: FC<ProfilePageProps> = ({
 }) => {
   const [user, setUser] = useState<ProfileUser>(
     initialUser || {
-      name: 'Катерина',
-      phone: '+380 (97) *** ** 42',
+      name: '',
+      phone: '',
       email: '',
       avatarUrl: null,
-      loyaltyTier: 'Gold Level • 25% Cashback',
-      bonusPoints: 450,
+      loyaltyTier: 'Базовий рівень',
+      bonusPoints: 0,
     }
   );
 
-  const [visit, setVisit] = useState<UpcomingVisitData | null | undefined>(
-    initialVisit !== undefined
-      ? initialVisit
-      : {
-          id: 'visit-1',
-          petName: 'Барон',
-          petAvatarUrl: null,
-          serviceTitle: 'Комплексний грумінг & СПА',
-          masterName: 'Олена М.',
-          price: 1200,
-          scheduledAtFormatted: 'Субота, 22 Серпня • 14:00',
-        }
+  const [visit, setVisit] = useState<UpcomingVisitData | null>(
+    initialVisit !== undefined ? initialVisit : null
   );
 
-  const [pets, setPets] = useState<ProfilePet[]>(
-    initialPets || [
-      {
-        id: 'pet-1',
-        name: 'Барон',
-        species: 'Собака',
-        breed: 'Мальтіпу',
-        ageFormatted: '2 роки 4 місяці',
-        avatarUrl: null,
-        lastVisitFormatted: '18 лип',
-      },
-      {
-        id: 'pet-2',
-        name: 'Луна',
-        species: 'Кіт',
-        breed: 'Перська кішка',
-        ageFormatted: '5 років',
-        avatarUrl: null,
-        lastVisitFormatted: '02 чер',
-      },
-    ]
-  );
+  const [pets, setPets] = useState<ProfilePet[]>(initialPets || []);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadProfileData() {
       const { data: sessionData } = await supabase.auth.getSession();
-      const currentUserId = sessionData?.session?.user?.id;
+      const sessionUser = sessionData?.session?.user;
+      const currentUserId = sessionUser?.id;
       if (!currentUserId || !isMounted) return;
 
       const { data: profileData } = await supabase
@@ -90,13 +61,34 @@ export const ProfilePage: FC<ProfilePageProps> = ({
         .eq('id', currentUserId)
         .maybeSingle();
 
-      if (profileData && isMounted) {
+      if (isMounted) {
+        const resolvedName =
+          profileData?.full_name?.trim() ||
+          sessionUser?.user_metadata?.first_name ||
+          sessionUser?.user_metadata?.full_name ||
+          (sessionUser?.email ? sessionUser.email.split('@')[0] : '');
+
+        const resolvedPhone =
+          profileData?.phone?.trim() ||
+          sessionUser?.phone ||
+          sessionUser?.user_metadata?.phone ||
+          '';
+
+        const resolvedAvatar =
+          profileData?.avatar_url ||
+          sessionUser?.user_metadata?.avatar_url ||
+          null;
+
+        const discountPct = profileData?.discount_pct ? Number(profileData.discount_pct) : 0;
+        const resolvedTier = discountPct > 0 ? `${discountPct}% Знижка` : 'Базовий рівень';
+
         setUser((prev) => ({
           ...prev,
-          name: profileData.full_name || prev.name,
-          phone: profileData.phone || prev.phone,
-          email: profileData.email || prev.email,
-          avatarUrl: profileData.avatar_url || prev.avatarUrl,
+          name: resolvedName || prev.name,
+          phone: resolvedPhone || prev.phone,
+          email: profileData?.email || sessionUser?.email || prev.email,
+          avatarUrl: resolvedAvatar || prev.avatarUrl,
+          loyaltyTier: resolvedTier,
         }));
       }
 
@@ -104,19 +96,69 @@ export const ProfilePage: FC<ProfilePageProps> = ({
         .from('pets')
         .select('*')
         .eq('owner_id', currentUserId)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
-      if (dbPets && dbPets.length > 0 && isMounted) {
-        setPets(
-          dbPets.map((p) => ({
-            id: p.id,
-            name: p.name,
-            species: p.species === 'dog' ? 'Собака' : p.species === 'cat' ? 'Кіт' : 'Інше',
-            breed: p.breed,
-            avatarUrl: null,
-            lastVisitFormatted: null,
-          }))
-        );
+      if (isMounted) {
+        if (dbPets && dbPets.length > 0) {
+          setPets(
+            dbPets.map((p) => ({
+              id: p.id,
+              name: p.name,
+              species: p.species === 'dog' ? 'Собака' : p.species === 'cat' ? 'Кіт' : 'Інше',
+              breed: p.breed || null,
+              ageFormatted: formatPetAge(p.birth_date),
+              avatarUrl: null,
+              lastVisitFormatted: null,
+            }))
+          );
+        } else if (!initialPets) {
+          setPets([]);
+        }
+      }
+
+      const { data: dbAppointment } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          starts_at,
+          price,
+          status,
+          pet:pets(name, species),
+          master:masters(display_name),
+          service:services(name)
+        `)
+        .eq('client_id', currentUserId)
+        .neq('status', 'cancelled')
+        .gte('starts_at', new Date().toISOString())
+        .order('starts_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (isMounted) {
+        if (dbAppointment) {
+          const petRecord = Array.isArray(dbAppointment.pet)
+            ? dbAppointment.pet[0]
+            : dbAppointment.pet;
+          const masterRecord = Array.isArray(dbAppointment.master)
+            ? dbAppointment.master[0]
+            : dbAppointment.master;
+          const serviceRecord = Array.isArray(dbAppointment.service)
+            ? dbAppointment.service[0]
+            : dbAppointment.service;
+
+          setVisit({
+            id: dbAppointment.id,
+            petName: petRecord?.name || 'Улюбленець',
+            petAvatarUrl: null,
+            serviceTitle: serviceRecord?.name || 'Грумінг',
+            masterName: masterRecord?.display_name || 'Майстер',
+            price: Number(dbAppointment.price) || 0,
+            scheduledAtFormatted: formatAppointmentDate(dbAppointment.starts_at),
+          });
+        } else if (initialVisit === undefined) {
+          setVisit(null);
+        }
       }
     }
 
@@ -125,7 +167,7 @@ export const ProfilePage: FC<ProfilePageProps> = ({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [initialPets, initialVisit]);
 
   const showToast = (message: string) => {
     if (onToast && message) {

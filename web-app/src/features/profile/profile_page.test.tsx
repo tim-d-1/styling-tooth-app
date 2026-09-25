@@ -7,6 +7,7 @@ import MyPetsSection from './MyPetsSection';
 import ProfileSettingsSection from './ProfileSettingsSection';
 import ProfilePage from './ProfilePage';
 import { supabase } from '@/lib/supabase';
+import { formatAppointmentDate, formatPetAge } from './profile_utils';
 import type { ProfilePet, UpcomingVisitData } from './profile_types';
 
 describe('Profile Feature Components', () => {
@@ -196,7 +197,7 @@ describe('Profile Feature Components', () => {
   });
 
   describe('ProfilePage Integration', () => {
-    it('renders profile page with default props and handles cancel visit', async () => {
+    it('renders profile page with empty state when user has no appointment or pets', async () => {
       vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
         data: { session: null },
         error: null,
@@ -206,16 +207,13 @@ describe('Profile Feature Components', () => {
         render(<ProfilePage />);
       });
 
-      expect(screen.getByRole('heading', { level: 1, name: 'Вітаємо, Катерина! 👋' })).toBeDefined();
+      expect(screen.getByRole('heading', { level: 1, name: 'Вітаємо! 👋' })).toBeDefined();
       expect(screen.getByText('Найближчий візит')).toBeDefined();
-
-      const cancelBtn = screen.getByRole('button', { name: 'Скасувати' });
-      fireEvent.click(cancelBtn);
-
       expect(screen.getByText('Немає запланованих візитів')).toBeDefined();
+      expect(screen.getByRole('button', { name: /Додати улюбленця/i })).toBeDefined();
     });
 
-    it('loads profile and pets from supabase when authenticated', async () => {
+    it('loads profile, pets, and upcoming appointment from supabase when authenticated', async () => {
       vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
         data: {
           session: {
@@ -236,6 +234,7 @@ describe('Profile Feature Components', () => {
                     phone: '+380 99 999 99 99',
                     email: 'olena@example.com',
                     avatar_url: 'https://example.com/olena.png',
+                    discount_pct: 10,
                   },
                 }),
               }),
@@ -247,15 +246,46 @@ describe('Profile Feature Components', () => {
           return {
             select: () => ({
               eq: () => ({
-                eq: vi.fn().mockResolvedValue({
-                  data: [
-                    {
-                      id: 'pet-db-1',
-                      name: 'Рекс',
-                      species: 'dog',
-                      breed: 'Вівчарка',
-                    },
-                  ],
+                eq: () => ({
+                  order: vi.fn().mockResolvedValue({
+                    data: [
+                      {
+                        id: 'pet-db-1',
+                        name: 'Рекс',
+                        species: 'dog',
+                        breed: 'Вівчарка',
+                        birth_date: '2024-01-01',
+                      },
+                    ],
+                  }),
+                }),
+              }),
+            }),
+          } as never;
+        }
+
+        if (table === 'appointments') {
+          return {
+            select: () => ({
+              eq: () => ({
+                neq: () => ({
+                  gte: () => ({
+                    order: () => ({
+                      limit: () => ({
+                        maybeSingle: vi.fn().mockResolvedValue({
+                          data: {
+                            id: 'app-1',
+                            starts_at: '2026-10-15T14:00:00Z',
+                            price: 1500,
+                            status: 'confirmed',
+                            pet: { name: 'Рекс', species: 'dog' },
+                            master: { display_name: 'Іван Т.' },
+                            service: { name: 'Повний комплекс' },
+                          },
+                        }),
+                      }),
+                    }),
+                  }),
                 }),
               }),
             }),
@@ -270,8 +300,29 @@ describe('Profile Feature Components', () => {
       });
 
       expect(screen.getByRole('heading', { level: 1, name: 'Вітаємо, Олена Петренко! 👋' })).toBeDefined();
-      expect(screen.getByText('Рекс')).toBeDefined();
-      expect(screen.getByText('Вівчарка')).toBeDefined();
+      expect(screen.getAllByText('Рекс')).toHaveLength(2);
+      expect(screen.getByText('10% Знижка')).toBeDefined();
+      expect(screen.getByText('Повний комплекс')).toBeDefined();
+      expect(screen.getByText(/Іван Т\./)).toBeDefined();
+    });
+  });
+
+  describe('profile_utils', () => {
+    it('formats appointment dates into localized readable string', () => {
+      const formatted = formatAppointmentDate('2026-08-22T14:00:00Z');
+      expect(formatted).toContain('22');
+      expect(formatted).toContain('•');
+    });
+
+    it('formats pet age based on birth date', () => {
+      expect(formatPetAge(null)).toBeNull();
+      expect(formatPetAge(undefined)).toBeNull();
+
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+      const ageStr = formatPetAge(oneYearAgo.toISOString().split('T')[0]);
+      expect(ageStr).toContain('рік');
     });
   });
 });
+
