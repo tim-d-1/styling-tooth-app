@@ -13,7 +13,6 @@ export const ProfileUpcomingVisitCard: FC<ProfileUpcomingVisitCardProps> = ({
   visit,
   onReschedule,
   onCancel,
-  onBookClick,
 }) => {
   const [petAvatarFailed, setPetAvatarFailed] = useState(false);
 
@@ -87,22 +86,18 @@ export const ProfileUpcomingVisitCard: FC<ProfileUpcomingVisitCardProps> = ({
           </div>
         </div>
       ) : (
-        <div className="w-full bg-surface-cream rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+        <div className="w-full flex-1 bg-surface-cream rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-2 border border-black/5">
+          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-terracotta shadow-xs">
+            <Icon name="fi-rr-calendar" size={20} />
+          </div>
           <div className="flex flex-col gap-1">
             <span className="font-accented font-semibold text-base text-content-dark">
               Немає запланованих візитів
             </span>
-            <span className="font-primary text-xs text-text-muted">
+            <span className="font-primary text-xs sm:text-sm text-text-muted">
               Оберіть зручний час для догляду за вашим улюбленцем
             </span>
           </div>
-          <button
-            type="button"
-            onClick={onBookClick}
-            className="h-10 px-5 rounded-xl bg-terracotta hover:bg-terracotta-hover text-white font-accented font-semibold text-sm transition-colors cursor-pointer border-0 outline-none"
-          >
-            Записатися
-          </button>
         </div>
       )}
     </article>

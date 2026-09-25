@@ -73,14 +73,14 @@ describe('Profile Feature Components', () => {
       expect(handleCancel).toHaveBeenCalledTimes(1);
     });
 
-    it('renders empty state when no upcoming visit is scheduled', () => {
-      const handleBook = vi.fn();
-      render(<ProfileUpcomingVisitCard visit={null} onBookClick={handleBook} />);
+    it('renders empty state when no upcoming visit is scheduled without redundant schedule button', () => {
+      render(<ProfileUpcomingVisitCard visit={null} />);
 
       expect(screen.getByText('Немає запланованих візитів')).toBeDefined();
-      const bookBtn = screen.getByRole('button', { name: 'Записатися' });
-      fireEvent.click(bookBtn);
-      expect(handleBook).toHaveBeenCalledTimes(1);
+      expect(
+        screen.getByText('Оберіть зручний час для догляду за вашим улюбленцем')
+      ).toBeDefined();
+      expect(screen.queryByRole('button', { name: 'Записатися' })).toBeNull();
     });
   });
 

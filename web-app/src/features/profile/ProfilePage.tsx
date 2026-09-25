@@ -222,7 +222,6 @@ export const ProfilePage: FC<ProfilePageProps> = ({
                 showToast('Візит скасовано');
               }}
               onReschedule={() => showToast('Перенесення візиту')}
-              onBookClick={onBookClick}
             />
 
             <LoyaltyCard
