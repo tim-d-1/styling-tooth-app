@@ -360,6 +360,15 @@ describe('Profile Feature Components', () => {
       expect(handlePaymentMethodsClick).toHaveBeenCalledTimes(1);
     });
 
+    it('calls onLoyaltyProgramClick when loyalty card button is clicked', async () => {
+      const handleLoyaltyProgramClick = vi.fn();
+      await act(async () => {
+        render(<ProfilePage onLoyaltyProgramClick={handleLoyaltyProgramClick} />);
+      });
+      fireEvent.click(screen.getByText('бонусів'));
+      expect(handleLoyaltyProgramClick).toHaveBeenCalledTimes(1);
+    });
+
     it('cancels visit via Supabase update and renders empty state on success', async () => {
       vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
         data: {

@@ -455,6 +455,37 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Підсумок записів' })).toBeDefined();
   });
 
+  it('renders loyalty program page via pathname /profile/loyalty', async () => {
+    window.history.pushState(null, '', '/profile/loyalty');
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-profile-loyalty', email: 'katya@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-14',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Програма лояльності' })
+    ).toBeDefined();
+    expect(screen.getByText('Ваш бонусний баланс:')).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'Історія транзакцій' })).toBeDefined();
+  });
+
   describe('Unauthenticated Route Gating & Redirects', () => {
     const privatePaths = [
       '/profile',
@@ -462,6 +493,8 @@ describe('App Root and Auth Gating', () => {
       '/profile/addresses',
       '/profile/payment-methods',
       '/profile/upcoming-visits',
+      '/profile/loyalty',
+      '/profile/loyalty-program',
       '/pets/p-test-1',
       '/pets/p-test-1/schedule',
       '/pets/p-test-1/history',

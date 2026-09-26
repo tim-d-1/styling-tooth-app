@@ -20,6 +20,7 @@ import PersonalDataPage from '@/features/profile/PersonalDataPage';
 import MyAddressesPage from '@/features/profile/MyAddressesPage';
 import PaymentMethodsPage from '@/features/profile/PaymentMethodsPage';
 import ProfileUpcomingVisitsPage from '@/features/profile/ProfileUpcomingVisitsPage';
+import LoyaltyProgramPage from '@/features/profile/LoyaltyProgramPage';
 import { supabase } from '@/lib/supabase';
 
 interface ProtectedRouteProps {
@@ -239,6 +240,7 @@ export function AppRoutes() {
                 onAddressesClick={() => navigate('/profile/addresses')}
                 onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
                 onViewAllUpcomingClick={() => navigate('/profile/upcoming-visits')}
+                onLoyaltyProgramClick={() => navigate('/profile/loyalty')}
                 onToast={showToast}
               />
             </ProtectedRoute>
@@ -554,6 +556,32 @@ export function AppRoutes() {
                 onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
                 onProfileClick={() => navigate('/profile')}
                 onBookClick={() => navigate('/main')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/profile/loyalty"
+          element={
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <LoyaltyProgramPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/profile/loyalty-program"
+          element={
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <LoyaltyProgramPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
                 onToast={showToast}
               />
             </ProtectedRoute>

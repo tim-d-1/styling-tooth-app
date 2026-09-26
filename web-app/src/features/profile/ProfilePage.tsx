@@ -19,6 +19,7 @@ export interface ProfilePageProps {
   onAddressesClick?: () => void;
   onPaymentMethodsClick?: () => void;
   onViewAllUpcomingClick?: () => void;
+  onLoyaltyProgramClick?: () => void;
   onToast?: (message: string) => void;
   initialUser?: ProfileUser;
   initialVisit?: UpcomingVisitData | null;
@@ -35,6 +36,7 @@ export const ProfilePage: FC<ProfilePageProps> = ({
   onAddressesClick,
   onPaymentMethodsClick,
   onViewAllUpcomingClick,
+  onLoyaltyProgramClick,
   onToast,
   initialUser,
   initialVisit,
@@ -276,7 +278,13 @@ export const ProfilePage: FC<ProfilePageProps> = ({
 
             <LoyaltyCard
               user={user}
-              onLoyaltyClick={() => showToast(`Картка лояльності: ${user.bonusPoints} бонусів`)}
+              onLoyaltyClick={() => {
+                if (onLoyaltyProgramClick) {
+                  onLoyaltyProgramClick();
+                } else {
+                  showToast(`Картка лояльності: ${user.bonusPoints} бонусів`);
+                }
+              }}
             />
           </div>
 

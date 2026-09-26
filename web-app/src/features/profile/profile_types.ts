@@ -76,3 +76,25 @@ export interface PaymentTransaction {
   receiptUrl?: string;
 }
 
+export interface LoyaltyTransaction {
+  id: string;
+  title: string;
+  dateFormatted: string;
+  points: number;
+  iconName: string;
+}
+
+export interface LoyaltyProgramData {
+  balancePoints: number;
+  discountUah: number;
+  tierName: string;
+  nextTierName: string;
+  currentSpendUah: number;
+  nextTierSpendUah: number;
+  totalEarnedPoints: number;
+  totalSpentPoints: number;
+  privileges: string[];
+  transactions: LoyaltyTransaction[];
+}
+
+
