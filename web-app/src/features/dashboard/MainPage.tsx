@@ -113,7 +113,7 @@ export const MainPage: FC<MainPageProps> = ({
               status,
               pet:pets(name, species),
               master:masters(display_name),
-              service:services(name)
+              service:services!appointments_service_id_fkey(name)
             `)
             .eq('client_id', currentUserId)
             .neq('status', 'cancelled')
