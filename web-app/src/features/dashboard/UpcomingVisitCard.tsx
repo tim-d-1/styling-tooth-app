@@ -3,6 +3,7 @@ import Button from '@/components/ui/Button';
 import Switch from '@/components/ui/Switch';
 
 export interface UpcomingVisitCardProps {
+  id?: string;
   dayOfWeek?: string;
   dayNumber?: string;
   timeSlot?: string;
@@ -13,6 +14,7 @@ export interface UpcomingVisitCardProps {
   initialTransferEnabled?: boolean;
   onReschedule?: () => void;
   onCancel?: () => void;
+  isCancelling?: boolean;
   className?: string;
 }
 
@@ -27,6 +29,7 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
   initialTransferEnabled = false,
   onReschedule,
   onCancel,
+  isCancelling = false,
   className,
 }) => {
   const [transferEnabled, setTransferEnabled] = useState(initialTransferEnabled);
@@ -112,10 +115,11 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
             variant="outline"
             size="md"
             onClick={onCancel}
+            disabled={isCancelling}
             aria-label="Скасувати запланований візит"
-            className="w-full rounded-xl border-content-dark hover:bg-gray-100 transition-colors"
+            className="w-full rounded-xl border-content-dark hover:bg-gray-100 transition-colors disabled:opacity-50"
           >
-            Скасувати
+            {isCancelling ? 'Скасування...' : 'Скасувати'}
           </Button>
         </div>
       </div>

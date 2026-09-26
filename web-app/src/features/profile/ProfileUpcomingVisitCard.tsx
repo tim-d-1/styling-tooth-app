@@ -7,12 +7,14 @@ export interface ProfileUpcomingVisitCardProps {
   onReschedule?: () => void;
   onCancel?: () => void;
   onBookClick?: () => void;
+  isCancelling?: boolean;
 }
 
 export const ProfileUpcomingVisitCard: FC<ProfileUpcomingVisitCardProps> = ({
   visit,
   onReschedule,
   onCancel,
+  isCancelling = false,
 }) => {
   const [petAvatarFailed, setPetAvatarFailed] = useState(false);
 
@@ -72,9 +74,10 @@ export const ProfileUpcomingVisitCard: FC<ProfileUpcomingVisitCardProps> = ({
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 md:flex-initial h-11 px-5 rounded-xl border border-content-dark text-content-dark font-accented font-semibold text-sm sm:text-base hover:bg-gray-100 transition-colors cursor-pointer bg-transparent outline-none"
+              disabled={isCancelling}
+              className="flex-1 md:flex-initial h-11 px-5 rounded-xl border border-content-dark text-content-dark font-accented font-semibold text-sm sm:text-base hover:bg-gray-100 transition-colors cursor-pointer bg-transparent outline-none disabled:opacity-50"
             >
-              Скасувати
+              {isCancelling ? 'Скасування...' : 'Скасувати'}
             </button>
             <button
               type="button"

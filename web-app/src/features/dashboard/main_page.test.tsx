@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import Header from '@/components/layout/Header';
 import LocationBar from './LocationBar';
 import GuestBanner from './GuestBanner';
@@ -7,6 +7,9 @@ import VisitSection from './VisitSection';
 import UpcomingVisitCard from './UpcomingVisitCard';
 import PromoBannersGrid from './PromoBannersGrid';
 import ExpertAdviceGrid from './ExpertAdviceGrid';
+import MainPage from './MainPage';
+import { formatVisitDateDetails } from './dashboard_utils';
+import { supabase } from '@/lib/supabase';
 
 describe('Main Page Components', () => {
   describe('Header', () => {
@@ -206,6 +209,277 @@ describe('Main Page Components', () => {
       const article3 = screen.getByRole('button', { name: 'Порада 3' });
       fireEvent.click(article3);
       expect(handleClick).toHaveBeenCalledWith('art3');
+    });
+  });
+
+  describe('dashboard_utils', () => {
+    it('formats valid ISO date into short Ukrainian weekday, day number, and time', () => {
+      const res = formatVisitDateDetails('2026-10-15T14:00:00Z');
+      expect(res.dayOfWeek).toBeTruthy();
+      expect(res.dayNumber).toBe('15');
+      expect(res.timeSlot).toMatch(/^\d{2}:\d{2}$/);
+    });
+
+    it('falls back to default values when date string is invalid', () => {
+      const res = formatVisitDateDetails('invalid-date');
+      expect(res).toEqual({
+        dayOfWeek: 'СЕР',
+        dayNumber: '10',
+        timeSlot: '16:00',
+      });
+    });
+  });
+
+  describe('MainPage Visit Loading & Cancellation', () => {
+    it('loads upcoming appointment from Supabase when user is authenticated', async () => {
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'usr-main-1' },
+          },
+        },
+        error: null,
+      } as never);
+
+      vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: {
+                    full_name: 'Андрій К.',
+                    avatar_url: null,
+                  },
+                }),
+              }),
+            }),
+          } as never;
+        }
+
+        if (table === 'appointments') {
+          return {
+            select: () => ({
+              eq: () => ({
+                neq: () => ({
+                  gte: () => ({
+                    order: () => ({
+                      limit: () => ({
+                        maybeSingle: vi.fn().mockResolvedValue({
+                          data: {
+                            id: 'app-main-100',
+                            starts_at: '2026-10-15T14:00:00Z',
+                            price: 1800,
+                            status: 'confirmed',
+                            master: { display_name: 'Ольга Майстер' },
+                            service: { name: 'Спа-догляд' },
+                          },
+                        }),
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
+          } as never;
+        }
+
+        return {} as never;
+      });
+
+      await act(async () => {
+        render(<MainPage isLoggedIn={true} />);
+      });
+
+      expect(screen.getByText('Ольга Майстер')).toBeDefined();
+      expect(screen.getByText('Спа-догляд')).toBeDefined();
+      expect(screen.getByText('1800 ₴')).toBeDefined();
+    });
+
+    it('cancels appointment via Supabase update and renders empty state on success', async () => {
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'usr-main-2' },
+          },
+        },
+        error: null,
+      } as never);
+
+      const eqMock = vi.fn().mockResolvedValue({ error: null });
+      const updateMock = vi.fn().mockReturnValue({
+        eq: eqMock,
+      });
+
+      vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: { full_name: 'Тетяна В.' },
+                }),
+              }),
+            }),
+          } as never;
+        }
+
+        if (table === 'appointments') {
+          return {
+            select: () => ({
+              eq: () => ({
+                neq: () => ({
+                  gte: () => ({
+                    order: () => ({
+                      limit: () => ({
+                        maybeSingle: vi.fn().mockResolvedValue({
+                          data: {
+                            id: 'app-main-200',
+                            starts_at: '2026-10-15T14:00:00Z',
+                            price: 1300,
+                            status: 'new',
+                            master: { display_name: 'Марія Шевченко' },
+                            service: { name: 'Комплексний грумінг' },
+                          },
+                        }),
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
+            update: updateMock,
+          } as never;
+        }
+
+        return {} as never;
+      });
+
+      const handleToast = vi.fn();
+      await act(async () => {
+        render(<MainPage isLoggedIn={true} onToast={handleToast} />);
+      });
+
+      expect(screen.getByText('Комплексний грумінг')).toBeDefined();
+
+      const cancelBtn = screen.getByRole('button', { name: /Скасувати запланований візит/i });
+      await act(async () => {
+        fireEvent.click(cancelBtn);
+      });
+
+      expect(updateMock).toHaveBeenCalledWith({ status: 'cancelled' });
+      expect(eqMock).toHaveBeenCalledWith('id', 'app-main-200');
+      expect(handleToast).toHaveBeenCalledWith('Візит скасовано');
+      expect(screen.getByText('Немає активних записів')).toBeDefined();
+    });
+
+    it('shows error toast and preserves upcoming visit card when Supabase cancellation fails', async () => {
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'usr-main-3' },
+          },
+        },
+        error: null,
+      } as never);
+
+      const eqMock = vi.fn().mockResolvedValue({
+        error: { message: 'Database RLS error' },
+      });
+      const updateMock = vi.fn().mockReturnValue({
+        eq: eqMock,
+      });
+
+      vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: { full_name: 'Тетяна В.' },
+                }),
+              }),
+            }),
+          } as never;
+        }
+
+        if (table === 'appointments') {
+          return {
+            select: () => ({
+              eq: () => ({
+                neq: () => ({
+                  gte: () => ({
+                    order: () => ({
+                      limit: () => ({
+                        maybeSingle: vi.fn().mockResolvedValue({
+                          data: {
+                            id: 'app-main-fail',
+                            starts_at: '2026-10-15T14:00:00Z',
+                            price: 1300,
+                            status: 'new',
+                            master: { display_name: 'Марія Шевченко' },
+                            service: { name: 'Комплексний грумінг' },
+                          },
+                        }),
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
+            update: updateMock,
+          } as never;
+        }
+
+        return {} as never;
+      });
+
+      const handleToast = vi.fn();
+      await act(async () => {
+        render(<MainPage isLoggedIn={true} onToast={handleToast} />);
+      });
+
+      expect(screen.getByText('Комплексний грумінг')).toBeDefined();
+
+      const cancelBtn = screen.getByRole('button', { name: /Скасувати запланований візит/i });
+      await act(async () => {
+        fireEvent.click(cancelBtn);
+      });
+
+      expect(updateMock).toHaveBeenCalledWith({ status: 'cancelled' });
+      expect(eqMock).toHaveBeenCalledWith('id', 'app-main-fail');
+      expect(handleToast).toHaveBeenCalledWith('Помилка скасування: Database RLS error');
+      expect(screen.getByText('Комплексний грумінг')).toBeDefined();
+    });
+
+    it('invokes custom onCancelVisit callback if provided', async () => {
+      const handleCancelVisit = vi.fn().mockResolvedValue(undefined);
+      const handleToast = vi.fn();
+
+      await act(async () => {
+        render(
+          <MainPage
+            isLoggedIn={false}
+            initialVisit={{
+              id: 'custom-visit-1',
+              procedureName: 'Спеціальний догляд',
+            }}
+            onCancelVisit={handleCancelVisit}
+            onToast={handleToast}
+          />
+        );
+      });
+
+      expect(screen.getByText('Спеціальний догляд')).toBeDefined();
+
+      const cancelBtn = screen.getByRole('button', { name: /Скасувати запланований візит/i });
+      await act(async () => {
+        fireEvent.click(cancelBtn);
+      });
+
+      expect(handleCancelVisit).toHaveBeenCalledWith('custom-visit-1');
+      expect(handleToast).toHaveBeenCalledWith('Візит скасовано');
+      expect(screen.getByText('Немає активних записів')).toBeDefined();
     });
   });
 });

@@ -6,6 +6,7 @@ import PromoBannersGrid from './PromoBannersGrid';
 import ExpertAdviceGrid, { type ArticleItem } from './ExpertAdviceGrid';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/lib/supabase';
+import { formatVisitDateDetails } from './dashboard_utils';
 
 const EXPERT_ARTICLES: ArticleItem[] = [
   {
@@ -38,6 +39,8 @@ export interface MainPageProps {
   onRegisterClick?: () => void;
   onProfileClick?: () => void;
   onToast?: (message: string) => void;
+  initialVisit?: VisitData | null;
+  onCancelVisit?: (visitId: string) => void | Promise<void>;
 }
 
 export const MainPage: FC<MainPageProps> = ({
@@ -46,8 +49,13 @@ export const MainPage: FC<MainPageProps> = ({
   onRegisterClick,
   onProfileClick,
   onToast,
+  initialVisit,
+  onCancelVisit,
 }) => {
-  const [visit] = useState<VisitData | null>(null);
+  const [visit, setVisit] = useState<VisitData | null>(
+    initialVisit !== undefined ? initialVisit : null
+  );
+  const [isCancelling, setIsCancelling] = useState(false);
   const [activeNav, setActiveNav] = useState('home');
   const [userName, setUserName] = useState('');
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
@@ -61,37 +69,88 @@ export const MainPage: FC<MainPageProps> = ({
       const currentUserId = sessionData?.session?.user?.id;
       if (!currentUserId || !isMounted) return;
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, avatar_url')
-        .eq('id', currentUserId)
-        .maybeSingle();
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', currentUserId)
+          .maybeSingle();
 
-      if (isMounted) {
-        const resolvedName =
-          profile?.full_name?.trim() ||
-          sessionData?.session?.user?.user_metadata?.first_name ||
-          sessionData?.session?.user?.user_metadata?.full_name ||
-          sessionData?.session?.user?.user_metadata?.name ||
-          '';
+        if (isMounted) {
+          const resolvedName =
+            profile?.full_name?.trim() ||
+            sessionData?.session?.user?.user_metadata?.first_name ||
+            sessionData?.session?.user?.user_metadata?.full_name ||
+            sessionData?.session?.user?.user_metadata?.name ||
+            '';
 
-        const rawAvatar =
-          profile?.avatar_url ||
-          sessionData?.session?.user?.user_metadata?.avatar_url ||
-          sessionData?.session?.user?.user_metadata?.picture ||
-          null;
+          const rawAvatar =
+            profile?.avatar_url ||
+            sessionData?.session?.user?.user_metadata?.avatar_url ||
+            sessionData?.session?.user?.user_metadata?.picture ||
+            null;
 
-        const resolvedAvatar =
-          rawAvatar &&
-          typeof rawAvatar === 'string' &&
-          rawAvatar.trim() &&
-          rawAvatar.trim() !== 'null' &&
-          rawAvatar.trim() !== 'undefined'
-            ? rawAvatar.trim()
-            : null;
+          const resolvedAvatar =
+            rawAvatar &&
+            typeof rawAvatar === 'string' &&
+            rawAvatar.trim() &&
+            rawAvatar.trim() !== 'null' &&
+            rawAvatar.trim() !== 'undefined'
+              ? rawAvatar.trim()
+              : null;
 
-        if (resolvedName) setUserName(resolvedName);
-        if (resolvedAvatar) setUserAvatarUrl(resolvedAvatar);
+          if (resolvedName) setUserName(resolvedName);
+          if (resolvedAvatar) setUserAvatarUrl(resolvedAvatar);
+        }
+
+        if (initialVisit === undefined) {
+          const { data: dbAppointment } = await supabase
+            .from('appointments')
+            .select(`
+              id,
+              starts_at,
+              price,
+              status,
+              pet:pets(name, species),
+              master:masters(display_name),
+              service:services(name)
+            `)
+            .eq('client_id', currentUserId)
+            .neq('status', 'cancelled')
+            .gte('starts_at', new Date().toISOString())
+            .order('starts_at', { ascending: true })
+            .limit(1)
+            .maybeSingle();
+
+          if (isMounted) {
+            if (dbAppointment) {
+              const masterRecord = Array.isArray(dbAppointment.master)
+                ? dbAppointment.master[0]
+                : dbAppointment.master;
+              const serviceRecord = Array.isArray(dbAppointment.service)
+                ? dbAppointment.service[0]
+                : dbAppointment.service;
+
+              const dateDetails = formatVisitDateDetails(dbAppointment.starts_at);
+
+              setVisit({
+                id: dbAppointment.id,
+                dayOfWeek: dateDetails.dayOfWeek,
+                dayNumber: dateDetails.dayNumber,
+                timeSlot: dateDetails.timeSlot,
+                masterName: masterRecord?.display_name || 'Марія Шевченко',
+                procedureName: serviceRecord?.name || 'Комплексний грумінг',
+                basePrice: Number(dbAppointment.price) || 1300,
+                transferPrice: 100,
+                initialTransferEnabled: false,
+              });
+            } else {
+              setVisit(null);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load user data:', err);
       }
     }
 
@@ -100,11 +159,46 @@ export const MainPage: FC<MainPageProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [isLoggedIn]);
+  }, [isLoggedIn, initialVisit]);
 
   const showToast = (message: string) => {
     if (onToast && message) {
       onToast(message);
+    }
+  };
+
+  const handleCancelVisit = async () => {
+    if (!visit || isCancelling) return;
+
+    if (!visit.id) {
+      setVisit(null);
+      showToast('Візит скасовано');
+      return;
+    }
+
+    setIsCancelling(true);
+    try {
+      if (onCancelVisit) {
+        await onCancelVisit(visit.id);
+      } else {
+        const { error } = await supabase
+          .from('appointments')
+          .update({ status: 'cancelled' })
+          .eq('id', visit.id);
+
+        if (error) {
+          showToast(`Помилка скасування: ${error.message}`);
+          setIsCancelling(false);
+          return;
+        }
+      }
+      setVisit(null);
+      showToast('Візит скасовано');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Не вдалося скасувати візит';
+      showToast(`Помилка скасування: ${msg}`);
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -131,9 +225,10 @@ export const MainPage: FC<MainPageProps> = ({
 
         <VisitSection
           visit={visit}
+          isCancelling={isCancelling}
           onBookClick={() => showToast('')}
           onReschedule={() => showToast('')}
-          onCancel={() => showToast('')}
+          onCancel={handleCancelVisit}
         />
 
         <PromoBannersGrid

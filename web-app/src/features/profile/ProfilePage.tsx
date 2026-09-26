@@ -22,6 +22,7 @@ export interface ProfilePageProps {
   initialUser?: ProfileUser;
   initialVisit?: UpcomingVisitData | null;
   initialPets?: ProfilePet[];
+  onCancelVisit?: (visitId: string) => void | Promise<void>;
 }
 
 export const ProfilePage: FC<ProfilePageProps> = ({
@@ -36,6 +37,7 @@ export const ProfilePage: FC<ProfilePageProps> = ({
   initialUser,
   initialVisit,
   initialPets,
+  onCancelVisit,
 }) => {
   const [user, setUser] = useState<ProfileUser>(
     initialUser || {
@@ -52,6 +54,7 @@ export const ProfilePage: FC<ProfilePageProps> = ({
     initialVisit !== undefined ? initialVisit : null
   );
 
+  const [isCancelling, setIsCancelling] = useState(false);
   const [pets, setPets] = useState<ProfilePet[]>(initialPets || []);
 
   useEffect(() => {
@@ -189,6 +192,41 @@ export const ProfilePage: FC<ProfilePageProps> = ({
     }
   };
 
+  const handleCancelVisit = async () => {
+    if (!visit || isCancelling) return;
+
+    if (!visit.id) {
+      setVisit(null);
+      showToast('Візит скасовано');
+      return;
+    }
+
+    setIsCancelling(true);
+    try {
+      if (onCancelVisit) {
+        await onCancelVisit(visit.id);
+      } else {
+        const { error } = await supabase
+          .from('appointments')
+          .update({ status: 'cancelled' })
+          .eq('id', visit.id);
+
+        if (error) {
+          showToast(`Помилка скасування: ${error.message}`);
+          setIsCancelling(false);
+          return;
+        }
+      }
+      setVisit(null);
+      showToast('Візит скасовано');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Не вдалося скасувати візит';
+      showToast(`Помилка скасування: ${msg}`);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-surface-cream text-content-dark font-primary flex flex-col justify-between">
       <div className="flex-1 pb-16">
@@ -223,10 +261,8 @@ export const ProfilePage: FC<ProfilePageProps> = ({
           <div className="w-full flex flex-col lg:flex-row items-stretch justify-between gap-6">
             <ProfileUpcomingVisitCard
               visit={visit}
-              onCancel={() => {
-                setVisit(null);
-                showToast('Візит скасовано');
-              }}
+              isCancelling={isCancelling}
+              onCancel={handleCancelVisit}
               onReschedule={() => showToast('Перенесення візиту')}
             />
 

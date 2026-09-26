@@ -348,6 +348,191 @@ describe('Profile Feature Components', () => {
       fireEvent.click(screen.getByText('Способи оплати'));
       expect(handlePaymentMethodsClick).toHaveBeenCalledTimes(1);
     });
+
+    it('cancels visit via Supabase update and renders empty state on success', async () => {
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'usr-456' },
+          },
+        },
+        error: null,
+      } as never);
+
+      const eqMock = vi.fn().mockResolvedValue({ error: null });
+      const updateMock = vi.fn().mockReturnValue({
+        eq: eqMock,
+      });
+
+      vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: {
+                    full_name: 'Олена Петренко',
+                    phone: '+380 99 999 99 99',
+                  },
+                }),
+              }),
+            }),
+          } as never;
+        }
+
+        if (table === 'pets') {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: () => ({
+                  order: vi.fn().mockResolvedValue({
+                    data: [],
+                  }),
+                }),
+              }),
+            }),
+          } as never;
+        }
+
+        if (table === 'appointments') {
+          return {
+            select: () => ({
+              eq: () => ({
+                neq: () => ({
+                  gte: () => ({
+                    order: () => ({
+                      limit: () => ({
+                        maybeSingle: vi.fn().mockResolvedValue({
+                          data: {
+                            id: 'app-999',
+                            starts_at: '2026-10-15T14:00:00Z',
+                            price: 1500,
+                            status: 'confirmed',
+                            pet: { name: 'Рекс', species: 'dog' },
+                            master: { display_name: 'Іван Т.' },
+                            service: { name: 'Повний комплекс' },
+                          },
+                        }),
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
+            update: updateMock,
+          } as never;
+        }
+
+        return {} as never;
+      });
+
+      const handleToast = vi.fn();
+      await act(async () => {
+        render(<ProfilePage onToast={handleToast} />);
+      });
+
+      expect(screen.getByText('Повний комплекс')).toBeDefined();
+
+      const cancelBtn = screen.getByRole('button', { name: 'Скасувати' });
+      await act(async () => {
+        fireEvent.click(cancelBtn);
+      });
+
+      expect(updateMock).toHaveBeenCalledWith({ status: 'cancelled' });
+      expect(eqMock).toHaveBeenCalledWith('id', 'app-999');
+      expect(handleToast).toHaveBeenCalledWith('Візит скасовано');
+      expect(screen.getByText('Немає запланованих візитів')).toBeDefined();
+    });
+
+    it('shows error toast and preserves visit if Supabase cancellation fails', async () => {
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'usr-456' },
+          },
+        },
+        error: null,
+      } as never);
+
+      const eqMock = vi.fn().mockResolvedValue({ error: { message: 'State transition rejected' } });
+      const updateMock = vi.fn().mockReturnValue({
+        eq: eqMock,
+      });
+
+      vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: { full_name: 'Олена Петренко' },
+                }),
+              }),
+            }),
+          } as never;
+        }
+
+        if (table === 'pets') {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: () => ({
+                  order: vi.fn().mockResolvedValue({ data: [] }),
+                }),
+              }),
+            }),
+          } as never;
+        }
+
+        if (table === 'appointments') {
+          return {
+            select: () => ({
+              eq: () => ({
+                neq: () => ({
+                  gte: () => ({
+                    order: () => ({
+                      limit: () => ({
+                        maybeSingle: vi.fn().mockResolvedValue({
+                          data: {
+                            id: 'app-fail',
+                            starts_at: '2026-10-15T14:00:00Z',
+                            price: 1500,
+                            status: 'confirmed',
+                            pet: { name: 'Рекс', species: 'dog' },
+                            master: { display_name: 'Іван Т.' },
+                            service: { name: 'Повний комплекс' },
+                          },
+                        }),
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
+            update: updateMock,
+          } as never;
+        }
+
+        return {} as never;
+      });
+
+      const handleToast = vi.fn();
+      await act(async () => {
+        render(<ProfilePage onToast={handleToast} />);
+      });
+
+      expect(screen.getByText('Повний комплекс')).toBeDefined();
+
+      const cancelBtn = screen.getByRole('button', { name: 'Скасувати' });
+      await act(async () => {
+        fireEvent.click(cancelBtn);
+      });
+
+      expect(updateMock).toHaveBeenCalledWith({ status: 'cancelled' });
+      expect(eqMock).toHaveBeenCalledWith('id', 'app-fail');
+      expect(handleToast).toHaveBeenCalledWith('Помилка скасування: State transition rejected');
+      expect(screen.getByText('Повний комплекс')).toBeDefined();
+    });
   });
 
   describe('profile_utils', () => {

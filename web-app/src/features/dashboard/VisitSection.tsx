@@ -10,6 +10,7 @@ export interface VisitSectionProps {
   onBookClick?: () => void;
   onReschedule?: () => void;
   onCancel?: () => void;
+  isCancelling?: boolean;
   isLoggedIn?: boolean;
   className?: string;
 }
@@ -19,6 +20,7 @@ export const VisitSection: FC<VisitSectionProps> = ({
   onBookClick,
   onReschedule,
   onCancel,
+  isCancelling = false,
   className,
 }) => {
   if (!visit) {
@@ -55,6 +57,7 @@ export const VisitSection: FC<VisitSectionProps> = ({
 
   return (
     <UpcomingVisitCard
+      id={visit.id}
       dayOfWeek={visit.dayOfWeek}
       dayNumber={visit.dayNumber}
       timeSlot={visit.timeSlot}
@@ -65,6 +68,7 @@ export const VisitSection: FC<VisitSectionProps> = ({
       initialTransferEnabled={visit.initialTransferEnabled}
       onReschedule={onReschedule}
       onCancel={onCancel}
+      isCancelling={isCancelling}
       className={className}
     />
   );
