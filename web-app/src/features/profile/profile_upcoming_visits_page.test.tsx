@@ -242,4 +242,100 @@ describe('ProfileUpcomingVisitsPage', () => {
     fireEvent.click(bookButton);
     expect(handleBook).toHaveBeenCalledTimes(1);
   });
+
+  it('loads profile, pets, and upcoming appointments from Supabase on mount', async () => {
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'usr-999', user_metadata: { full_name: 'Олена' } },
+        },
+      },
+      error: null,
+    } as never);
+
+    vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: { full_name: 'Олена', avatar_url: null },
+              }),
+            }),
+          }),
+        } as never;
+      }
+
+      if (table === 'pets') {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                order: vi.fn().mockResolvedValue({
+                  data: [
+                    {
+                      id: 'pet-db-1',
+                      name: 'Рекс',
+                      species: 'dog',
+                      breed: 'Вівчарка',
+                      birth_date: '2024-01-01',
+                    },
+                  ],
+                }),
+              }),
+            }),
+          }),
+        } as never;
+      }
+
+      if (table === 'appointments') {
+        return {
+          select: () => ({
+            eq: () => ({
+              neq: () => ({
+                gte: () => ({
+                  order: vi.fn().mockResolvedValue({
+                    data: [
+                      {
+                        id: 'app-db-1',
+                        pet_id: 'pet-db-1',
+                        starts_at: '2026-10-15T14:00:00Z',
+                        price: 1500,
+                        status: 'confirmed',
+                        pet: { id: 'pet-db-1', name: 'Рекс', species: 'dog' },
+                        master: { display_name: 'Іван Т.' },
+                        service: { name: 'Повний комплекс' },
+                      },
+                    ],
+                  }),
+                }),
+              }),
+            }),
+          }),
+        } as never;
+      }
+
+      return {
+        select: () => ({
+          eq: () => ({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+          }),
+        }),
+      } as never;
+    });
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <ProfileUpcomingVisitsPage />
+        </MemoryRouter>
+      );
+    });
+
+    expect(screen.getByText('Показано 1 запланований візит')).toBeDefined();
+    expect(screen.getByTestId('upcoming-visit-item-app-db-1')).toBeDefined();
+    expect(screen.getByText('Повний комплекс')).toBeDefined();
+    expect(screen.getByText('Майстер: Іван Т.')).toBeDefined();
+    expect(screen.getByText('1 500 грн')).toBeDefined();
+  });
 });

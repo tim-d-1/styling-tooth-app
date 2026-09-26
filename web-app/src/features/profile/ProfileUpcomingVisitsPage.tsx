@@ -94,7 +94,7 @@ export const ProfileUpcomingVisitsPage: FC<ProfileUpcomingVisitsPageProps> = ({
       if (!initialPets) {
         const { data: dbPets } = await supabase
           .from('pets')
-          .select('id, name, species, breed, birth_date, avatar_url')
+          .select('id, name, species, breed, birth_date')
           .eq('owner_id', currentUserId)
           .eq('is_active', true)
           .order('name', { ascending: true });
@@ -106,7 +106,7 @@ export const ProfileUpcomingVisitsPage: FC<ProfileUpcomingVisitsPageProps> = ({
               name: p.name,
               species: p.species === 'dog' ? 'Собака' : p.species === 'cat' ? 'Кіт' : 'Інше',
               breed: p.breed || null,
-              avatarUrl: p.avatar_url || null,
+              avatarUrl: null,
             }))
           );
         }
@@ -117,10 +117,11 @@ export const ProfileUpcomingVisitsPage: FC<ProfileUpcomingVisitsPageProps> = ({
           .from('appointments')
           .select(`
             id,
+            pet_id,
             starts_at,
             price,
             status,
-            pet:pets(id, name, species, avatar_url),
+            pet:pets(id, name, species),
             master:masters(display_name),
             service:services!appointments_service_id_fkey(name)
           `)
@@ -137,9 +138,9 @@ export const ProfileUpcomingVisitsPage: FC<ProfileUpcomingVisitsPageProps> = ({
 
             return {
               id: appt.id,
-              petId: petRec?.id || undefined,
+              petId: appt.pet_id || petRec?.id || undefined,
               petName: petRec?.name || 'Улюбленець',
-              petAvatarUrl: petRec?.avatar_url || null,
+              petAvatarUrl: null,
               serviceTitle: serviceRec?.name || 'Грумінг комплекс',
               masterName: masterRec?.display_name || 'Майстер салону',
               price: Number(appt.price) || 0,
