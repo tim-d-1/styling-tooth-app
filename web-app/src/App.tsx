@@ -18,6 +18,7 @@ import MainPage from '@/features/dashboard/MainPage';
 import ProfilePage from '@/features/profile/ProfilePage';
 import PersonalDataPage from '@/features/profile/PersonalDataPage';
 import MyAddressesPage from '@/features/profile/MyAddressesPage';
+import PaymentMethodsPage from '@/features/profile/PaymentMethodsPage';
 import { supabase } from '@/lib/supabase';
 
 export function AppRoutes() {
@@ -188,6 +189,7 @@ export function AppRoutes() {
               onPetClick={(pet) => navigate(`/pets/${pet.id}`)}
               onPersonalInfoClick={() => navigate('/profile/personal-data')}
               onAddressesClick={() => navigate('/profile/addresses')}
+              onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
               onToast={showToast}
             />
           }
@@ -200,7 +202,7 @@ export function AppRoutes() {
               onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
               onProfileClick={() => navigate('/profile')}
               onAddressesClick={() => navigate('/profile/addresses')}
-              onPaymentMethodsClick={() => showToast('Способи оплати')}
+              onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
               onLogout={() => {
                 setIsLoggedIn(false);
                 navigate('/login');
@@ -218,7 +220,7 @@ export function AppRoutes() {
               onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
               onProfileClick={() => navigate('/profile')}
               onAddressesClick={() => navigate('/profile/addresses')}
-              onPaymentMethodsClick={() => showToast('Способи оплати')}
+              onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
               onLogout={() => {
                 setIsLoggedIn(false);
                 navigate('/login');
@@ -236,7 +238,7 @@ export function AppRoutes() {
               onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
               onProfileClick={() => navigate('/profile')}
               onPersonalDataClick={() => navigate('/profile/personal-data')}
-              onPaymentMethodsClick={() => showToast('Способи оплати')}
+              onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
               onLogout={() => {
                 setIsLoggedIn(false);
                 navigate('/login');
@@ -254,7 +256,7 @@ export function AppRoutes() {
               onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
               onProfileClick={() => navigate('/profile')}
               onPersonalDataClick={() => navigate('/profile/personal-data')}
-              onPaymentMethodsClick={() => showToast('Способи оплати')}
+              onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
               onLogout={() => {
                 setIsLoggedIn(false);
                 navigate('/login');
@@ -272,7 +274,61 @@ export function AppRoutes() {
               onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
               onProfileClick={() => navigate('/profile')}
               onPersonalDataClick={() => navigate('/profile/personal-data')}
-              onPaymentMethodsClick={() => showToast('Способи оплати')}
+              onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
+              onLogout={() => {
+                setIsLoggedIn(false);
+                navigate('/login');
+                showToast('Ви вийшли з акаунту');
+              }}
+              onToast={showToast}
+            />
+          }
+        />
+
+        <Route
+          path="/profile/payment-methods"
+          element={
+            <PaymentMethodsPage
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onProfileClick={() => navigate('/profile')}
+              onPersonalDataClick={() => navigate('/profile/personal-data')}
+              onAddressesClick={() => navigate('/profile/addresses')}
+              onLogout={() => {
+                setIsLoggedIn(false);
+                navigate('/login');
+                showToast('Ви вийшли з акаунту');
+              }}
+              onToast={showToast}
+            />
+          }
+        />
+
+        <Route
+          path="/profile/payments"
+          element={
+            <PaymentMethodsPage
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onProfileClick={() => navigate('/profile')}
+              onPersonalDataClick={() => navigate('/profile/personal-data')}
+              onAddressesClick={() => navigate('/profile/addresses')}
+              onLogout={() => {
+                setIsLoggedIn(false);
+                navigate('/login');
+                showToast('Ви вийшли з акаунту');
+              }}
+              onToast={showToast}
+            />
+          }
+        />
+
+        <Route
+          path="/profile/personal-data/payment-methods"
+          element={
+            <PaymentMethodsPage
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onProfileClick={() => navigate('/profile')}
+              onPersonalDataClick={() => navigate('/profile/personal-data')}
+              onAddressesClick={() => navigate('/profile/addresses')}
               onLogout={() => {
                 setIsLoggedIn(false);
                 navigate('/login');

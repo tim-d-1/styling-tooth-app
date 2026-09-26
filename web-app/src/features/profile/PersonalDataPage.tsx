@@ -138,7 +138,7 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
     if (onPaymentMethodsClick) {
       onPaymentMethodsClick();
     } else {
-      showToast('Способи оплати');
+      navigate('/profile/payment-methods');
     }
   };
 

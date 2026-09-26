@@ -54,3 +54,23 @@ export interface UserAddress {
   isDefaultTransfer: boolean;
 }
 
+export interface SavedPaymentMethod {
+  id: string;
+  type: 'apple_pay' | 'card' | 'google_pay';
+  title: string;
+  subtitle?: string;
+  isDefault: boolean;
+  last4?: string;
+  expiry?: string;
+}
+
+export interface PaymentTransaction {
+  id: string;
+  title: string;
+  dateFormatted: string;
+  amount: number;
+  currency?: string;
+  serviceType?: 'spa' | 'grooming' | 'hygiene' | string;
+  receiptUrl?: string;
+}
+

@@ -339,6 +339,15 @@ describe('Profile Feature Components', () => {
       fireEvent.click(screen.getByText('Мої адреси'));
       expect(handleAddressesClick).toHaveBeenCalledTimes(1);
     });
+
+    it('calls onPaymentMethodsClick when payment_methods setting card is clicked', async () => {
+      const handlePaymentMethodsClick = vi.fn();
+      await act(async () => {
+        render(<ProfilePage onPaymentMethodsClick={handlePaymentMethodsClick} />);
+      });
+      fireEvent.click(screen.getByText('Способи оплати'));
+      expect(handlePaymentMethodsClick).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('profile_utils', () => {

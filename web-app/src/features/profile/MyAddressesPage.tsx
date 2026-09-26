@@ -146,7 +146,7 @@ export const MyAddressesPage: FC<MyAddressesPageProps> = ({
     if (onPaymentMethodsClick) {
       onPaymentMethodsClick();
     } else {
-      showToast('Способи оплати');
+      navigate('/profile/payment-methods');
     }
   };
 

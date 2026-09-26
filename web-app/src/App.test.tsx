@@ -392,4 +392,36 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByTestId('pet-taxi-map-card')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Обрати адресу' })).toBeDefined();
   });
+
+  it('renders payment methods page via pathname /profile/payment-methods', async () => {
+    window.history.pushState(null, '', '/profile/payment-methods');
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-profile-7', email: 'katya@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-12',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Способи оплати' })
+    ).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'Збережені способи' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'Додати банківську картку' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'Останні транзакції' })).toBeDefined();
+  });
 });
