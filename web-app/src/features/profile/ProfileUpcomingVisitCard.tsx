@@ -7,6 +7,7 @@ export interface ProfileUpcomingVisitCardProps {
   onReschedule?: () => void;
   onCancel?: () => void;
   onBookClick?: () => void;
+  onViewAllUpcoming?: () => void;
   isCancelling?: boolean;
 }
 
@@ -14,6 +15,7 @@ export const ProfileUpcomingVisitCard: FC<ProfileUpcomingVisitCardProps> = ({
   visit,
   onReschedule,
   onCancel,
+  onViewAllUpcoming,
   isCancelling = false,
 }) => {
   const [petAvatarFailed, setPetAvatarFailed] = useState(false);
@@ -29,12 +31,23 @@ export const ProfileUpcomingVisitCard: FC<ProfileUpcomingVisitCardProps> = ({
           Найближчий візит
         </h2>
 
-        {visit && (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-soft-blue text-white text-xs font-primary">
-            <Icon name="fi-rr-clock" size={12} className="text-white" />
-            <span>{visit.scheduledAtFormatted}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onViewAllUpcoming}
+            className="font-primary text-xs sm:text-sm font-semibold text-terracotta hover:text-terracotta-hover transition-colors inline-flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0 outline-none"
+          >
+            <span>Всі заплановані візити</span>
+            <Icon name="fi-rr-arrow-right" size={12} />
+          </button>
+
+          {visit && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-soft-blue text-white text-xs font-primary">
+              <Icon name="fi-rr-clock" size={12} className="text-white" />
+              <span>{visit.scheduledAtFormatted}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {visit ? (

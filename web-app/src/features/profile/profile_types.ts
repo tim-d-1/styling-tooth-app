@@ -9,12 +9,14 @@ export interface ProfileUser {
 
 export interface UpcomingVisitData {
   id: string;
+  petId?: string;
   petName: string;
   petAvatarUrl?: string | null;
   serviceTitle: string;
   masterName: string;
   price: number;
   scheduledAtFormatted: string;
+  startsAt?: string;
 }
 
 export interface ProfilePet {

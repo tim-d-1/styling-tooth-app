@@ -425,12 +425,43 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Останні транзакції' })).toBeDefined();
   });
 
+  it('renders upcoming visits page via pathname /profile/upcoming-visits', async () => {
+    window.history.pushState(null, '', '/profile/upcoming-visits');
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-profile-8', email: 'katya@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-13',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Заплановані візити' })
+    ).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'Підсумок записів' })).toBeDefined();
+  });
+
   describe('Unauthenticated Route Gating & Redirects', () => {
     const privatePaths = [
       '/profile',
       '/profile/personal-data',
       '/profile/addresses',
       '/profile/payment-methods',
+      '/profile/upcoming-visits',
       '/pets/p-test-1',
       '/pets/p-test-1/schedule',
       '/pets/p-test-1/history',

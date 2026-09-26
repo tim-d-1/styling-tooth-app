@@ -19,6 +19,7 @@ import ProfilePage from '@/features/profile/ProfilePage';
 import PersonalDataPage from '@/features/profile/PersonalDataPage';
 import MyAddressesPage from '@/features/profile/MyAddressesPage';
 import PaymentMethodsPage from '@/features/profile/PaymentMethodsPage';
+import ProfileUpcomingVisitsPage from '@/features/profile/ProfileUpcomingVisitsPage';
 import { supabase } from '@/lib/supabase';
 
 interface ProtectedRouteProps {
@@ -237,6 +238,7 @@ export function AppRoutes() {
                 onPersonalInfoClick={() => navigate('/profile/personal-data')}
                 onAddressesClick={() => navigate('/profile/addresses')}
                 onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
+                onViewAllUpcomingClick={() => navigate('/profile/upcoming-visits')}
                 onToast={showToast}
               />
             </ProtectedRoute>
@@ -537,6 +539,20 @@ export function AppRoutes() {
                 onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
                 onProfileClick={() => navigate('/profile')}
                 onPetsClick={() => navigate('/profile')}
+                onBookClick={() => navigate('/main')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/profile/upcoming-visits"
+          element={
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <ProfileUpcomingVisitsPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
                 onBookClick={() => navigate('/main')}
                 onToast={showToast}
               />

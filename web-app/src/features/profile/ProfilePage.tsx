@@ -18,6 +18,7 @@ export interface ProfilePageProps {
   onPersonalInfoClick?: () => void;
   onAddressesClick?: () => void;
   onPaymentMethodsClick?: () => void;
+  onViewAllUpcomingClick?: () => void;
   onToast?: (message: string) => void;
   initialUser?: ProfileUser;
   initialVisit?: UpcomingVisitData | null;
@@ -33,12 +34,18 @@ export const ProfilePage: FC<ProfilePageProps> = ({
   onPersonalInfoClick,
   onAddressesClick,
   onPaymentMethodsClick,
+  onViewAllUpcomingClick,
   onToast,
   initialUser,
   initialVisit,
   initialPets,
   onCancelVisit,
 }) => {
+  const handleViewAllUpcoming = () => {
+    if (onViewAllUpcomingClick) {
+      onViewAllUpcomingClick();
+    }
+  };
   const [user, setUser] = useState<ProfileUser>(
     initialUser || {
       name: '',
@@ -264,6 +271,7 @@ export const ProfilePage: FC<ProfilePageProps> = ({
               isCancelling={isCancelling}
               onCancel={handleCancelVisit}
               onReschedule={() => showToast('Перенесення візиту')}
+              onViewAllUpcoming={handleViewAllUpcoming}
             />
 
             <LoyaltyCard

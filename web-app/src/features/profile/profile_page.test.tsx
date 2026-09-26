@@ -82,6 +82,17 @@ describe('Profile Feature Components', () => {
       ).toBeDefined();
       expect(screen.queryByRole('button', { name: 'Записатися' })).toBeNull();
     });
+
+    it('renders view all upcoming visits link and handles click', () => {
+      const handleViewAll = vi.fn();
+      render(<ProfileUpcomingVisitCard visit={mockVisit} onViewAllUpcoming={handleViewAll} />);
+
+      const viewAllButton = screen.getByRole('button', { name: /Всі заплановані візити/i });
+      expect(viewAllButton).toBeDefined();
+
+      fireEvent.click(viewAllButton);
+      expect(handleViewAll).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('LoyaltyCard', () => {
