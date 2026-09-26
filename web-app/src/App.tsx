@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -21,8 +21,40 @@ import MyAddressesPage from '@/features/profile/MyAddressesPage';
 import PaymentMethodsPage from '@/features/profile/PaymentMethodsPage';
 import { supabase } from '@/lib/supabase';
 
+interface ProtectedRouteProps {
+  isLoggedIn: boolean;
+  isAuthLoading: boolean;
+  children: ReactNode;
+}
+
+export function ProtectedRoute({
+  isLoggedIn,
+  isAuthLoading,
+  children,
+}: ProtectedRouteProps) {
+  const location = useLocation();
+
+  if (isAuthLoading) {
+    return <div className="min-h-screen bg-surface-cream" />;
+  }
+
+  if (!isLoggedIn) {
+    const returnTo = location.pathname + location.search;
+    return (
+      <Navigate
+        to={`/login?from=${encodeURIComponent(returnTo)}`}
+        state={{ from: returnTo }}
+        replace
+      />
+    );
+  }
+
+  return <>{children}</>;
+}
+
 export function AppRoutes() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,16 +68,23 @@ export function AppRoutes() {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const authed = Boolean(session?.user);
-      setIsLoggedIn(authed);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        const authed = Boolean(session?.user);
+        setIsLoggedIn(authed);
+        setIsAuthLoading(false);
+      })
+      .catch(() => {
+        setIsAuthLoading(false);
+      });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       const authed = Boolean(session?.user);
       setIsLoggedIn(authed);
+      setIsAuthLoading(false);
     });
 
     return () => {
@@ -118,7 +157,7 @@ export function AppRoutes() {
         <Route
           path="/main"
           element={
-            isLoggedIn ? (
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
               <MainPage
                 isLoggedIn={isLoggedIn}
                 onLoginClick={() => navigate('/login')}
@@ -126,39 +165,46 @@ export function AppRoutes() {
                 onProfileClick={() => navigate('/profile')}
                 onToast={showToast}
               />
-            ) : (
-              <Navigate to="/" replace />
-            )
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/login"
           element={
-            <LoginPage
-              onBack={() => navigate('/')}
-              onSuccess={() => {
-                setIsLoggedIn(true);
-                navigate('/main');
-                showToast('Успішний вхід у систему');
-              }}
-              onNavigateRegister={() => navigate('/register')}
-            />
+            isLoggedIn ? (
+              <Navigate to={getReturnPath('/main')} replace />
+            ) : (
+              <LoginPage
+                onBack={() => navigate('/')}
+                onSuccess={() => {
+                  setIsLoggedIn(true);
+                  const target = getReturnPath('/main');
+                  navigate(target, { replace: true });
+                  showToast('Успішний вхід у систему');
+                }}
+                onNavigateRegister={() => navigate('/register')}
+              />
+            )
           }
         />
 
         <Route
           path="/register"
           element={
-            <RegisterPage
-              onBack={() => navigate('/')}
-              onSuccess={() => {
-                setIsLoggedIn(true);
-                navigate('/pet-register');
-                showToast('Успішна реєстрація! Додайте вашого улюбленця');
-              }}
-              onNavigateLogin={() => navigate('/login')}
-            />
+            isLoggedIn ? (
+              <Navigate to={getReturnPath('/main')} replace />
+            ) : (
+              <RegisterPage
+                onBack={() => navigate('/')}
+                onSuccess={() => {
+                  setIsLoggedIn(true);
+                  navigate('/pet-register');
+                  showToast('Успішна реєстрація! Додайте вашого улюбленця');
+                }}
+                onNavigateLogin={() => navigate('/login')}
+              />
+            )
           }
         />
 
@@ -180,285 +226,321 @@ export function AppRoutes() {
         <Route
           path="/profile"
           element={
-            <ProfilePage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onBookClick={() => navigate('/main')}
-              onAddPetClick={() =>
-                navigate('/pet-register', { state: { from: '/profile' } })
-              }
-              onPetClick={(pet) => navigate(`/pets/${pet.id}`)}
-              onPersonalInfoClick={() => navigate('/profile/personal-data')}
-              onAddressesClick={() => navigate('/profile/addresses')}
-              onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <ProfilePage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onBookClick={() => navigate('/main')}
+                onAddPetClick={() =>
+                  navigate('/pet-register', { state: { from: '/profile' } })
+                }
+                onPetClick={(pet) => navigate(`/pets/${pet.id}`)}
+                onPersonalInfoClick={() => navigate('/profile/personal-data')}
+                onAddressesClick={() => navigate('/profile/addresses')}
+                onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/profile/personal-data"
           element={
-            <PersonalDataPage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onAddressesClick={() => navigate('/profile/addresses')}
-              onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
-              onLogout={() => {
-                setIsLoggedIn(false);
-                navigate('/login');
-                showToast('Ви вийшли з акаунту');
-              }}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <PersonalDataPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onAddressesClick={() => navigate('/profile/addresses')}
+                onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
+                onLogout={() => {
+                  setIsLoggedIn(false);
+                  navigate('/login');
+                  showToast('Ви вийшли з акаунту');
+                }}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/profile/personal-info"
           element={
-            <PersonalDataPage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onAddressesClick={() => navigate('/profile/addresses')}
-              onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
-              onLogout={() => {
-                setIsLoggedIn(false);
-                navigate('/login');
-                showToast('Ви вийшли з акаунту');
-              }}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <PersonalDataPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onAddressesClick={() => navigate('/profile/addresses')}
+                onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
+                onLogout={() => {
+                  setIsLoggedIn(false);
+                  navigate('/login');
+                  showToast('Ви вийшли з акаунту');
+                }}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/profile/addresses"
           element={
-            <MyAddressesPage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onPersonalDataClick={() => navigate('/profile/personal-data')}
-              onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
-              onLogout={() => {
-                setIsLoggedIn(false);
-                navigate('/login');
-                showToast('Ви вийшли з акаунту');
-              }}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <MyAddressesPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onPersonalDataClick={() => navigate('/profile/personal-data')}
+                onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
+                onLogout={() => {
+                  setIsLoggedIn(false);
+                  navigate('/login');
+                  showToast('Ви вийшли з акаунту');
+                }}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/profile/my-addresses"
           element={
-            <MyAddressesPage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onPersonalDataClick={() => navigate('/profile/personal-data')}
-              onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
-              onLogout={() => {
-                setIsLoggedIn(false);
-                navigate('/login');
-                showToast('Ви вийшли з акаунту');
-              }}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <MyAddressesPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onPersonalDataClick={() => navigate('/profile/personal-data')}
+                onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
+                onLogout={() => {
+                  setIsLoggedIn(false);
+                  navigate('/login');
+                  showToast('Ви вийшли з акаунту');
+                }}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/profile/personal-data/addresses"
           element={
-            <MyAddressesPage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onPersonalDataClick={() => navigate('/profile/personal-data')}
-              onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
-              onLogout={() => {
-                setIsLoggedIn(false);
-                navigate('/login');
-                showToast('Ви вийшли з акаунту');
-              }}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <MyAddressesPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onPersonalDataClick={() => navigate('/profile/personal-data')}
+                onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
+                onLogout={() => {
+                  setIsLoggedIn(false);
+                  navigate('/login');
+                  showToast('Ви вийшли з акаунту');
+                }}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/profile/payment-methods"
           element={
-            <PaymentMethodsPage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onPersonalDataClick={() => navigate('/profile/personal-data')}
-              onAddressesClick={() => navigate('/profile/addresses')}
-              onLogout={() => {
-                setIsLoggedIn(false);
-                navigate('/login');
-                showToast('Ви вийшли з акаунту');
-              }}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <PaymentMethodsPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onPersonalDataClick={() => navigate('/profile/personal-data')}
+                onAddressesClick={() => navigate('/profile/addresses')}
+                onLogout={() => {
+                  setIsLoggedIn(false);
+                  navigate('/login');
+                  showToast('Ви вийшли з акаунту');
+                }}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/profile/payments"
           element={
-            <PaymentMethodsPage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onPersonalDataClick={() => navigate('/profile/personal-data')}
-              onAddressesClick={() => navigate('/profile/addresses')}
-              onLogout={() => {
-                setIsLoggedIn(false);
-                navigate('/login');
-                showToast('Ви вийшли з акаунту');
-              }}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <PaymentMethodsPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onPersonalDataClick={() => navigate('/profile/personal-data')}
+                onAddressesClick={() => navigate('/profile/addresses')}
+                onLogout={() => {
+                  setIsLoggedIn(false);
+                  navigate('/login');
+                  showToast('Ви вийшли з акаунту');
+                }}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/profile/personal-data/payment-methods"
           element={
-            <PaymentMethodsPage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onPersonalDataClick={() => navigate('/profile/personal-data')}
-              onAddressesClick={() => navigate('/profile/addresses')}
-              onLogout={() => {
-                setIsLoggedIn(false);
-                navigate('/login');
-                showToast('Ви вийшли з акаунту');
-              }}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <PaymentMethodsPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onPersonalDataClick={() => navigate('/profile/personal-data')}
+                onAddressesClick={() => navigate('/profile/addresses')}
+                onLogout={() => {
+                  setIsLoggedIn(false);
+                  navigate('/login');
+                  showToast('Ви вийшли з акаунту');
+                }}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/pets/:petId"
           element={
-            <PetDetailPage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onAddPetClick={() =>
-                navigate('/pet-register', { state: { from: location.pathname } })
-              }
-              onBookClick={() => navigate('/main')}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <PetDetailPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onAddPetClick={() =>
+                  navigate('/pet-register', { state: { from: location.pathname } })
+                }
+                onBookClick={() => navigate('/main')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/pets"
           element={
-            <PetDetailPage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onAddPetClick={() =>
-                navigate('/pet-register', { state: { from: '/pets' } })
-              }
-              onBookClick={() => navigate('/main')}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <PetDetailPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onAddPetClick={() =>
+                  navigate('/pet-register', { state: { from: '/pets' } })
+                }
+                onBookClick={() => navigate('/main')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/profile/pets/:petId"
           element={
-            <PetDetailPage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onAddPetClick={() =>
-                navigate('/pet-register', { state: { from: location.pathname } })
-              }
-              onBookClick={() => navigate('/main')}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <PetDetailPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onAddPetClick={() =>
+                  navigate('/pet-register', { state: { from: location.pathname } })
+                }
+                onBookClick={() => navigate('/main')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/pets/:petId/schedule"
           element={
-            <PetCareSchedulePage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onPetsClick={() => navigate('/profile')}
-              onBookClick={() => navigate('/main')}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <PetCareSchedulePage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onPetsClick={() => navigate('/profile')}
+                onBookClick={() => navigate('/main')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/pets/schedule"
           element={
-            <PetCareSchedulePage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onPetsClick={() => navigate('/profile')}
-              onBookClick={() => navigate('/main')}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <PetCareSchedulePage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onPetsClick={() => navigate('/profile')}
+                onBookClick={() => navigate('/main')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/profile/pets/:petId/schedule"
           element={
-            <PetCareSchedulePage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onPetsClick={() => navigate('/profile')}
-              onBookClick={() => navigate('/main')}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <PetCareSchedulePage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onPetsClick={() => navigate('/profile')}
+                onBookClick={() => navigate('/main')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/pets/:petId/history"
           element={
-            <PetProcedureHistoryPage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onPetsClick={() => navigate('/profile')}
-              onBookClick={() => navigate('/main')}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <PetProcedureHistoryPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onPetsClick={() => navigate('/profile')}
+                onBookClick={() => navigate('/main')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/pets/history"
           element={
-            <PetProcedureHistoryPage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onPetsClick={() => navigate('/profile')}
-              onBookClick={() => navigate('/main')}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <PetProcedureHistoryPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onPetsClick={() => navigate('/profile')}
+                onBookClick={() => navigate('/main')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/profile/pets/:petId/history"
           element={
-            <PetProcedureHistoryPage
-              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-              onProfileClick={() => navigate('/profile')}
-              onPetsClick={() => navigate('/profile')}
-              onBookClick={() => navigate('/main')}
-              onToast={showToast}
-            />
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <PetProcedureHistoryPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onPetsClick={() => navigate('/profile')}
+                onBookClick={() => navigate('/main')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
           }
         />
 

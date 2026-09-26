@@ -424,4 +424,137 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Додати банківську картку' })).toBeDefined();
     expect(screen.getByRole('heading', { level: 2, name: 'Останні транзакції' })).toBeDefined();
   });
+
+  describe('Unauthenticated Route Gating & Redirects', () => {
+    const privatePaths = [
+      '/profile',
+      '/profile/personal-data',
+      '/profile/addresses',
+      '/profile/payment-methods',
+      '/pets/p-test-1',
+      '/pets/p-test-1/schedule',
+      '/pets/p-test-1/history',
+    ];
+
+    for (const testPath of privatePaths) {
+      it(`redirects unauthenticated guest from ${testPath} to /login with returnTo query param`, async () => {
+        window.history.pushState(null, '', testPath);
+        vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+          data: { session: null },
+          error: null,
+        } as never);
+        vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+          data: {
+            subscription: {
+              id: `sub-unauth-${testPath}`,
+              callback: vi.fn(),
+              unsubscribe: vi.fn(),
+            },
+          },
+        } as never);
+
+        await act(async () => {
+          render(<App />);
+        });
+
+        expect(window.location.pathname).toBe('/login');
+        expect(window.location.search).toBe(`?from=${encodeURIComponent(testPath)}`);
+        expect(screen.getByRole('heading', { level: 1, name: 'Вхід' })).toBeDefined();
+      });
+    }
+
+    it('redirects authenticated user from /login back to /main or returnTo path', async () => {
+      window.history.pushState(null, '', '/login?from=/profile');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'authed-usr-1', email: 'authed@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-authed-login',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(window.location.pathname).toBe('/profile');
+    });
+
+    it('redirects authenticated user from /register to /main', async () => {
+      window.history.pushState(null, '', '/register');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'authed-usr-2', email: 'authed2@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-authed-register',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(window.location.pathname).toBe('/main');
+    });
+
+    it('navigates to returnTo path on successful login', async () => {
+      window.history.pushState(null, '', '/login?from=/profile/addresses');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-login-flow',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+      vi.spyOn(supabase.auth, 'signInWithPassword').mockResolvedValue({
+        data: {
+          session: { user: { id: 'usr-flow', email: 'flow@test.com' } },
+          user: { id: 'usr-flow', email: 'flow@test.com' },
+        },
+        error: null,
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      const idInput = screen.getByLabelText('Email/номер телефону');
+      const pwdInput = screen.getByLabelText('Пароль');
+      const submitBtn = screen.getByRole('button', { name: 'Далі' });
+
+      await act(async () => {
+        fireEvent.change(idInput, { target: { value: 'flow@test.com' } });
+        fireEvent.change(pwdInput, { target: { value: 'password123' } });
+        fireEvent.click(submitBtn);
+      });
+
+      expect(window.location.pathname).toBe('/profile/addresses');
+    });
+  });
 });
