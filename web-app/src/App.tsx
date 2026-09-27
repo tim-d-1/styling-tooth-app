@@ -6,6 +6,7 @@ import {
   Navigate,
   useNavigate,
   useLocation,
+  useParams,
 } from 'react-router-dom';
 import LoginPage from '@/features/auth/LoginPage';
 import RegisterPage from '@/features/auth/RegisterPage';
@@ -22,6 +23,7 @@ import PaymentMethodsPage from '@/features/profile/PaymentMethodsPage';
 import ProfileUpcomingVisitsPage from '@/features/profile/ProfileUpcomingVisitsPage';
 import LoyaltyProgramPage from '@/features/profile/LoyaltyProgramPage';
 import QuickSchedulePage from '@/features/schedule/QuickSchedulePage';
+import ArticleDetailPage from '@/features/articles/ArticleDetailPage';
 import ScrollToTop from '@/components/layout/ScrollToTop';
 import { supabase } from '@/lib/supabase';
 
@@ -54,6 +56,29 @@ export function ProtectedRoute({
   }
 
   return <>{children}</>;
+}
+
+function ArticleRouteWrapper({
+  isLoggedIn,
+  onToast,
+}: {
+  isLoggedIn: boolean;
+  onToast: (msg: string) => void;
+}) {
+  const { articleId } = useParams();
+  const navigate = useNavigate();
+
+  return (
+    <ArticleDetailPage
+      articleId={articleId}
+      isLoggedIn={isLoggedIn}
+      onBackClick={() => navigate(-1)}
+      onLoginClick={() => navigate('/login')}
+      onRegisterClick={() => navigate('/register')}
+      onProfileClick={() => navigate('/profile')}
+      onToast={onToast}
+    />
+  );
 }
 
 export function AppRoutes() {
@@ -197,6 +222,33 @@ export function AppRoutes() {
         />
 
         <Route
+          path="/articles/:articleId"
+          element={
+            <ArticleRouteWrapper
+              isLoggedIn={isLoggedIn}
+              onToast={showToast}
+            />
+          }
+        />
+        <Route
+          path="/articles"
+          element={<Navigate to="/articles/shampoo-guide" replace />}
+        />
+        <Route
+          path="/advice/:articleId"
+          element={
+            <ArticleRouteWrapper
+              isLoggedIn={isLoggedIn}
+              onToast={showToast}
+            />
+          }
+        />
+        <Route
+          path="/advice"
+          element={<Navigate to="/articles/shampoo-guide" replace />}
+        />
+
+        <Route
           path="/main"
           element={
             <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
@@ -205,6 +257,7 @@ export function AppRoutes() {
                 onLoginClick={() => navigate('/login')}
                 onRegisterClick={() => navigate('/register')}
                 onProfileClick={() => navigate('/profile')}
+                onArticleClick={(articleId) => navigate(`/articles/${articleId}`)}
                 onToast={showToast}
               />
             </ProtectedRoute>

@@ -41,6 +41,7 @@ export interface MainPageProps {
   onToast?: (message: string) => void;
   initialVisit?: VisitData | null;
   onCancelVisit?: (visitId: string) => void | Promise<void>;
+  onArticleClick?: (articleId: string) => void;
 }
 
 export const MainPage: FC<MainPageProps> = ({
@@ -51,6 +52,7 @@ export const MainPage: FC<MainPageProps> = ({
   onToast,
   initialVisit,
   onCancelVisit,
+  onArticleClick,
 }) => {
   const [visit, setVisit] = useState<VisitData | null>(
     initialVisit !== undefined ? initialVisit : null
@@ -247,9 +249,13 @@ export const MainPage: FC<MainPageProps> = ({
 
         <ExpertAdviceGrid
           articles={EXPERT_ARTICLES}
-          onArticleClick={(articleId) =>
-            showToast(`Відкрито статтю: ${articleId}`)
-          }
+          onArticleClick={(articleId) => {
+            if (onArticleClick) {
+              onArticleClick(articleId);
+            } else {
+              showToast(`Відкрито статтю: ${articleId}`);
+            }
+          }}
         />
       </div>
 

@@ -488,5 +488,21 @@ describe('Main Page Components', () => {
       expect(handleToast).toHaveBeenCalledWith('Візит скасовано');
       expect(screen.getByText('Немає активних записів')).toBeDefined();
     });
+
+    it('invokes onArticleClick when expert advice card is clicked', () => {
+      const handleArticleClick = vi.fn();
+      render(
+        <MainPage
+          isLoggedIn={false}
+          onArticleClick={handleArticleClick}
+        />
+      );
+
+      const shampooBtn = screen.getByRole('button', {
+        name: /ЯК ОБРАТИ ПРАВИЛЬНИЙ ШАМПУНЬ\?/i,
+      });
+      fireEvent.click(shampooBtn);
+      expect(handleArticleClick).toHaveBeenCalledWith('shampoo-guide');
+    });
   });
 });

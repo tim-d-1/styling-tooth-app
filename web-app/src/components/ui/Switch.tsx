@@ -42,7 +42,7 @@ export const Switch: FC<SwitchProps> = ({
         <span
           className={[
             'ui-switch__handle w-6 h-6 rounded-full bg-white shadow-xs transition-transform duration-150',
-            checked ? 'ui-switch__handle--checked translate-x-6' : 'translate-x-0',
+            checked ? 'ui-switch__handle--checked' : 'translate-x-0',
           ].join(' ')}
         />
       </button>

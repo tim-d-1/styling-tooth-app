@@ -731,5 +731,81 @@ describe('App Root and Auth Gating', () => {
       const backBtn = screen.getByRole('button', { name: 'Назад' });
       expect(backBtn).toBeDefined();
     });
+
+    it('renders article page directly via /articles/shampoo-guide and supports back navigation', async () => {
+      window.history.pushState(null, '', '/articles/shampoo-guide');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-article-direct',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(
+        await screen.findByRole('heading', { level: 1, name: 'Як обрати правильний шампунь?' })
+      ).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Назад' })).toBeDefined();
+      expect(screen.getByText('Оцініть, наскільки корисною була ця інформація')).toBeDefined();
+    });
+
+    it('navigates to article page when clicking article from main page', async () => {
+      const createChain = () => {
+        const chain: Record<string, unknown> = {};
+        chain.select = vi.fn(() => chain);
+        chain.eq = vi.fn(() => chain);
+        chain.neq = vi.fn(() => chain);
+        chain.gte = vi.fn(() => chain);
+        chain.order = vi.fn(() => chain);
+        chain.limit = vi.fn(() => chain);
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        chain.single = vi.fn().mockResolvedValue({ data: null, error: null });
+        return chain;
+      };
+      vi.spyOn(supabase, 'from').mockImplementation(() => createChain() as never);
+
+      window.history.pushState(null, '', '/main');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'user-art-nav', email: 'user@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-art-nav',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      const articleBtn = await screen.findByRole('button', {
+        name: /ЯК ОБРАТИ ПРАВИЛЬНИЙ ШАМПУНЬ\?/i,
+      });
+      await act(async () => {
+        fireEvent.click(articleBtn);
+      });
+
+      expect(
+        await screen.findByRole('heading', { level: 1, name: 'Як обрати правильний шампунь?' })
+      ).toBeDefined();
+    });
   });
 });

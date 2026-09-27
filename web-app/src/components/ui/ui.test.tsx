@@ -401,6 +401,14 @@ describe('UI Component Library', () => {
       expect(handleChange).toHaveBeenCalledWith(4);
     });
 
+    it('handles Rating with paw variant', () => {
+      const handleChange = vi.fn();
+      render(<Rating value={2} variant="paw" readOnly={false} onChange={handleChange} />);
+      const paw5 = screen.getByRole('radio', { name: 'Оцінити 5 лапок' });
+      fireEvent.click(paw5);
+      expect(handleChange).toHaveBeenCalledWith(5);
+    });
+
     it('renders Input with accessible helper and error states', () => {
       render(<Input label="Електронна пошта" error="Невірний формат" />);
       const input = screen.getByRole('textbox', { name: 'Електронна пошта' });
