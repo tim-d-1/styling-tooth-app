@@ -23,12 +23,12 @@ export interface MyAddressesPageProps {
   };
 }
 
-const defaultAddress: UserAddress = {
-  street: 'вул. Хрещатик, 15',
-  apartment: '42',
-  entranceFloor: "1 під'їзд, 3 пов.",
+const initialEmptyAddress: UserAddress = {
+  street: '',
+  apartment: '',
+  entranceFloor: '',
   label: 'Дім',
-  isDefaultTransfer: true,
+  isDefaultTransfer: false,
 };
 
 export const MyAddressesPage: FC<MyAddressesPageProps> = ({
@@ -45,13 +45,13 @@ export const MyAddressesPage: FC<MyAddressesPageProps> = ({
   const navigate = useNavigate();
 
   const [userData, setUserData] = useState({
-    fullName: initialUserData?.fullName || 'Катерина Ковальчук',
+    fullName: initialUserData?.fullName || 'Користувач',
     avatarUrl: initialUserData?.avatarUrl ?? null,
-    isVip: initialUserData?.isVip ?? true,
+    isVip: initialUserData?.isVip ?? false,
   });
 
   const [address, setAddress] = useState<UserAddress>({
-    ...defaultAddress,
+    ...initialEmptyAddress,
     ...initialAddress,
   });
 
@@ -83,7 +83,7 @@ export const MyAddressesPage: FC<MyAddressesPageProps> = ({
       if (!isMounted) return;
 
       const userMeta = sessionData?.session?.user?.user_metadata;
-      const resolvedName = profile?.full_name || userMeta?.full_name || 'Катерина Ковальчук';
+      const resolvedName = profile?.full_name || userMeta?.full_name || 'Користувач';
       const rawAvatar = profile?.avatar_url || userMeta?.avatar_url || userMeta?.picture || null;
       const resolvedAvatar =
         rawAvatar &&
@@ -201,7 +201,7 @@ export const MyAddressesPage: FC<MyAddressesPageProps> = ({
     }
   };
 
-  const firstName = userData.fullName.split(' ')[0] || userData.fullName;
+  const firstName = userData.fullName ? userData.fullName.split(' ')[0] : 'Користувач';
 
   return (
     <div className="min-h-screen bg-surface-cream text-content-dark font-primary flex flex-col justify-between">
@@ -298,7 +298,7 @@ export const MyAddressesPage: FC<MyAddressesPageProps> = ({
                     type="text"
                     value={address.street}
                     onChange={(e) => setAddress((prev) => ({ ...prev, street: e.target.value }))}
-                    placeholder="вул. Хрещатик, 15"
+                    placeholder="Введіть вулицю та будинок"
                     className="w-full border border-black/15 rounded-2xl px-4 py-3.5 text-base text-content-dark font-accented font-medium outline-none focus:border-terracotta transition-colors"
                   />
                 </div>

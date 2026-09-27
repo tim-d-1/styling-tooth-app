@@ -18,14 +18,14 @@ export interface PersonalDataPageProps {
   initialData?: Partial<PersonalDataForm>;
 }
 
-const defaultFormData: PersonalDataForm = {
-  fullName: 'Катерина Ковальчук',
-  phone: '+380 (97) 123 45 67',
-  isPhoneVerified: true,
-  email: 'kateryna.pet@gmail.com',
-  birthDate: '14 Травня 1995',
+const initialEmptyFormData: PersonalDataForm = {
+  fullName: '',
+  phone: '',
+  isPhoneVerified: false,
+  email: '',
+  birthDate: '',
   avatarUrl: null,
-  isVip: true,
+  isVip: false,
 };
 
 export const PersonalDataPage: FC<PersonalDataPageProps> = ({
@@ -41,7 +41,7 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<PersonalDataForm>({
-    ...defaultFormData,
+    ...initialEmptyFormData,
     ...initialData,
   });
 
@@ -73,9 +73,9 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
       if (!isMounted) return;
 
       const userMeta = sessionData?.session?.user?.user_metadata;
-      const resolvedName = profile?.full_name || userMeta?.full_name || defaultFormData.fullName;
-      const resolvedEmail = profile?.email || sessionData?.session?.user?.email || defaultFormData.email;
-      const resolvedPhone = profile?.phone || userMeta?.phone || defaultFormData.phone;
+      const resolvedName = profile?.full_name || userMeta?.full_name || '';
+      const resolvedEmail = profile?.email || sessionData?.session?.user?.email || '';
+      const resolvedPhone = profile?.phone || userMeta?.phone || '';
       const rawAvatar =
         profile?.avatar_url ||
         userMeta?.avatar_url ||
@@ -196,7 +196,7 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
     }
   };
 
-  const firstName = formData.fullName.split(' ')[0] || formData.fullName;
+  const firstName = formData.fullName.split(' ')[0] || formData.fullName || 'Користувач';
 
   return (
     <div className="min-h-screen bg-surface-cream text-content-dark font-primary flex flex-col justify-between">

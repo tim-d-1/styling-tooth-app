@@ -3,6 +3,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import PaymentMethodsPage from './PaymentMethodsPage';
 import { supabase } from '@/lib/supabase';
+import { mockSavedMethods, mockPaymentTransactions } from '@/__mocks__/fixtures/test_fixtures';
 
 describe('PaymentMethodsPage', () => {
   beforeEach(() => {
@@ -88,7 +89,7 @@ describe('PaymentMethodsPage', () => {
 
     render(
       <MemoryRouter>
-        <PaymentMethodsPage onToast={handleToast} />
+        <PaymentMethodsPage onToast={handleToast} initialMethods={mockSavedMethods} />
       </MemoryRouter>
     );
 
@@ -119,7 +120,7 @@ describe('PaymentMethodsPage', () => {
 
     render(
       <MemoryRouter>
-        <PaymentMethodsPage onToast={handleToast} />
+        <PaymentMethodsPage onToast={handleToast} initialMethods={mockSavedMethods} />
       </MemoryRouter>
     );
 
@@ -196,7 +197,11 @@ describe('PaymentMethodsPage', () => {
 
     render(
       <MemoryRouter>
-        <PaymentMethodsPage onDownloadReceipt={handleDownload} onToast={handleToast} />
+        <PaymentMethodsPage
+          initialTransactions={mockPaymentTransactions}
+          onDownloadReceipt={handleDownload}
+          onToast={handleToast}
+        />
       </MemoryRouter>
     );
 
@@ -211,6 +216,19 @@ describe('PaymentMethodsPage', () => {
     fireEvent.click(downloadButtons[0]);
     expect(handleDownload).toHaveBeenCalledWith('tx-1');
     expect(handleToast).toHaveBeenCalledWith('Чек завантажено');
+  });
+
+  it('renders empty states when there are no saved methods or transactions', () => {
+    render(
+      <MemoryRouter>
+        <PaymentMethodsPage initialMethods={[]} initialTransactions={[]} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByTestId('no-saved-methods')).toBeDefined();
+    expect(screen.getByText('У вас ще немає збережених способів оплати')).toBeDefined();
+    expect(screen.getByTestId('no-transactions')).toBeDefined();
+    expect(screen.getByText('Немає проведених транзакцій')).toBeDefined();
   });
 
   it('loads user data and saved methods from supabase when not provided', async () => {

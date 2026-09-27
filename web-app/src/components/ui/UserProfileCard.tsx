@@ -11,14 +11,14 @@ export interface UserProfileCardProps {
 }
 
 export const UserProfileCard: FC<UserProfileCardProps> = ({
-  name = 'Катерина Ковальчук',
+  name = 'Користувач',
   roleLabel = "Ім'я та Прізвище",
   isSelected = false,
   onEdit,
   onClick,
   className,
 }) => {
-  const effectiveName = name?.trim() || 'Катерина Ковальчук';
+  const effectiveName = name?.trim() || 'Користувач';
   const effectiveRoleLabel = roleLabel?.trim() || "Ім'я та Прізвище";
 
   return (

@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "tsc -b && vitest run",
+    "audit:placeholders": "node scripts/audit-placeholders.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

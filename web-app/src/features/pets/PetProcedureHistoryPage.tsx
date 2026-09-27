@@ -23,40 +23,6 @@ export interface PetProcedureHistoryPageProps {
 type CategoryType = 'all' | 'grooming' | 'spa' | 'transfer' | 'payment';
 type SortOrderType = 'newest' | 'oldest' | 'price_desc' | 'price_asc';
 
-const defaultProcedures: PetProcedureHistory[] = [
-  {
-    id: 'proc-1',
-    serviceTitle: 'СПА-комплекс + Гігієнічна стрижка',
-    price: 1450,
-    dateFormatted: '20 Липня 2026',
-    masterName: 'Анна К.',
-    durationFormatted: '2 год 15 хв',
-    rating: 5,
-    category: 'spa',
-    tags: ['Стрижка', 'Купання', 'Ознаки алергії відсутні'],
-    beforePhotoUrl: null,
-    afterPhotoUrl: null,
-  },
-  {
-    id: 'proc-2',
-    serviceTitle: 'Експрес-лінька & Догляд за кігтями',
-    price: 950,
-    dateFormatted: '12 Травня 2026',
-    masterName: 'Олена М.',
-    durationFormatted: '1 год 30 хв',
-    statusText: 'Завершено',
-    category: 'grooming',
-    tags: ['Лінька', 'Вичісування', 'Обрізання кігтів', 'Чистка вух', 'Ознаки алергії відсутні'],
-    resultPhotoUrl: null,
-  },
-];
-
-const defaultSummaryData: ProcedureHistorySummary = {
-  year: 2026,
-  totalProcedures: 12,
-  favoriteMaster: 'Анна К.',
-};
-
 const categoryTabs: { id: CategoryType; label: string }[] = [
   { id: 'all', label: 'Всі запитання' },
   { id: 'grooming', label: '✂️ Грумінг' },
@@ -88,7 +54,7 @@ export const PetProcedureHistoryPage: FC<PetProcedureHistoryPageProps> = ({
   onRepeatVisitClick,
   onToast,
   initialProcedures,
-  initialSummary = defaultSummaryData,
+  initialSummary,
 }) => {
   const { petId } = useParams<{ petId: string }>();
   const navigate = useNavigate();
@@ -97,9 +63,15 @@ export const PetProcedureHistoryPage: FC<PetProcedureHistoryPageProps> = ({
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
   const [procedures, setProcedures] = useState<PetProcedureHistory[]>(
-    initialProcedures || defaultProcedures
+    initialProcedures || []
   );
-  const [summary, setSummary] = useState<ProcedureHistorySummary>(initialSummary);
+  const [summary, setSummary] = useState<ProcedureHistorySummary>(
+    initialSummary || {
+      year: new Date().getFullYear(),
+      totalProcedures: 0,
+      favoriteMaster: 'Немає даних',
+    }
+  );
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
@@ -219,11 +191,22 @@ export const PetProcedureHistoryPage: FC<PetProcedureHistoryPageProps> = ({
             }
           });
 
-          setSummary({
-            year: new Date().getFullYear(),
-            totalProcedures: mapped.length,
-            favoriteMaster: topMaster,
-          });
+          if (!initialSummary) {
+            setSummary({
+              year: new Date().getFullYear(),
+              totalProcedures: mapped.length,
+              favoriteMaster: topMaster,
+            });
+          }
+        } else if (isMounted) {
+          setProcedures([]);
+          if (!initialSummary) {
+            setSummary({
+              year: new Date().getFullYear(),
+              totalProcedures: 0,
+              favoriteMaster: 'Немає даних',
+            });
+          }
         }
       }
     }
@@ -233,7 +216,7 @@ export const PetProcedureHistoryPage: FC<PetProcedureHistoryPageProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [petId, initialProcedures]);
+  }, [petId, initialProcedures, initialSummary]);
 
   const handleHomeClick = () => {
     if (onHomeClick) {

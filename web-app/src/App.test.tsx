@@ -326,7 +326,7 @@ describe('App Root and Auth Gating', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Історія процедур' })
     ).toBeDefined();
-    expect(screen.getByText('СПА-комплекс + Гігієнічна стрижка')).toBeDefined();
+    expect(screen.getByTestId('empty-procedure-search')).toBeDefined();
     expect(screen.getByText('Підсумок за 2026 рік')).toBeDefined();
   });
 
@@ -357,7 +357,7 @@ describe('App Root and Auth Gating', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Особисті дані' })
     ).toBeDefined();
-    expect(screen.getByText('V.I.P Користувач')).toBeDefined();
+    expect(screen.getByText("Ім'я та Прізвище")).toBeDefined();
     expect(screen.getByText('Зберегти зміни')).toBeDefined();
   });
 

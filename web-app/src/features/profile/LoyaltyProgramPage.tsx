@@ -1,10 +1,18 @@
-import { useState, useEffect, useMemo, type FC } from 'react';
+import type { FC } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Icon from '@/components/ui/Icon';
 import AppIcon from '@/components/icons';
-import type { LoyaltyProgramData, LoyaltyTransaction } from './profile_types';
+import {
+  type LoyaltyProgramData,
+  type LoyaltyTransaction,
+  resolveLoyaltyTier,
+  calculateDiscountUah,
+  calculateCashbackPoints,
+  getEmptyLoyaltyData,
+} from '@/config/loyalty';
 import { formatAppointmentDate } from './profile_utils';
 import { supabase } from '@/lib/supabase';
 
@@ -17,61 +25,6 @@ export interface LoyaltyProgramPageProps {
 
 type FilterType = 'all' | 'earned' | 'spent';
 
-const defaultTransactions: LoyaltyTransaction[] = [
-  {
-    id: 'tx-1',
-    title: 'Комплексний грумінг (Мальтипу)',
-    dateFormatted: '18 Липня 2026',
-    points: 240,
-    iconName: 'fi-rr-barber-shop',
-  },
-  {
-    id: 'tx-2',
-    title: 'Спа + Заспокійлива маска',
-    dateFormatted: '02 Липня 2026',
-    points: -400,
-    iconName: 'fi-rr-spa',
-  },
-  {
-    id: 'tx-3',
-    title: 'Експрес-лінька & Догляд за кігтями',
-    dateFormatted: '25 Червня 2026',
-    points: 60,
-    iconName: 'fi-rr-paw',
-  },
-  {
-    id: 'tx-4',
-    title: 'Стрижка кігтів',
-    dateFormatted: '10 Червня 2026',
-    points: -100,
-    iconName: 'fi-rr-scissors',
-  },
-  {
-    id: 'tx-5',
-    title: 'Озонова ванна + Масаж',
-    dateFormatted: '19 Червня 2026',
-    points: -200,
-    iconName: 'fi-rr-soup',
-  },
-];
-
-const defaultLoyaltyData: LoyaltyProgramData = {
-  balancePoints: 450,
-  discountUah: 112,
-  tierName: 'Gold Level • 25% Cashback',
-  nextTierName: 'До Platinum рівня',
-  currentSpendUah: 6800,
-  nextTierSpendUah: 7500,
-  totalEarnedPoints: 1700,
-  totalSpentPoints: 1250,
-  privileges: [
-    '25% кешбеку з кожної послуги',
-    'Пріоритетний запис до топ-майстрів',
-    'Безкоштовна спа-маска при комплексному грумінгу',
-  ],
-  transactions: defaultTransactions,
-};
-
 export const LoyaltyProgramPage: FC<LoyaltyProgramPageProps> = ({
   initialData,
   onHomeClick,
@@ -81,7 +34,7 @@ export const LoyaltyProgramPage: FC<LoyaltyProgramPageProps> = ({
   const navigate = useNavigate();
 
   const [loyaltyData, setLoyaltyData] = useState<LoyaltyProgramData>(
-    initialData || defaultLoyaltyData
+    initialData || getEmptyLoyaltyData()
   );
 
   const [filter, setFilter] = useState<FilterType>('all');
@@ -157,54 +110,14 @@ export const LoyaltyProgramPage: FC<LoyaltyProgramPageProps> = ({
             ? dbAppointments.reduce((sum: number, a: any) => sum + (Number(a.price) || 0), 0)
             : Number(clientStats?.lifetime_value || 0);
 
-          let tierName = 'Bronze Level • 10% Cashback';
-          let nextTierName = 'До Silver рівня';
-          let nextTierSpendUah = 2000;
-          let cashbackRate = 10;
-          let privileges = [
-            '10% кешбеку з кожної послуги',
-            'Бонусна програма накопичення',
-            'Нагадування про регулярний догляд',
-          ];
-
-          if (completedSpend >= 15000 || discountPct >= 25) {
-            tierName = 'Platinum Level • 30% Cashback';
-            nextTierName = 'Максимальний рівень';
-            nextTierSpendUah = 25000;
-            cashbackRate = 30;
-            privileges = [
-              '30% кешбеку з кожної послуги',
-              'VIP обслуговування без черги',
-              'Безкоштовний трансфер та спа-маска',
-            ];
-          } else if (completedSpend >= 5000 || discountPct >= 15) {
-            tierName = 'Gold Level • 25% Cashback';
-            nextTierName = 'До Platinum рівня';
-            nextTierSpendUah = 15000;
-            cashbackRate = 25;
-            privileges = [
-              '25% кешбеку з кожної послуги',
-              'Пріоритетний запис до топ-майстрів',
-              'Безкоштовна спа-маска при комплексному грумінгу',
-            ];
-          } else if (completedSpend >= 2000 || discountPct >= 10) {
-            tierName = 'Silver Level • 15% Cashback';
-            nextTierName = 'До Gold рівня';
-            nextTierSpendUah = 5000;
-            cashbackRate = 15;
-            privileges = [
-              '15% кешбеку з кожної послуги',
-              'Пріоритетний запис',
-              'Знижка на засоби догляду',
-            ];
-          }
+          const tier = resolveLoyaltyTier(completedSpend, discountPct);
 
           if (dbAppointments && dbAppointments.length > 0) {
             const txList: LoyaltyTransaction[] = dbAppointments.map((appt: any) => {
               const srv = Array.isArray(appt.service) ? appt.service[0] : appt.service;
               const pet = Array.isArray(appt.pet) ? appt.pet[0] : appt.pet;
               const srvTitle = srv?.name ? `${srv.name}${pet?.name ? ` (${pet.name})` : ''}` : 'Грумінг послуга';
-              const earned = Math.max(10, Math.round((Number(appt.price) || 0) * (cashbackRate / 100) / 0.25));
+              const earned = Math.max(10, calculateCashbackPoints(Number(appt.price) || 0, tier.cashbackRatePct));
 
               let icon = 'fi-rr-barber-shop';
               const lowTitle = srvTitle.toLowerCase();
@@ -225,19 +138,32 @@ export const LoyaltyProgramPage: FC<LoyaltyProgramPageProps> = ({
             const totalEarned = txList.reduce((acc, t) => acc + (t.points > 0 ? t.points : 0), 0);
             const totalSpent = txList.reduce((acc, t) => acc + (t.points < 0 ? Math.abs(t.points) : 0), 0);
             const balance = Math.max(0, totalEarned - totalSpent);
-            const discount = Math.round(balance * 0.25);
+            const discount = calculateDiscountUah(balance);
 
             setLoyaltyData({
               balancePoints: balance,
               discountUah: discount,
-              tierName,
-              nextTierName,
+              tierName: tier.name,
+              nextTierName: tier.nextTierName,
               currentSpendUah: completedSpend,
-              nextTierSpendUah,
+              nextTierSpendUah: tier.nextTierSpendUah,
               totalEarnedPoints: totalEarned,
               totalSpentPoints: totalSpent,
-              privileges,
+              privileges: tier.privileges,
               transactions: txList,
+            });
+          } else {
+            setLoyaltyData({
+              balancePoints: 0,
+              discountUah: 0,
+              tierName: tier.name,
+              nextTierName: tier.nextTierName,
+              currentSpendUah: completedSpend,
+              nextTierSpendUah: tier.nextTierSpendUah,
+              totalEarnedPoints: 0,
+              totalSpentPoints: 0,
+              privileges: tier.privileges,
+              transactions: [],
             });
           }
         }

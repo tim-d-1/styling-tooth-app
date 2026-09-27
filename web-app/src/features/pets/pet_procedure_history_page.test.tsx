@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import PetProcedureHistoryPage from './PetProcedureHistoryPage';
 import { supabase } from '@/lib/supabase';
 import type { PetProcedureHistory, ProcedureHistorySummary } from './pet_types';
+import { mockProcedures, mockProcedureSummary } from '@/__mocks__/fixtures/test_fixtures';
 
 describe('PetProcedureHistoryPage', () => {
   beforeEach(() => {
@@ -91,7 +92,10 @@ describe('PetProcedureHistoryPage', () => {
     await act(async () => {
       render(
         <MemoryRouter>
-          <PetProcedureHistoryPage />
+          <PetProcedureHistoryPage
+            initialProcedures={mockProcedures}
+            initialSummary={mockProcedureSummary}
+          />
         </MemoryRouter>
       );
     });
@@ -107,7 +111,10 @@ describe('PetProcedureHistoryPage', () => {
     await act(async () => {
       render(
         <MemoryRouter>
-          <PetProcedureHistoryPage />
+          <PetProcedureHistoryPage
+            initialProcedures={mockProcedures}
+            initialSummary={mockProcedureSummary}
+          />
         </MemoryRouter>
       );
     });
@@ -134,7 +141,10 @@ describe('PetProcedureHistoryPage', () => {
     await act(async () => {
       render(
         <MemoryRouter>
-          <PetProcedureHistoryPage />
+          <PetProcedureHistoryPage
+            initialProcedures={mockProcedures}
+            initialSummary={mockProcedureSummary}
+          />
         </MemoryRouter>
       );
     });
@@ -166,7 +176,10 @@ describe('PetProcedureHistoryPage', () => {
     await act(async () => {
       render(
         <MemoryRouter>
-          <PetProcedureHistoryPage />
+          <PetProcedureHistoryPage
+            initialProcedures={mockProcedures}
+            initialSummary={mockProcedureSummary}
+          />
         </MemoryRouter>
       );
     });
@@ -214,7 +227,11 @@ describe('PetProcedureHistoryPage', () => {
     await act(async () => {
       render(
         <MemoryRouter>
-          <PetProcedureHistoryPage onRepeatVisitClick={handleRepeat} />
+          <PetProcedureHistoryPage
+            initialProcedures={mockProcedures}
+            initialSummary={mockProcedureSummary}
+            onRepeatVisitClick={handleRepeat}
+          />
         </MemoryRouter>
       );
     });
@@ -279,5 +296,19 @@ describe('PetProcedureHistoryPage', () => {
     });
 
     expect(screen.getByAltText('Катерина')).toBeDefined();
+  });
+
+  it('renders empty state when there are no procedures recorded', async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <PetProcedureHistoryPage initialProcedures={[]} />
+        </MemoryRouter>
+      );
+    });
+
+    expect(screen.getByTestId('empty-procedure-search')).toBeDefined();
+    expect(screen.getByText('Процедур не знайдено')).toBeDefined();
+    expect(screen.getByText('Показано 0 візитів')).toBeDefined();
   });
 });

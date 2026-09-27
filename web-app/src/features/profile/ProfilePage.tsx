@@ -9,6 +9,7 @@ import ProfileSettingsSection from './ProfileSettingsSection';
 import type { ProfileUser, UpcomingVisitData, ProfilePet } from './profile_types';
 import { formatAppointmentDate, formatPetAge } from './profile_utils';
 import { supabase } from '@/lib/supabase';
+import { resolveLoyaltyTier, calculateCashbackPoints } from '@/config/loyalty';
 
 export interface ProfilePageProps {
   onHomeClick?: () => void;
@@ -207,17 +208,12 @@ export const ProfilePage: FC<ProfilePageProps> = ({
 
           if (isMounted && dbCompleted && Array.isArray(dbCompleted) && dbCompleted.length > 0) {
             const lifetimeSpend = dbCompleted.reduce((sum: number, a: any) => sum + (Number(a.price) || 0), 0);
-            const cashbackRate = discountPct >= 25 || lifetimeSpend >= 15000
-              ? 30
-              : discountPct >= 15 || lifetimeSpend >= 5000
-              ? 25
-              : discountPct >= 10 || lifetimeSpend >= 2000
-              ? 15
-              : 10;
-            const calculatedPoints = Math.round(lifetimeSpend * (cashbackRate / 100) / 0.25);
+            const tier = resolveLoyaltyTier(lifetimeSpend, discountPct);
+            const calculatedPoints = calculateCashbackPoints(lifetimeSpend, tier.cashbackRatePct);
 
             setUser((prev) => ({
               ...prev,
+              loyaltyTier: tier.name,
               bonusPoints: calculatedPoints,
             }));
           }

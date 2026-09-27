@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import LoyaltyProgramPage from './LoyaltyProgramPage';
-import type { LoyaltyProgramData } from './profile_types';
+import type { LoyaltyProgramData } from '@/config/loyalty';
 import { supabase } from '@/lib/supabase';
 
 vi.mock('react-router-dom', async () => {
@@ -253,7 +253,7 @@ describe('LoyaltyProgramPage', () => {
     expect(handleToast).toHaveBeenCalledWith('Немає нових сповіщень');
   });
 
-  it('renders default transactions when initialData is not provided', async () => {
+  it('renders clean empty state when initialData is not provided', async () => {
     await act(async () => {
       render(
         <MemoryRouter>
@@ -262,10 +262,8 @@ describe('LoyaltyProgramPage', () => {
       );
     });
 
-    expect(screen.getByText('450')).toBeDefined();
-    expect(screen.getByText('+1 700')).toBeDefined();
-    expect(screen.getByText('-1 250')).toBeDefined();
-    expect(screen.getByText('Комплексний грумінг (Мальтипу)')).toBeDefined();
-    expect(screen.getByText('Озонова ванна + Масаж')).toBeDefined();
+    expect(screen.getByTestId('no-transactions')).toBeDefined();
+    expect(screen.getByText('Немає транзакцій у цій категорії')).toBeDefined();
+    expect(screen.getByText('0')).toBeDefined();
   });
 });
