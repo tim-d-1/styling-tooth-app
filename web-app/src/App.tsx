@@ -25,6 +25,8 @@ import LoyaltyProgramPage from '@/features/profile/LoyaltyProgramPage';
 import QuickSchedulePage from '@/features/schedule/QuickSchedulePage';
 import ArticleDetailPage from '@/features/articles/ArticleDetailPage';
 import PromoDetailPage from '@/features/promotions/PromoDetailPage';
+import CitySelectionPage from '@/features/location/CitySelectionPage';
+import { CITY_STORAGE_KEY } from '@/features/location/city_types';
 import ScrollToTop from '@/components/layout/ScrollToTop';
 import { supabase } from '@/lib/supabase';
 
@@ -103,9 +105,39 @@ function PromoRouteWrapper({
   );
 }
 
+function CitySelectionRouteWrapper({
+  isLoggedIn,
+  onCitySelected,
+}: {
+  isLoggedIn: boolean;
+  onCitySelected?: (city: string) => void;
+}) {
+  const navigate = useNavigate();
+
+  return (
+    <CitySelectionPage
+      isLoggedIn={isLoggedIn}
+      onBackClick={() => navigate(-1)}
+      onLoginClick={() => navigate('/login')}
+      onRegisterClick={() => navigate('/register')}
+      onProfileClick={() => navigate('/profile')}
+      onConfirm={(city) => {
+        onCitySelected?.(city);
+        navigate(-1);
+      }}
+    />
+  );
+}
+
 export function AppRoutes() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [selectedCity, setSelectedCity] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(CITY_STORAGE_KEY) || 'Запоріжжя';
+    }
+    return 'Запоріжжя';
+  });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -168,6 +200,10 @@ export function AppRoutes() {
                 onLoginClick={() => navigate('/login')}
                 onRegisterClick={() => navigate('/register')}
                 onProfileClick={() => navigate('/profile')}
+                onArticleClick={(articleId) => navigate(`/articles/${articleId}`)}
+                onPromoClick={(promoId) => navigate(`/promotions/${promoId}`)}
+                onLocationClick={() => navigate('/select-city')}
+                selectedCity={selectedCity}
                 onToast={showToast}
               />
             ) : (
@@ -288,6 +324,24 @@ export function AppRoutes() {
         />
 
         <Route
+          path="/select-city"
+          element={
+            <CitySelectionRouteWrapper
+              isLoggedIn={isLoggedIn}
+              onCitySelected={(city) => setSelectedCity(city)}
+            />
+          }
+        />
+        <Route
+          path="/cities"
+          element={<Navigate to="/select-city" replace />}
+        />
+        <Route
+          path="/location"
+          element={<Navigate to="/select-city" replace />}
+        />
+
+        <Route
           path="/main"
           element={
             <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
@@ -298,6 +352,8 @@ export function AppRoutes() {
                 onProfileClick={() => navigate('/profile')}
                 onArticleClick={(articleId) => navigate(`/articles/${articleId}`)}
                 onPromoClick={(promoId) => navigate(`/promotions/${promoId}`)}
+                onLocationClick={() => navigate('/select-city')}
+                selectedCity={selectedCity}
                 onToast={showToast}
               />
             </ProtectedRoute>

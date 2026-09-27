@@ -520,5 +520,45 @@ describe('Main Page Components', () => {
       fireEvent.click(banner2);
       expect(handlePromoClick).toHaveBeenCalledWith('free-nail-trimming');
     });
+
+    it('invokes onLocationClick when location bar is clicked in MainPage', () => {
+      const handleLocationClick = vi.fn();
+      render(
+        <MainPage
+          isLoggedIn={false}
+          onLocationClick={handleLocationClick}
+        />
+      );
+
+      const locationBtn = screen.getByRole('button', {
+        name: /Поточна локація/i,
+      });
+      fireEvent.click(locationBtn);
+      expect(handleLocationClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders selectedCity from prop or localStorage in LocationBar', () => {
+      const { rerender } = render(
+        <MainPage
+          isLoggedIn={false}
+          selectedCity="Львів"
+        />
+      );
+
+      expect(
+        screen.getByRole('button', { name: /Поточна локація: м. Львів/i })
+      ).toBeDefined();
+
+      localStorage.setItem('styling_tooth_selected_city', 'Одеса');
+      rerender(
+        <MainPage
+          isLoggedIn={false}
+        />
+      );
+
+      expect(
+        screen.getByRole('button', { name: /Поточна локація: м. Одеса/i })
+      ).toBeDefined();
+    });
   });
 });

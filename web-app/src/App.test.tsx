@@ -303,7 +303,6 @@ describe('App Root and Auth Gating', () => {
         },
       },
     } as never);
-    const originalFrom = supabase.from.bind(supabase);
     const fromSpy = vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
       if (table === 'pet_care_schedules') {
         return {
@@ -331,7 +330,16 @@ describe('App Root and Auth Gating', () => {
           }),
         } as never;
       }
-      return originalFrom(table as never);
+      const chain: Record<string, unknown> = {};
+      chain.select = vi.fn(() => chain);
+      chain.eq = vi.fn(() => chain);
+      chain.neq = vi.fn(() => chain);
+      chain.gte = vi.fn(() => chain);
+      chain.order = vi.fn(() => chain);
+      chain.limit = vi.fn(() => chain);
+      chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+      chain.single = vi.fn().mockResolvedValue({ data: null, error: null });
+      return chain as never;
     });
 
     await act(async () => {
@@ -895,6 +903,150 @@ describe('App Root and Auth Gating', () => {
           level: 1,
           name: 'підстригання кігтів при комплексному грумінгу',
         })
+      ).toBeDefined();
+    });
+
+    it('navigates to promo page when clicking promo banner 2 from root route / when authenticated', async () => {
+      const createChain = () => {
+        const chain: Record<string, unknown> = {};
+        chain.select = vi.fn(() => chain);
+        chain.eq = vi.fn(() => chain);
+        chain.neq = vi.fn(() => chain);
+        chain.gte = vi.fn(() => chain);
+        chain.order = vi.fn(() => chain);
+        chain.limit = vi.fn(() => chain);
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        chain.single = vi.fn().mockResolvedValue({ data: null, error: null });
+        return chain;
+      };
+      vi.spyOn(supabase, 'from').mockImplementation(() => createChain() as never);
+
+      window.history.pushState(null, '', '/');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'user-root-promo', email: 'root@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-root-promo',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      const promoBanner = await screen.findByRole('button', {
+        name: /Безкоштовне підстригання кігтів/i,
+      });
+      await act(async () => {
+        fireEvent.click(promoBanner);
+      });
+
+      expect(
+        await screen.findByRole('heading', {
+          level: 1,
+          name: 'підстригання кігтів при комплексному грумінгу',
+        })
+      ).toBeDefined();
+    });
+
+    it('renders city selection page directly via /select-city', async () => {
+      window.history.pushState(null, '', '/select-city');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-city-direct',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(
+        await screen.findByRole('heading', { level: 1, name: 'Оберіть своє місто' })
+      ).toBeDefined();
+      expect(screen.getByRole('radio', { name: 'Київ' })).toBeDefined();
+      expect(screen.getByRole('radio', { name: 'Львів' })).toBeDefined();
+    });
+
+    it('navigates to city selection page when clicking location bar and updates selected city on confirm', async () => {
+      const createChain = () => {
+        const chain: Record<string, unknown> = {};
+        chain.select = vi.fn(() => chain);
+        chain.eq = vi.fn(() => chain);
+        chain.neq = vi.fn(() => chain);
+        chain.gte = vi.fn(() => chain);
+        chain.order = vi.fn(() => chain);
+        chain.limit = vi.fn(() => chain);
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        chain.single = vi.fn().mockResolvedValue({ data: null, error: null });
+        return chain;
+      };
+      vi.spyOn(supabase, 'from').mockImplementation(() => createChain() as never);
+
+      window.history.pushState(null, '', '/main');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'user-city-nav', email: 'user@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-city-nav',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      const locationBtn = await screen.findByRole('button', {
+        name: /Поточна локація/i,
+      });
+      await act(async () => {
+        fireEvent.click(locationBtn);
+      });
+
+      expect(
+        await screen.findByRole('heading', { level: 1, name: 'Оберіть своє місто' })
+      ).toBeDefined();
+
+      const lvivRadio = screen.getByRole('radio', { name: 'Львів' });
+      await act(async () => {
+        fireEvent.click(lvivRadio);
+      });
+
+      const confirmBtn = screen.getByRole('button', { name: 'Підтвердити' });
+      await act(async () => {
+        fireEvent.click(confirmBtn);
+      });
+
+      expect(
+        await screen.findByRole('button', { name: /Поточна локація: м. Львів/i })
       ).toBeDefined();
     });
   });

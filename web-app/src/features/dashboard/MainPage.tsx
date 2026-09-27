@@ -43,6 +43,8 @@ export interface MainPageProps {
   onCancelVisit?: (visitId: string) => void | Promise<void>;
   onArticleClick?: (articleId: string) => void;
   onPromoClick?: (promoId: string) => void;
+  onLocationClick?: () => void;
+  selectedCity?: string;
 }
 
 export const MainPage: FC<MainPageProps> = ({
@@ -55,7 +57,15 @@ export const MainPage: FC<MainPageProps> = ({
   onCancelVisit,
   onArticleClick,
   onPromoClick,
+  onLocationClick,
+  selectedCity,
 }) => {
+  const currentCity =
+    selectedCity ||
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('styling_tooth_selected_city') || 'Запоріжжя'
+      : 'Запоріжжя');
+
   const [visit, setVisit] = useState<VisitData | null>(
     initialVisit !== undefined ? initialVisit : null
   );
@@ -229,8 +239,11 @@ export const MainPage: FC<MainPageProps> = ({
         />
 
         <LocationBar
-          location="м. Запоріжжя"
+          location={
+            currentCity.startsWith('м.') ? currentCity : `м. ${currentCity}`
+          }
           hasNotification={false}
+          onLocationClick={onLocationClick}
           onNotificationClick={() => showToast('')}
         />
 
