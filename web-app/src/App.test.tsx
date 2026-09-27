@@ -652,5 +652,68 @@ describe('App Root and Auth Gating', () => {
 
       expect(window.location.pathname).toBe('/profile/addresses');
     });
+
+    it('navigates to /quick-schedule when clicking "Швидкий запис" on landing page', async () => {
+      window.history.pushState(null, '', '/');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-anon-quick-schedule',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      const quickScheduleBtn = screen.getByRole('button', { name: 'Швидкий запис' });
+      await act(async () => {
+        fireEvent.click(quickScheduleBtn);
+      });
+
+      expect(window.location.pathname).toBe('/quick-schedule');
+      expect(
+        await screen.findByRole('heading', { level: 2, name: 'Запланований візит' })
+      ).toBeDefined();
+      expect(
+        await screen.findByRole('heading', { level: 2, name: 'Заплануйте свій візит' })
+      ).toBeDefined();
+    });
+
+    it('renders quick schedule page directly via /quick-schedule and supports back navigation', async () => {
+      window.history.pushState(null, '', '/quick-schedule');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-anon-quick-direct',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(
+        await screen.findByRole('heading', { level: 2, name: 'Запланований візит' })
+      ).toBeDefined();
+      expect(
+        await screen.findByRole('heading', { level: 2, name: 'Заплануйте свій візит' })
+      ).toBeDefined();
+
+      const backBtn = screen.getByRole('button', { name: 'Назад' });
+      expect(backBtn).toBeDefined();
+    });
   });
 });

@@ -140,5 +140,15 @@ describe('Landing Page Components', () => {
       const elementsWithInlineStyles = container.querySelectorAll('[style]');
       expect(elementsWithInlineStyles.length).toBe(0);
     });
+
+    it('propagates onQuickBookClick when quick book button is clicked', () => {
+      const handleQuickBook = vi.fn();
+
+      render(<LandingPage onQuickBookClick={handleQuickBook} />);
+
+      const quickBookBtn = screen.getByRole('button', { name: 'Швидкий запис' });
+      fireEvent.click(quickBookBtn);
+      expect(handleQuickBook).toHaveBeenCalledTimes(1);
+    });
   });
 });

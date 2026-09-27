@@ -21,6 +21,7 @@ import MyAddressesPage from '@/features/profile/MyAddressesPage';
 import PaymentMethodsPage from '@/features/profile/PaymentMethodsPage';
 import ProfileUpcomingVisitsPage from '@/features/profile/ProfileUpcomingVisitsPage';
 import LoyaltyProgramPage from '@/features/profile/LoyaltyProgramPage';
+import QuickSchedulePage from '@/features/schedule/QuickSchedulePage';
 import { supabase } from '@/lib/supabase';
 
 interface ProtectedRouteProps {
@@ -133,6 +134,7 @@ export function AppRoutes() {
                     navigate('/login');
                   }
                 }}
+                onQuickBookClick={() => navigate('/quick-schedule')}
               />
             )
           }
@@ -152,8 +154,45 @@ export function AppRoutes() {
                   navigate('/login');
                 }
               }}
+              onQuickBookClick={() => navigate('/quick-schedule')}
             />
           }
+        />
+
+        <Route
+          path="/quick-schedule"
+          element={
+            <QuickSchedulePage
+              isLoggedIn={isLoggedIn}
+              onBackClick={() => navigate(-1)}
+              onLoginClick={() => navigate('/login')}
+              onRegisterClick={() => navigate('/register')}
+              onProfileClick={() => navigate('/profile')}
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onBookClick={() => {
+                if (isLoggedIn) {
+                  navigate('/main');
+                } else {
+                  showToast('Увійдіть для запису на візит');
+                  navigate('/login');
+                }
+              }}
+              onQuickBookClick={() => {
+                if (isLoggedIn) {
+                  navigate('/main');
+                } else {
+                  showToast('Увійдіть для запису на візит');
+                  navigate('/login');
+                }
+              }}
+              onToast={showToast}
+            />
+          }
+        />
+
+        <Route
+          path="/quick-booking"
+          element={<Navigate to="/quick-schedule" replace />}
         />
 
         <Route

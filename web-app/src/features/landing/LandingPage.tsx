@@ -9,12 +9,14 @@ export interface LandingPageProps {
   onRegisterClick?: () => void;
   onLoginClick?: () => void;
   onBookClick?: () => void;
+  onQuickBookClick?: () => void;
 }
 
 export const LandingPage: FC<LandingPageProps> = ({
   onRegisterClick,
   onLoginClick,
   onBookClick,
+  onQuickBookClick,
 }) => {
   return (
     <div className="min-h-screen bg-landing-page text-content-dark font-primary flex flex-col">
@@ -23,7 +25,7 @@ export const LandingPage: FC<LandingPageProps> = ({
         onLoginClick={onLoginClick}
       />
       <LandingAbout onBookClick={onBookClick} />
-      <LandingServices onQuickBookClick={onBookClick} />
+      <LandingServices onQuickBookClick={onQuickBookClick || onBookClick} />
       <LandingContacts />
       <LandingFooter />
     </div>

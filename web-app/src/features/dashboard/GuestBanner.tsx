@@ -11,27 +11,33 @@ export const GuestBanner: FC<GuestBannerProps> = ({
   className,
 }) => {
   return (
-    <section className={['max-w-[1200px] mx-auto my-6 px-6 sm:px-8 mb-10', className].filter(Boolean).join(' ')}>
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-banner-brown-start via-banner-brown-mid to-banner-brown-end min-h-[14rem] md:min-h-[15rem] h-auto flex items-center p-8 md:p-12 shadow-md">
+    <section className={['max-w-[75rem] mx-auto my-6 px-6 sm:px-8 mb-10', className].filter(Boolean).join(' ')}>
+      <div className="relative overflow-hidden rounded-[10px] bg-[#161615] min-h-[20rem] md:min-h-[26.625rem] flex items-center p-8 sm:p-12 lg:p-[3.625rem_3.6875rem] shadow-md">
         <img
           src="/assets/images/dog_towel_shampoo.png"
           alt=""
-          className="absolute right-0 top-0 h-full w-auto max-w-[65%] md:max-w-[55%] object-cover object-right pointer-events-none select-none z-10"
+          className="absolute right-0 top-0 h-full w-full sm:w-[50%] lg:w-[33.5625rem] object-cover object-center pointer-events-none select-none z-10"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-r from-banner-brown-start via-banner-brown-start/85 via-40% to-transparent z-20 pointer-events-none" />
+        <div
+          className="absolute inset-0 z-20 pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(230deg, rgba(20, 20, 19, 0) 0%, rgba(185, 83, 52, 1) 100%)',
+          }}
+        />
 
-        <div className="relative z-30 flex flex-col items-start max-w-md">
-          <h2 className="text-3xl md:text-4xl font-bold font-accented text-white leading-tight m-0">
-            Заплануйте<br />свій візит
+        <div className="relative z-30 flex flex-col items-start max-w-[22rem]">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-accented text-surface-cream leading-[1.15] m-0 max-w-[20.5rem]">
+            Заплануйте свій візит
           </h2>
 
           <Button
             variant="primary"
-            size="md"
+            size="lg"
             onClick={onQuickBookClick}
             aria-label="Швидкий запис на візит"
-            className="bg-terracotta rounded-xl shadow-xs hover:bg-terracotta-hover transition-colors px-6 py-2.5 mt-5 text-white font-accented font-semibold"
+            className="w-full max-w-[20.5rem] h-12 bg-terracotta hover:bg-terracotta-hover text-surface-cream font-accented font-semibold text-base rounded-xl transition-colors shadow-xs mt-8 lg:mt-10"
           >
             Швидкий запис
           </Button>

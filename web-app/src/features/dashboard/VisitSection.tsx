@@ -10,6 +10,7 @@ export interface VisitSectionProps {
   onBookClick?: () => void;
   onReschedule?: () => void;
   onCancel?: () => void;
+  onBackClick?: () => void;
   isCancelling?: boolean;
   isLoggedIn?: boolean;
   className?: string;
@@ -20,13 +21,24 @@ export const VisitSection: FC<VisitSectionProps> = ({
   onBookClick,
   onReschedule,
   onCancel,
+  onBackClick,
   isCancelling = false,
   className,
 }) => {
   if (!visit) {
     return (
-      <section className={['max-w-[1200px] mx-auto my-6 px-6 sm:px-8 mb-10', className].filter(Boolean).join(' ')}>
-        <h2 className="text-2xl font-semibold font-accented mb-4 text-content-dark">
+      <section className={['max-w-[75rem] mx-auto my-6 px-6 sm:px-8 mb-10', className].filter(Boolean).join(' ')}>
+        {onBackClick && (
+          <button
+            type="button"
+            onClick={onBackClick}
+            aria-label="Назад"
+            className="mb-4 inline-flex items-center justify-center p-1 text-content-dark hover:opacity-80 transition-opacity cursor-pointer border-0 bg-transparent"
+          >
+            <Icon name="fi-rr-arrow-left" size={20} color="var(--color-content-primary)" />
+          </button>
+        )}
+        <h2 className="text-2xl font-bold font-accented mb-4 text-content-dark">
           Запланований візит
         </h2>
         <div className="bg-visit-gray rounded-3xl p-8 sm:p-12 flex flex-col items-center justify-center text-center gap-4 shadow-xs min-h-[14rem] h-auto">
@@ -68,6 +80,7 @@ export const VisitSection: FC<VisitSectionProps> = ({
       initialTransferEnabled={visit.initialTransferEnabled}
       onReschedule={onReschedule}
       onCancel={onCancel}
+      onBackClick={onBackClick}
       isCancelling={isCancelling}
       className={className}
     />
