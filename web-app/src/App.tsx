@@ -24,6 +24,7 @@ import ProfileUpcomingVisitsPage from '@/features/profile/ProfileUpcomingVisitsP
 import LoyaltyProgramPage from '@/features/profile/LoyaltyProgramPage';
 import QuickSchedulePage from '@/features/schedule/QuickSchedulePage';
 import ArticleDetailPage from '@/features/articles/ArticleDetailPage';
+import PromoDetailPage from '@/features/promotions/PromoDetailPage';
 import ScrollToTop from '@/components/layout/ScrollToTop';
 import { supabase } from '@/lib/supabase';
 
@@ -77,6 +78,27 @@ function ArticleRouteWrapper({
       onRegisterClick={() => navigate('/register')}
       onProfileClick={() => navigate('/profile')}
       onToast={onToast}
+    />
+  );
+}
+
+function PromoRouteWrapper({
+  isLoggedIn,
+}: {
+  isLoggedIn: boolean;
+}) {
+  const { promoId } = useParams();
+  const navigate = useNavigate();
+
+  return (
+    <PromoDetailPage
+      promoId={promoId}
+      isLoggedIn={isLoggedIn}
+      onBackClick={() => navigate(-1)}
+      onLoginClick={() => navigate('/login')}
+      onRegisterClick={() => navigate('/register')}
+      onProfileClick={() => navigate('/profile')}
+      onQuickBookClick={() => navigate('/quick-schedule')}
     />
   );
 }
@@ -249,6 +271,23 @@ export function AppRoutes() {
         />
 
         <Route
+          path="/promotions/:promoId"
+          element={<PromoRouteWrapper isLoggedIn={isLoggedIn} />}
+        />
+        <Route
+          path="/promotions"
+          element={<Navigate to="/promotions/free-nail-trimming" replace />}
+        />
+        <Route
+          path="/promos/:promoId"
+          element={<PromoRouteWrapper isLoggedIn={isLoggedIn} />}
+        />
+        <Route
+          path="/promos"
+          element={<Navigate to="/promotions/free-nail-trimming" replace />}
+        />
+
+        <Route
           path="/main"
           element={
             <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
@@ -258,6 +297,7 @@ export function AppRoutes() {
                 onRegisterClick={() => navigate('/register')}
                 onProfileClick={() => navigate('/profile')}
                 onArticleClick={(articleId) => navigate(`/articles/${articleId}`)}
+                onPromoClick={(promoId) => navigate(`/promotions/${promoId}`)}
                 onToast={showToast}
               />
             </ProtectedRoute>

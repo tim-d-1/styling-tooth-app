@@ -42,6 +42,7 @@ export interface MainPageProps {
   initialVisit?: VisitData | null;
   onCancelVisit?: (visitId: string) => void | Promise<void>;
   onArticleClick?: (articleId: string) => void;
+  onPromoClick?: (promoId: string) => void;
 }
 
 export const MainPage: FC<MainPageProps> = ({
@@ -53,6 +54,7 @@ export const MainPage: FC<MainPageProps> = ({
   initialVisit,
   onCancelVisit,
   onArticleClick,
+  onPromoClick,
 }) => {
   const [visit, setVisit] = useState<VisitData | null>(
     initialVisit !== undefined ? initialVisit : null
@@ -243,7 +245,13 @@ export const MainPage: FC<MainPageProps> = ({
 
         <PromoBannersGrid
           onBanner1Click={() => showToast('')}
-          onBanner2Click={() => showToast('')}
+          onBanner2Click={() => {
+            if (onPromoClick) {
+              onPromoClick('free-nail-trimming');
+            } else {
+              showToast('');
+            }
+          }}
           onBanner3Click={() => showToast('')}
         />
 

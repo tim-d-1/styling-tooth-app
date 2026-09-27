@@ -807,5 +807,95 @@ describe('App Root and Auth Gating', () => {
         await screen.findByRole('heading', { level: 1, name: 'Як обрати правильний шампунь?' })
       ).toBeDefined();
     });
+
+    it('renders promo page directly via /promotions/free-nail-trimming and navigates to quick schedule on CTA click', async () => {
+      window.history.pushState(null, '', '/promotions/free-nail-trimming');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-promo-direct',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByText('Безкоштовне')).toBeDefined();
+      expect(
+        await screen.findByRole('heading', {
+          level: 1,
+          name: 'підстригання кігтів при комплексному грумінгу',
+        })
+      ).toBeDefined();
+
+      const ctaBtn = screen.getByRole('button', { name: 'Швидкий запис' });
+      await act(async () => {
+        fireEvent.click(ctaBtn);
+      });
+
+      expect(
+        await screen.findByRole('heading', { level: 2, name: 'Запланований візит' })
+      ).toBeDefined();
+    });
+
+    it('navigates to promo page when clicking promo banner from main page', async () => {
+      const createChain = () => {
+        const chain: Record<string, unknown> = {};
+        chain.select = vi.fn(() => chain);
+        chain.eq = vi.fn(() => chain);
+        chain.neq = vi.fn(() => chain);
+        chain.gte = vi.fn(() => chain);
+        chain.order = vi.fn(() => chain);
+        chain.limit = vi.fn(() => chain);
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        chain.single = vi.fn().mockResolvedValue({ data: null, error: null });
+        return chain;
+      };
+      vi.spyOn(supabase, 'from').mockImplementation(() => createChain() as never);
+
+      window.history.pushState(null, '', '/main');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'user-promo-nav', email: 'user@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-promo-nav',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      const promoBanner = await screen.findByRole('button', {
+        name: /Безкоштовне підстригання кігтів/i,
+      });
+      await act(async () => {
+        fireEvent.click(promoBanner);
+      });
+
+      expect(
+        await screen.findByRole('heading', {
+          level: 1,
+          name: 'підстригання кігтів при комплексному грумінгу',
+        })
+      ).toBeDefined();
+    });
   });
 });

@@ -504,5 +504,21 @@ describe('Main Page Components', () => {
       fireEvent.click(shampooBtn);
       expect(handleArticleClick).toHaveBeenCalledWith('shampoo-guide');
     });
+
+    it('invokes onPromoClick when promo banner 2 is clicked', () => {
+      const handlePromoClick = vi.fn();
+      render(
+        <MainPage
+          isLoggedIn={false}
+          onPromoClick={handlePromoClick}
+        />
+      );
+
+      const banner2 = screen.getByRole('button', {
+        name: /Безкоштовне підстригання кігтів/i,
+      });
+      fireEvent.click(banner2);
+      expect(handlePromoClick).toHaveBeenCalledWith('free-nail-trimming');
+    });
   });
 });
