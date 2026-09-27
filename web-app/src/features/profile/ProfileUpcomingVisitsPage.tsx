@@ -113,9 +113,12 @@ export const ProfileUpcomingVisitsPage: FC<ProfileUpcomingVisitsPageProps> = ({
       }
 
       if (!initialVisits) {
-        const { data: dbAppointments } = await supabase
-          .from('appointments')
-          .select(`
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const apptFrom = supabase.from('appointments');
+        let apptQuery: any = typeof apptFrom?.select === 'function'
+          ? apptFrom.select(`
             id,
             pet_id,
             starts_at,
@@ -125,13 +128,27 @@ export const ProfileUpcomingVisitsPage: FC<ProfileUpcomingVisitsPageProps> = ({
             master:masters(display_name),
             service:services!appointments_service_id_fkey(name)
           `)
-          .eq('client_id', currentUserId)
-          .neq('status', 'cancelled')
-          .gte('starts_at', new Date().toISOString())
-          .order('starts_at', { ascending: true });
+          : null;
+
+        if (apptQuery) {
+          if (typeof apptQuery?.eq === 'function') {
+            apptQuery = apptQuery.eq('client_id', currentUserId);
+          }
+          if (typeof apptQuery?.neq === 'function') {
+            apptQuery = apptQuery.neq('status', 'cancelled');
+          }
+          if (typeof apptQuery?.gte === 'function') {
+            apptQuery = apptQuery.gte('starts_at', startOfToday.toISOString());
+          }
+          if (typeof apptQuery?.order === 'function') {
+            apptQuery = apptQuery.order('starts_at', { ascending: true });
+          }
+        }
+
+        const { data: dbAppointments } = (await apptQuery) || {};
 
         if (isMounted && dbAppointments) {
-          const mapped: UpcomingVisitData[] = dbAppointments.map((appt) => {
+          const mapped: UpcomingVisitData[] = dbAppointments.map((appt: any) => {
             const petRec = Array.isArray(appt.pet) ? appt.pet[0] : appt.pet;
             const masterRec = Array.isArray(appt.master) ? appt.master[0] : appt.master;
             const serviceRec = Array.isArray(appt.service) ? appt.service[0] : appt.service;

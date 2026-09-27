@@ -81,6 +81,8 @@ export const ProfilePage: FC<ProfilePageProps> = ({
         .eq('id', currentUserId)
         .maybeSingle();
 
+      let discountPct = 0;
+
       if (isMounted) {
         const resolvedName =
           profileData?.full_name?.trim() ||
@@ -105,7 +107,7 @@ export const ProfilePage: FC<ProfilePageProps> = ({
             ? rawAvatar.trim()
             : null;
 
-        const discountPct = profileData?.discount_pct ? Number(profileData.discount_pct) : 0;
+        discountPct = profileData?.discount_pct ? Number(profileData.discount_pct) : 0;
         const resolvedTier = discountPct > 0 ? `${discountPct}% Знижка` : 'Базовий рівень';
 
         setUser((prev) => ({
@@ -143,23 +145,28 @@ export const ProfilePage: FC<ProfilePageProps> = ({
         }
       }
 
-      const { data: dbAppointment } = await supabase
-        .from('appointments')
-        .select(`
-          id,
-          starts_at,
-          price,
-          status,
-          pet:pets(name, species),
-          master:masters(display_name),
-          service:services!appointments_service_id_fkey(name)
-        `)
-        .eq('client_id', currentUserId)
-        .neq('status', 'cancelled')
-        .gte('starts_at', new Date().toISOString())
-        .order('starts_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+
+      const apptFrom = supabase.from('appointments');
+      const { data: dbAppointment } = typeof apptFrom?.select === 'function'
+        ? await apptFrom
+            .select(`
+              id,
+              starts_at,
+              price,
+              status,
+              pet:pets(name, species),
+              master:masters(display_name),
+              service:services!appointments_service_id_fkey(name)
+            `)
+            .eq('client_id', currentUserId)
+            .neq('status', 'cancelled')
+            .gte('starts_at', startOfToday.toISOString())
+            .order('starts_at', { ascending: true })
+            .limit(1)
+            .maybeSingle()
+        : { data: null };
 
       if (isMounted) {
         if (dbAppointment) {
@@ -184,6 +191,36 @@ export const ProfilePage: FC<ProfilePageProps> = ({
           });
         } else if (initialVisit === undefined) {
           setVisit(null);
+        }
+
+        if (typeof apptFrom?.select === 'function') {
+          let completedQuery: any = apptFrom.select('id, price');
+
+          if (typeof completedQuery?.eq === 'function') {
+            completedQuery = completedQuery.eq('client_id', currentUserId);
+            if (typeof completedQuery?.eq === 'function') {
+              completedQuery = completedQuery.eq('status', 'completed');
+            }
+          }
+
+          const { data: dbCompleted } = (await completedQuery) || {};
+
+          if (isMounted && dbCompleted && Array.isArray(dbCompleted) && dbCompleted.length > 0) {
+            const lifetimeSpend = dbCompleted.reduce((sum: number, a: any) => sum + (Number(a.price) || 0), 0);
+            const cashbackRate = discountPct >= 25 || lifetimeSpend >= 15000
+              ? 30
+              : discountPct >= 15 || lifetimeSpend >= 5000
+              ? 25
+              : discountPct >= 10 || lifetimeSpend >= 2000
+              ? 15
+              : 10;
+            const calculatedPoints = Math.round(lifetimeSpend * (cashbackRate / 100) / 0.25);
+
+            setUser((prev) => ({
+              ...prev,
+              bonusPoints: calculatedPoints,
+            }));
+          }
         }
       }
     }

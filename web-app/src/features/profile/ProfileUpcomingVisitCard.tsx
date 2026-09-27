@@ -32,15 +32,6 @@ export const ProfileUpcomingVisitCard: FC<ProfileUpcomingVisitCardProps> = ({
         </h2>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onViewAllUpcoming}
-            className="font-primary text-xs sm:text-sm font-semibold text-terracotta hover:text-terracotta-hover transition-colors inline-flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0 outline-none"
-          >
-            <span>Всі заплановані візити</span>
-            <Icon name="fi-rr-arrow-right" size={12} />
-          </button>
-
           {visit && (
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-soft-blue text-white text-xs font-primary">
               <Icon name="fi-rr-clock" size={12} className="text-white" />
@@ -49,6 +40,15 @@ export const ProfileUpcomingVisitCard: FC<ProfileUpcomingVisitCardProps> = ({
           )}
         </div>
       </div>
+
+      <button
+            type="button"
+            onClick={onViewAllUpcoming}
+            className="inline-flex justify-end font-primary text-xs sm:text-sm font-semibold text-terracotta hover:text-terracotta-hover transition-colors inline-flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0 outline-none"
+          >
+            <span>Всі заплановані візити</span>
+            <Icon name="fi-rr-arrow-right" size={12} />
+          </button>
 
       {visit ? (
         <div className="w-full bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-black/5 flex flex-col md:flex-row md:items-center justify-between gap-4">

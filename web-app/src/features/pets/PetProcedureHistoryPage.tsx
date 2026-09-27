@@ -4,6 +4,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Icon from '@/components/ui/Icon';
 import type { PetProcedureHistory, ProcedureHistorySummary } from './pet_types';
+import { formatAppointmentDate } from '@/features/profile/profile_utils';
 import { supabase } from '@/lib/supabase';
 
 export interface PetProcedureHistoryPageProps {
@@ -95,10 +96,10 @@ export const PetProcedureHistoryPage: FC<PetProcedureHistoryPageProps> = ({
   const [userName, setUserName] = useState('');
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
-  const [procedures] = useState<PetProcedureHistory[]>(
+  const [procedures, setProcedures] = useState<PetProcedureHistory[]>(
     initialProcedures || defaultProcedures
   );
-  const [summary] = useState<ProcedureHistorySummary>(initialSummary);
+  const [summary, setSummary] = useState<ProcedureHistorySummary>(initialSummary);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
@@ -150,6 +151,81 @@ export const PetProcedureHistoryPage: FC<PetProcedureHistoryPageProps> = ({
         if (resolvedName) setUserName(resolvedName);
         if (resolvedAvatar) setUserAvatarUrl(resolvedAvatar);
       }
+
+      if (!initialProcedures) {
+        const apptFrom = supabase.from('appointments');
+        let query: any = typeof apptFrom?.select === 'function'
+          ? apptFrom.select(`
+            id,
+            starts_at,
+            ends_at,
+            price,
+            status,
+            pet_id,
+            master:masters(display_name),
+            service:services!appointments_service_id_fkey(name, category_id, duration_min)
+          `)
+          : null;
+
+        if (query && typeof query?.eq === 'function') {
+          query = query.eq('status', 'completed');
+          if (typeof query?.eq === 'function') {
+            query = petId ? query.eq('pet_id', petId) : query.eq('client_id', currentUserId);
+          }
+          if (typeof query?.order === 'function') {
+            query = query.order('starts_at', { ascending: false });
+          }
+        }
+
+        const { data: dbProcedures } = (await query) || {};
+
+        if (isMounted && dbProcedures && dbProcedures.length > 0) {
+          const mapped: PetProcedureHistory[] = dbProcedures.map((proc: any) => {
+            const masterRec = Array.isArray(proc.master) ? proc.master[0] : proc.master;
+            const srvRec = Array.isArray(proc.service) ? proc.service[0] : proc.service;
+            const srvName = srvRec?.name || 'Процедура догляду';
+            const isSpa = srvName.toLowerCase().includes('спа') || srvName.toLowerCase().includes('ванна');
+            const durationMin = srvRec?.duration_min;
+            const durationFormatted = durationMin
+              ? `${Math.floor(durationMin / 60)} год ${durationMin % 60} хв`.replace('0 год ', '')
+              : '1 год 30 хв';
+
+            return {
+              id: proc.id,
+              serviceTitle: srvName,
+              price: Number(proc.price) || 0,
+              dateFormatted: proc.starts_at ? formatAppointmentDate(proc.starts_at) : 'Дата не вказана',
+              masterName: masterRec?.display_name || 'Майстер салону',
+              durationFormatted,
+              rating: 5,
+              category: isSpa ? 'spa' : 'grooming',
+              tags: [isSpa ? 'СПА' : 'Грумінг', 'Ознаки алергії відсутні'],
+              statusText: 'Завершено',
+            };
+          });
+
+          setProcedures(mapped);
+
+          const masterCounts: Record<string, number> = {};
+          mapped.forEach((p) => {
+            masterCounts[p.masterName] = (masterCounts[p.masterName] || 0) + 1;
+          });
+          let topMaster = 'Майстер салону';
+          let maxCount = 0;
+          Object.entries(masterCounts).forEach(([name, count]) => {
+            if (count > maxCount) {
+              maxCount = count;
+              topMaster = name;
+            }
+          });
+
+          setSummary({
+            year: new Date().getFullYear(),
+            totalProcedures: mapped.length,
+            favoriteMaster: topMaster,
+          });
+        }
+      }
     }
 
     loadUserData();
@@ -157,7 +233,7 @@ export const PetProcedureHistoryPage: FC<PetProcedureHistoryPageProps> = ({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [petId, initialProcedures]);
 
   const handleHomeClick = () => {
     if (onHomeClick) {

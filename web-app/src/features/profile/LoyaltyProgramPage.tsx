@@ -5,6 +5,7 @@ import Footer from '@/components/layout/Footer';
 import Icon from '@/components/ui/Icon';
 import AppIcon from '@/components/icons';
 import type { LoyaltyProgramData, LoyaltyTransaction } from './profile_types';
+import { formatAppointmentDate } from './profile_utils';
 import { supabase } from '@/lib/supabase';
 
 export interface LoyaltyProgramPageProps {
@@ -79,7 +80,7 @@ export const LoyaltyProgramPage: FC<LoyaltyProgramPageProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const [loyaltyData] = useState<LoyaltyProgramData>(
+  const [loyaltyData, setLoyaltyData] = useState<LoyaltyProgramData>(
     initialData || defaultLoyaltyData
   );
 
@@ -103,7 +104,7 @@ export const LoyaltyProgramPage: FC<LoyaltyProgramPageProps> = ({
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, avatar_url')
+        .select('full_name, avatar_url, discount_pct')
         .eq('id', currentUserId)
         .maybeSingle();
 
@@ -119,6 +120,128 @@ export const LoyaltyProgramPage: FC<LoyaltyProgramPageProps> = ({
           null
         );
       }
+
+      if (!initialData) {
+        const statsFrom = supabase.from('client_stats');
+        const { data: clientStats } = typeof statsFrom?.select === 'function'
+          ? await statsFrom.select('*').eq('client_id', currentUserId).maybeSingle()
+          : { data: null };
+
+        const apptFrom = supabase.from('appointments');
+        let apptQuery: any = typeof apptFrom?.select === 'function'
+          ? apptFrom.select(`
+            id,
+            starts_at,
+            price,
+            status,
+            pet:pets(name),
+            service:services!appointments_service_id_fkey(name, category_id)
+          `)
+          : null;
+
+        if (apptQuery && typeof apptQuery?.eq === 'function') {
+          apptQuery = apptQuery.eq('client_id', currentUserId);
+          if (typeof apptQuery?.eq === 'function') {
+            apptQuery = apptQuery.eq('status', 'completed');
+          }
+          if (typeof apptQuery?.order === 'function') {
+            apptQuery = apptQuery.order('starts_at', { ascending: false });
+          }
+        }
+
+        const { data: dbAppointments } = (await apptQuery) || {};
+
+        if (isMounted) {
+          const discountPct = Number(profile?.discount_pct || 0);
+          const completedSpend = dbAppointments && dbAppointments.length > 0
+            ? dbAppointments.reduce((sum: number, a: any) => sum + (Number(a.price) || 0), 0)
+            : Number(clientStats?.lifetime_value || 0);
+
+          let tierName = 'Bronze Level • 10% Cashback';
+          let nextTierName = 'До Silver рівня';
+          let nextTierSpendUah = 2000;
+          let cashbackRate = 10;
+          let privileges = [
+            '10% кешбеку з кожної послуги',
+            'Бонусна програма накопичення',
+            'Нагадування про регулярний догляд',
+          ];
+
+          if (completedSpend >= 15000 || discountPct >= 25) {
+            tierName = 'Platinum Level • 30% Cashback';
+            nextTierName = 'Максимальний рівень';
+            nextTierSpendUah = 25000;
+            cashbackRate = 30;
+            privileges = [
+              '30% кешбеку з кожної послуги',
+              'VIP обслуговування без черги',
+              'Безкоштовний трансфер та спа-маска',
+            ];
+          } else if (completedSpend >= 5000 || discountPct >= 15) {
+            tierName = 'Gold Level • 25% Cashback';
+            nextTierName = 'До Platinum рівня';
+            nextTierSpendUah = 15000;
+            cashbackRate = 25;
+            privileges = [
+              '25% кешбеку з кожної послуги',
+              'Пріоритетний запис до топ-майстрів',
+              'Безкоштовна спа-маска при комплексному грумінгу',
+            ];
+          } else if (completedSpend >= 2000 || discountPct >= 10) {
+            tierName = 'Silver Level • 15% Cashback';
+            nextTierName = 'До Gold рівня';
+            nextTierSpendUah = 5000;
+            cashbackRate = 15;
+            privileges = [
+              '15% кешбеку з кожної послуги',
+              'Пріоритетний запис',
+              'Знижка на засоби догляду',
+            ];
+          }
+
+          if (dbAppointments && dbAppointments.length > 0) {
+            const txList: LoyaltyTransaction[] = dbAppointments.map((appt: any) => {
+              const srv = Array.isArray(appt.service) ? appt.service[0] : appt.service;
+              const pet = Array.isArray(appt.pet) ? appt.pet[0] : appt.pet;
+              const srvTitle = srv?.name ? `${srv.name}${pet?.name ? ` (${pet.name})` : ''}` : 'Грумінг послуга';
+              const earned = Math.max(10, Math.round((Number(appt.price) || 0) * (cashbackRate / 100) / 0.25));
+
+              let icon = 'fi-rr-barber-shop';
+              const lowTitle = srvTitle.toLowerCase();
+              if (lowTitle.includes('спа')) icon = 'fi-rr-spa';
+              else if (lowTitle.includes('кігт') || lowTitle.includes('стрижка')) icon = 'fi-rr-scissors';
+              else if (lowTitle.includes('ванна') || lowTitle.includes('масаж')) icon = 'fi-rr-soup';
+              else if (lowTitle.includes('лінька') || lowTitle.includes('лап')) icon = 'fi-rr-paw';
+
+              return {
+                id: `tx-${appt.id}`,
+                title: srvTitle,
+                dateFormatted: formatAppointmentDate(appt.starts_at),
+                points: earned,
+                iconName: icon,
+              };
+            });
+
+            const totalEarned = txList.reduce((acc, t) => acc + (t.points > 0 ? t.points : 0), 0);
+            const totalSpent = txList.reduce((acc, t) => acc + (t.points < 0 ? Math.abs(t.points) : 0), 0);
+            const balance = Math.max(0, totalEarned - totalSpent);
+            const discount = Math.round(balance * 0.25);
+
+            setLoyaltyData({
+              balancePoints: balance,
+              discountUah: discount,
+              tierName,
+              nextTierName,
+              currentSpendUah: completedSpend,
+              nextTierSpendUah,
+              totalEarnedPoints: totalEarned,
+              totalSpentPoints: totalSpent,
+              privileges,
+              transactions: txList,
+            });
+          }
+        }
+      }
     }
 
     loadUserData();
@@ -126,7 +249,7 @@ export const LoyaltyProgramPage: FC<LoyaltyProgramPageProps> = ({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [initialData]);
 
   const handleHomeClick = () => {
     if (onHomeClick) {

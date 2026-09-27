@@ -5,6 +5,7 @@ import Footer from '@/components/layout/Footer';
 import Icon from '@/components/ui/Icon';
 import ProfileAccountSidebar from './ProfileAccountSidebar';
 import type { SavedPaymentMethod, PaymentTransaction } from './profile_types';
+import { formatAppointmentDate } from './profile_utils';
 import { supabase } from '@/lib/supabase';
 
 export interface PaymentMethodsPageProps {
@@ -92,7 +93,7 @@ export const PaymentMethodsPage: FC<PaymentMethodsPageProps> = ({
   const [savedMethods, setSavedMethods] = useState<SavedPaymentMethod[]>(
     initialMethods || defaultSavedMethods
   );
-  const [transactions] = useState<PaymentTransaction[]>(
+  const [transactions, setTransactions] = useState<PaymentTransaction[]>(
     initialTransactions || defaultTransactions
   );
 
@@ -146,16 +147,71 @@ export const PaymentMethodsPage: FC<PaymentMethodsPageProps> = ({
       if (userMeta?.payment_methods && !initialMethods) {
         setSavedMethods(userMeta.payment_methods);
       }
-    }
 
-    if (!initialUserData) {
+      if (!initialTransactions) {
+        const payFrom = supabase.from('payments');
+        if (typeof payFrom?.select === 'function') {
+          let payQuery: any = payFrom.select(`
+            id,
+            amount,
+            currency,
+            status,
+            provider,
+            invoice_id,
+            page_url,
+            created_at,
+            appointment:appointments(
+              id,
+              starts_at,
+              pet:pets(name),
+              service:services!appointments_service_id_fkey(name)
+            )
+          `);
+
+          if (typeof payQuery?.eq === 'function') {
+            payQuery = payQuery.eq('client_id', currentUserId);
+            if (typeof payQuery?.order === 'function') {
+              payQuery = payQuery.order('created_at', { ascending: false });
+            }
+          }
+
+          const { data: dbPayments } = (await payQuery) || {};
+
+          if (isMounted && dbPayments && dbPayments.length > 0) {
+          const mapped: PaymentTransaction[] = dbPayments.map((p: any) => {
+            const appt = Array.isArray(p.appointment) ? p.appointment[0] : p.appointment;
+            const srv = Array.isArray(appt?.service) ? appt.service[0] : appt?.service;
+            const pet = Array.isArray(appt?.pet) ? appt.pet[0] : appt?.pet;
+            const title = srv?.name
+              ? `${srv.name}${pet?.name ? ` (${pet.name})` : ''}`
+              : `Оплата через ${p.provider || 'картку'}`;
+            const dateFormatted = formatAppointmentDate(p.created_at || appt?.starts_at);
+            const serviceType = srv?.name?.toLowerCase().includes('спа') ? 'spa' : 'grooming';
+
+            return {
+              id: p.id,
+              title,
+              dateFormatted,
+              amount: Number(p.amount) || 0,
+              currency: p.currency || 'UAH',
+              serviceType,
+              receiptUrl: p.page_url || undefined,
+            };
+          });
+          setTransactions(mapped);
+        }
+      }
+    }
+  }
+
+    if (!initialUserData || !initialTransactions) {
       loadData();
     }
 
     return () => {
       isMounted = false;
     };
-  }, [initialUserData, initialMethods]);
+  }, [initialUserData, initialMethods, initialTransactions]);
 
   const handleHomeClick = () => {
     if (onHomeClick) {
