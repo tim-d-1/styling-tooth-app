@@ -203,3 +203,27 @@ test("4. Admin Auth: Full Database Seed Records & Cross-Table Verification", asy
     assert.ok(Number(client.lifetime_value) > 0, "Lifetime value must be positive");
   }
 });
+
+test("5. Pet Care Schedules Seeding Verification", async () => {
+  const adminSupabase = createClient(supabaseUrl, supabaseAnonKey);
+  const { data: authData, error: authErr } = await adminSupabase.auth.signInWithPassword({
+    email: "admin@stylishtoot.com",
+    password: "TestPass2026!",
+  });
+  assert.equal(authErr, null, `Admin auth failed: ${authErr?.message}`);
+  assert.ok(authData?.session, "Admin must receive valid session");
+
+  const { data: schedules, error: schedErr } = await adminSupabase
+    .from("pet_care_schedules")
+    .select("id, pet_id, category, title, drug_name, badge_text")
+    .order("sort_order", { ascending: true });
+
+  assert.equal(schedErr, null, `Pet care schedules error: ${schedErr?.message}`);
+  assert.ok(schedules.length >= 8, `Expected at least 8 care schedule records, found ${schedules.length}`);
+
+  const misyaSchedules = schedules.filter((s) => s.pet_id === "70000000-0000-0000-0000-000000000002");
+  assert.equal(misyaSchedules.length, 4, "Pet Міся must have 4 care schedule records");
+  assert.ok(misyaSchedules.some((s) => s.category === "parasites" && s.drug_name === "Bravecto Plus"));
+  assert.ok(misyaSchedules.some((s) => s.title === "Дегельмінтизація" && s.badge_text === "Через 1 міс."));
+});
+

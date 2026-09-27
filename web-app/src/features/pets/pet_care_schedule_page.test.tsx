@@ -89,11 +89,21 @@ describe('PetCareSchedulePage', () => {
 
   it('renders upcoming treatment card and marks it as read', async () => {
     const handleToast = vi.fn();
+    const testNotification = {
+      id: 'notif-1',
+      title: 'Найближча обробка',
+      drugInfo: 'Обробка від кліщів (Bravecto)',
+      dueDateText: 'через 14 днів — 15 Серпня 2026',
+      isRead: false,
+    };
 
     await act(async () => {
       render(
         <MemoryRouter>
-          <PetCareSchedulePage onToast={handleToast} />
+          <PetCareSchedulePage
+            onToast={handleToast}
+            initialNotification={testNotification}
+          />
         </MemoryRouter>
       );
     });
@@ -164,28 +174,45 @@ describe('PetCareSchedulePage', () => {
   });
 
   it('filters schedule cards by tab selection', async () => {
+    const filterItems: CareScheduleItem[] = [
+      {
+        id: 'p-1',
+        title: 'Захист від бліх',
+        category: 'parasites',
+        badgeText: 'В нормі',
+        iconName: 'fi-rr-shield-check',
+      },
+      {
+        id: 'v-1',
+        title: 'Комплексна вакцинація',
+        category: 'vaccines',
+        badgeText: 'В нормі',
+        iconName: 'fi-rr-syringe',
+      },
+    ];
+
     await act(async () => {
       render(
         <MemoryRouter>
-          <PetCareSchedulePage />
+          <PetCareSchedulePage initialItems={filterItems} />
         </MemoryRouter>
       );
     });
 
-    expect(screen.getByText('Захист від паразитів')).toBeDefined();
-    expect(screen.getByText('Вакцинація')).toBeDefined();
+    expect(screen.getByText('Захист від бліх')).toBeDefined();
+    expect(screen.getByText('Комплексна вакцинація')).toBeDefined();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Паразити' }));
-    expect(screen.getByText('Захист від паразитів')).toBeDefined();
-    expect(screen.queryByText('Вакцинація')).toBeNull();
+    expect(screen.getByText('Захист від бліх')).toBeDefined();
+    expect(screen.queryByText('Комплексна вакцинація')).toBeNull();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Вакцини' }));
-    expect(screen.queryByText('Захист від паразитів')).toBeNull();
-    expect(screen.getByText('Вакцинація')).toBeDefined();
+    expect(screen.queryByText('Захист від бліх')).toBeNull();
+    expect(screen.getByText('Комплексна вакцинація')).toBeDefined();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Всі' }));
-    expect(screen.getByText('Захист від паразитів')).toBeDefined();
-    expect(screen.getByText('Вакцинація')).toBeDefined();
+    expect(screen.getByText('Захист від бліх')).toBeDefined();
+    expect(screen.getByText('Комплексна вакцинація')).toBeDefined();
   });
 
   it('renders custom care schedule items', async () => {
@@ -229,16 +256,41 @@ describe('PetCareSchedulePage', () => {
   });
 
   it('loads cat care schedule for petId route parameter', async () => {
+    const catPetId = '70000000-0000-0000-0000-000000000002';
     vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
-      if (table === 'pets') {
+      if (table === 'pet_care_schedules') {
         return {
           select: () => ({
             eq: () => ({
-              maybeSingle: vi.fn().mockResolvedValue({
-                data: {
-                  id: '70000000-0000-0000-0000-000000000002',
-                  species: 'cat',
-                },
+              order: vi.fn().mockResolvedValue({
+                data: [
+                  {
+                    id: '80000000-0000-0000-0000-000000000001',
+                    pet_id: catPetId,
+                    category: 'parasites',
+                    title: 'Від кліщів та бліх',
+                    drug_name: 'Bravecto Plus',
+                    badge_text: '✓ Захищено',
+                    valid_until_formatted: 'Наступна: 15 серп.',
+                    icon_name: 'fi-rr-shield-check',
+                    status_text: '✓ Захищено',
+                    status_type: 'success',
+                    sort_order: 1,
+                  },
+                  {
+                    id: '80000000-0000-0000-0000-000000000002',
+                    pet_id: catPetId,
+                    category: 'parasites',
+                    title: 'Дегельмінтизація',
+                    drug_name: 'Milbemax',
+                    badge_text: 'Через 1 міс.',
+                    valid_until_formatted: 'Наступна: 10 вер.',
+                    icon_name: 'fi-rr-medicine',
+                    status_text: 'Через 1 міс.',
+                    status_type: 'neutral',
+                    sort_order: 2,
+                  },
+                ],
               }),
             }),
           }),
@@ -247,6 +299,7 @@ describe('PetCareSchedulePage', () => {
       return {
         select: () => ({
           eq: () => ({
+            order: vi.fn().mockResolvedValue({ data: [] }),
             maybeSingle: vi.fn().mockResolvedValue({ data: null }),
           }),
         }),
@@ -255,7 +308,7 @@ describe('PetCareSchedulePage', () => {
 
     await act(async () => {
       render(
-        <MemoryRouter initialEntries={['/pets/70000000-0000-0000-0000-000000000002/schedule']}>
+        <MemoryRouter initialEntries={[`/pets/${catPetId}/schedule`]}>
           <Routes>
             <Route path="/pets/:petId/schedule" element={<PetCareSchedulePage />} />
           </Routes>
@@ -266,6 +319,44 @@ describe('PetCareSchedulePage', () => {
     expect(screen.getByText('Дегельмінтизація')).toBeDefined();
     expect(screen.getByText('Через 1 міс.')).toBeDefined();
     expect(screen.getByText('Bravecto Plus')).toBeDefined();
+  });
+
+  it('renders clean empty states when pet has no care schedules in database', async () => {
+    vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+      if (table === 'pet_care_schedules') {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: vi.fn().mockResolvedValue({ data: [] }),
+            }),
+          }),
+        } as never;
+      }
+      return {
+        select: () => ({
+          eq: () => ({
+            order: vi.fn().mockResolvedValue({ data: [] }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+          }),
+        }),
+      } as never;
+    });
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/pets/pet-empty/schedule']}>
+          <Routes>
+            <Route path="/pets/:petId/schedule" element={<PetCareSchedulePage />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    expect(screen.getByTestId('empty-parasites')).toBeDefined();
+    expect(screen.getByText('Немає запланованих обробок від паразитів')).toBeDefined();
+    expect(screen.getByTestId('empty-vaccines')).toBeDefined();
+    expect(screen.getByText('Немає даних про вакцинацію')).toBeDefined();
+    expect(screen.queryByTestId('upcoming-treatment-notification')).toBeNull();
   });
 });
 

@@ -1,84 +1,85 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
-  getDefaultCareSchedule,
-  getDefaultCareNotification,
-  getPetCareScheduleItems,
-  savePetCareScheduleItems,
-  getPetCareNotification,
+  mapRowToCareScheduleItem,
+  deriveUpcomingNotification,
   markPetCareNotificationRead,
+  type PetCareScheduleRow,
 } from './care_schedule';
 
-describe('care_schedule config', () => {
+describe('care_schedule config and helpers', () => {
+  const mockRow: PetCareScheduleRow = {
+    id: '80000000-0000-0000-0000-000000000001',
+    pet_id: '70000000-0000-0000-0000-000000000002',
+    category: 'parasites',
+    title: 'Дегельмінтизація',
+    drug_name: 'Milbemax',
+    due_date: '2026-10-10',
+    badge_text: 'Через 1 міс.',
+    valid_until_formatted: 'Наступна: 10 вер.',
+    icon_name: 'fi-rr-medicine',
+    status_text: 'Через 1 міс.',
+    status_type: 'neutral',
+    sort_order: 1,
+  };
+
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
   });
 
-  it('returns dog schedule by default or for non-cat species', () => {
-    const dogSchedule = getDefaultCareSchedule('dog');
-    const defaultSchedule = getDefaultCareSchedule(null);
-
-    expect(dogSchedule.find((item) => item.id === 'flea-tick')?.drugName).toBe('Bravecto');
-    expect(dogSchedule.find((item) => item.id === 'deworming')?.badgeText).toBe('Через 1 міс.');
-    expect(dogSchedule.find((item) => item.id === 'core-vaccine')?.drugName).toBe('Nobivac DHPPi');
-    expect(dogSchedule.find((item) => item.id === 'rabies-vaccine')?.title).toBe('Сказ + лептоспіроз');
-
-    expect(defaultSchedule.find((item) => item.id === 'flea-tick')?.drugName).toBe('Bravecto');
+  it('maps database row correctly to CareScheduleItem', () => {
+    const item = mapRowToCareScheduleItem(mockRow);
+    expect(item.id).toBe(mockRow.id);
+    expect(item.title).toBe('Дегельмінтизація');
+    expect(item.badgeText).toBe('Через 1 міс.');
+    expect(item.drugName).toBe('Milbemax');
+    expect(item.validUntilFormatted).toBe('Наступна: 10 вер.');
+    expect(item.category).toBe('parasites');
+    expect(item.statusType).toBe('neutral');
   });
 
-  it('returns cat schedule for cat species', () => {
-    const catSchedule = getDefaultCareSchedule('cat');
-    const uaCatSchedule = getDefaultCareSchedule('Кіт');
+  it('handles optional fields gracefully during row mapping', () => {
+    const minimalRow: PetCareScheduleRow = {
+      id: 'row-min',
+      pet_id: 'pet-min',
+      category: 'vaccines',
+      title: 'Вакцинація',
+      badge_text: 'Заплановано',
+      icon_name: '',
+      status_type: 'neutral',
+      sort_order: 0,
+    };
 
-    expect(catSchedule.find((item) => item.id === 'flea-tick')?.drugName).toBe('Bravecto Plus');
-    expect(catSchedule.find((item) => item.id === 'deworming')?.badgeText).toBe('Через 1 міс.');
-    expect(catSchedule.find((item) => item.id === 'core-vaccine')?.drugName).toBe('Nobivac Tricat Trio');
-    expect(catSchedule.find((item) => item.id === 'rabies-vaccine')?.title).toBe('Сказ');
-
-    expect(uaCatSchedule.find((item) => item.id === 'flea-tick')?.drugName).toBe('Bravecto Plus');
+    const item = mapRowToCareScheduleItem(minimalRow);
+    expect(item.id).toBe('row-min');
+    expect(item.drugName).toBeUndefined();
+    expect(item.validUntilFormatted).toBeUndefined();
+    expect(item.statusText).toBeUndefined();
+    expect(item.iconName).toBe('fi-rr-shield-check');
   });
 
-  it('returns default notification according to species', () => {
-    const dogNotif = getDefaultCareNotification('dog');
-    const catNotif = getDefaultCareNotification('cat');
-
-    expect(dogNotif.drugInfo).toBe('Обробка від кліщів (Bravecto)');
-    expect(catNotif.drugInfo).toBe('Обробка від кліщів (Bravecto Plus)');
+  it('returns null for upcoming notification when no schedule items exist', () => {
+    const notif = deriveUpcomingNotification('pet-empty', []);
+    expect(notif).toBeNull();
   });
 
-  it('loads and saves pet schedule items with localStorage', () => {
+  it('derives upcoming notification from schedule rows', () => {
+    const notif = deriveUpcomingNotification('pet-1', [mockRow]);
+    expect(notif).not.toBeNull();
+    expect(notif?.title).toBe('Найближча обробка');
+    expect(notif?.drugInfo).toBe('Обробка: Дегельмінтизація (Milbemax)');
+    expect(notif?.dueDateText).toBe('Наступна: 10 вер.');
+    expect(notif?.isRead).toBe(false);
+  });
+
+  it('marks notification as read and suppresses it on subsequent calls', () => {
     const petId = '70000000-0000-0000-0000-000000000002';
-    const initial = getPetCareScheduleItems(petId, 'cat');
-    expect(initial.length).toBe(4);
-    expect(initial.find((i) => i.id === 'deworming')?.badgeText).toBe('Через 1 міс.');
-
-    const modified = initial.map((item) =>
-      item.id === 'deworming' ? { ...item, badgeText: 'Виконано' } : item
-    );
-    savePetCareScheduleItems(petId, modified);
-
-    const reloaded = getPetCareScheduleItems(petId, 'cat');
-    expect(reloaded.find((i) => i.id === 'deworming')?.badgeText).toBe('Виконано');
-  });
-
-  it('handles corrupted localStorage gracefully by falling back to default', () => {
-    const petId = 'pet-corrupt';
-    localStorage.setItem(`styling-tooth:care-schedule:${petId}`, 'not-valid-json');
-
-    const schedule = getPetCareScheduleItems(petId, 'dog');
-    expect(schedule.length).toBe(4);
-    expect(schedule.find((i) => i.id === 'flea-tick')?.drugName).toBe('Bravecto');
-  });
-
-  it('marks notification as read and suppresses it on next query', () => {
-    const petId = '70000000-0000-0000-0000-000000000002';
-    const notifBefore = getPetCareNotification(petId, 'cat');
+    const notifBefore = deriveUpcomingNotification(petId, [mockRow]);
     expect(notifBefore).not.toBeNull();
-    expect(notifBefore?.isRead).toBe(false);
 
     markPetCareNotificationRead(petId);
 
-    const notifAfter = getPetCareNotification(petId, 'cat');
+    const notifAfter = deriveUpcomingNotification(petId, [mockRow]);
     expect(notifAfter).toBeNull();
   });
 });

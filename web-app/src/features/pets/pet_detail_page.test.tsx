@@ -465,6 +465,7 @@ describe('PetDetailPage Integration', () => {
       return {
         select: () => ({
           eq: () => ({
+            order: vi.fn().mockResolvedValue({ data: [] }),
             maybeSingle: vi.fn().mockResolvedValue({ data: null }),
           }),
         }),
@@ -496,9 +497,8 @@ describe('PetDetailPage Integration', () => {
     expect(screen.getByTestId('vip-badge')).toBeDefined();
     expect(screen.getByText('СПА-комплекс')).toBeDefined();
     expect(screen.getByText('1450 грн')).toBeDefined();
-    expect(screen.queryByTestId('empty-care-schedule')).toBeNull();
-    expect(screen.getByText('Дегельмінтизація')).toBeDefined();
-    expect(screen.getByText('Через 1 міс.')).toBeDefined();
+    expect(screen.getByTestId('empty-care-schedule')).toBeDefined();
+    expect(screen.getByText('Немає запланованих обробок')).toBeDefined();
   });
 
   it('renders pet care schedule with upcoming treatment for pet id 70000000-0000-0000-0000-000000000002', async () => {
@@ -554,6 +554,75 @@ describe('PetDetailPage Integration', () => {
         } as never;
       }
 
+      if (table === 'pet_care_schedules') {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: vi.fn().mockResolvedValue({
+                data: [
+                  {
+                    id: '80000000-0000-0000-0000-000000000001',
+                    pet_id: catPetId,
+                    category: 'parasites',
+                    title: 'Від кліщів та бліх',
+                    drug_name: 'Bravecto Plus',
+                    due_date: '2026-08-15',
+                    badge_text: '✓ Захищено',
+                    valid_until_formatted: 'Наступна: 15 серп.',
+                    icon_name: 'fi-rr-shield-check',
+                    status_text: '✓ Захищено',
+                    status_type: 'success',
+                    sort_order: 1,
+                  },
+                  {
+                    id: '80000000-0000-0000-0000-000000000002',
+                    pet_id: catPetId,
+                    category: 'parasites',
+                    title: 'Дегельмінтизація',
+                    drug_name: 'Milbemax',
+                    due_date: '2026-10-10',
+                    badge_text: 'Через 1 міс.',
+                    valid_until_formatted: 'Наступна: 10 вер.',
+                    icon_name: 'fi-rr-medicine',
+                    status_text: 'Через 1 міс.',
+                    status_type: 'neutral',
+                    sort_order: 2,
+                  },
+                  {
+                    id: '80000000-0000-0000-0000-000000000003',
+                    pet_id: catPetId,
+                    category: 'vaccines',
+                    title: 'Комплексна вакцинація',
+                    drug_name: 'Nobivac Tricat Trio',
+                    due_date: '2026-12-10',
+                    badge_text: '✓ В нормі',
+                    valid_until_formatted: 'Дійсна до 10 груд. 2026',
+                    icon_name: 'fi-rr-syringe',
+                    status_text: '✓ В нормі',
+                    status_type: 'success',
+                    sort_order: 3,
+                  },
+                  {
+                    id: '80000000-0000-0000-0000-000000000004',
+                    pet_id: catPetId,
+                    category: 'vaccines',
+                    title: 'Сказ',
+                    drug_name: 'Nobivac Rabies',
+                    due_date: '2026-12-15',
+                    badge_text: '✓ В нормі',
+                    valid_until_formatted: 'Дійсна до 15 груд. 2026',
+                    icon_name: 'fi-rr-syringe',
+                    status_text: '✓ В нормі',
+                    status_type: 'success',
+                    sort_order: 4,
+                  },
+                ],
+              }),
+            }),
+          }),
+        } as never;
+      }
+
       if (table === 'appointments') {
         return {
           select: (_cols: string, opts?: { count?: string; head?: boolean }) => {
@@ -590,6 +659,7 @@ describe('PetDetailPage Integration', () => {
       return {
         select: () => ({
           eq: () => ({
+            order: vi.fn().mockResolvedValue({ data: [] }),
             maybeSingle: vi.fn().mockResolvedValue({ data: null }),
           }),
         }),

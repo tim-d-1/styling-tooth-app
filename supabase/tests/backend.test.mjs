@@ -307,3 +307,12 @@ test("12. Direct Appointment Insert Blocked by Staff-Only RLS", async () => {
   );
 });
 
+test("13. Pet Care Schedules RLS Scope", async () => {
+  const { data: anonData, error: anonErr } = await supabase
+    .from("pet_care_schedules")
+    .select("id");
+  assert.equal(anonErr, null, `pet_care_schedules anon error: ${anonErr?.message}`);
+  assert.equal(anonData?.length || 0, 0, "Anon cannot view pet care schedules");
+});
+
+

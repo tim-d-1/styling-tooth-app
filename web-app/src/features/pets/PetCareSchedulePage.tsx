@@ -5,8 +5,8 @@ import Footer from '@/components/layout/Footer';
 import Icon from '@/components/ui/Icon';
 import type { CareScheduleItem, CareScheduleNotification } from './pet_types';
 import {
-  getPetCareScheduleItems,
-  getPetCareNotification,
+  mapRowToCareScheduleItem,
+  deriveUpcomingNotification,
   markPetCareNotificationRead,
 } from '@/config/care_schedule';
 import { supabase } from '@/lib/supabase';
@@ -43,15 +43,13 @@ export const PetCareSchedulePage: FC<PetCareSchedulePageProps> = ({
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<FilterCategory>('all');
-  const [notification, setNotification] = useState<CareScheduleNotification | null>(() =>
-    initialNotification !== undefined
-      ? initialNotification
-      : getPetCareNotification(petId)
+  const [notification, setNotification] = useState<CareScheduleNotification | null>(
+    initialNotification !== undefined ? initialNotification : null
   );
   const [documentsCount, setDocumentsCount] = useState<number>(initialDocumentsCount);
 
-  const [items, setItems] = useState<CareScheduleItem[]>(() =>
-    initialItems !== undefined ? initialItems : getPetCareScheduleItems(petId)
+  const [items, setItems] = useState<CareScheduleItem[]>(
+    initialItems !== undefined ? initialItems : []
   );
 
   useEffect(() => {
@@ -114,18 +112,18 @@ export const PetCareSchedulePage: FC<PetCareSchedulePageProps> = ({
       }
 
       if (petId) {
-        const { data: pet } = await supabase
-          .from('pets')
-          .select('species')
-          .eq('id', petId)
-          .maybeSingle();
+        const { data: scheduleData } = await supabase
+          .from('pet_care_schedules')
+          .select('*')
+          .eq('pet_id', petId)
+          .order('sort_order', { ascending: true });
 
-        if (isMounted && pet) {
+        if (isMounted && scheduleData) {
           if (initialItems === undefined) {
-            setItems(getPetCareScheduleItems(petId, pet.species));
+            setItems(scheduleData.map(mapRowToCareScheduleItem));
           }
           if (initialNotification === undefined) {
-            setNotification(getPetCareNotification(petId, pet.species));
+            setNotification(deriveUpcomingNotification(petId, scheduleData));
           }
         }
       }
@@ -392,44 +390,53 @@ export const PetCareSchedulePage: FC<PetCareSchedulePageProps> = ({
                   </h2>
 
                   <div className="flex flex-col gap-3">
-                    {parasiteItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="bg-white rounded-3xl p-5 shadow-sm border border-black/5 flex items-center justify-between gap-4"
-                      >
-                        <div className="flex items-center gap-4 min-w-0">
-                          <div className="w-12 h-12 rounded-full bg-soft-blue/20 text-terracotta flex items-center justify-center shrink-0">
-                            <Icon name={item.iconName} size={22} />
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <h3 className="font-accented font-semibold text-base text-content-dark">
-                              {item.title}
-                            </h3>
-                            {item.drugName && (
-                              <span className="font-primary text-xs text-text-muted">
-                                {item.drugName}
-                              </span>
-                            )}
-                            {item.validUntilFormatted && (
-                              <span className="font-primary text-xs text-text-muted">
-                                {item.validUntilFormatted}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <span
-                          className={[
-                            'font-primary text-xs sm:text-sm font-medium shrink-0',
-                            item.statusType === 'success'
-                              ? 'text-status-success'
-                              : 'text-content-dark/70',
-                          ].join(' ')}
+                    {parasiteItems.length > 0 ? (
+                      parasiteItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="bg-white rounded-3xl p-5 shadow-sm border border-black/5 flex items-center justify-between gap-4"
                         >
-                          {item.statusText || item.badgeText}
-                        </span>
+                          <div className="flex items-center gap-4 min-w-0">
+                            <div className="w-12 h-12 rounded-full bg-soft-blue/20 text-terracotta flex items-center justify-center shrink-0">
+                              <Icon name={item.iconName} size={22} />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <h3 className="font-accented font-semibold text-base text-content-dark">
+                                {item.title}
+                              </h3>
+                              {item.drugName && (
+                                <span className="font-primary text-xs text-text-muted">
+                                  {item.drugName}
+                                </span>
+                              )}
+                              {item.validUntilFormatted && (
+                                <span className="font-primary text-xs text-text-muted">
+                                  {item.validUntilFormatted}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <span
+                            className={[
+                              'font-primary text-xs sm:text-sm font-medium shrink-0',
+                              item.statusType === 'success'
+                                ? 'text-status-success'
+                                : 'text-content-dark/70',
+                            ].join(' ')}
+                          >
+                            {item.statusText || item.badgeText}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div
+                        data-testid="empty-parasites"
+                        className="bg-white rounded-3xl p-6 shadow-sm border border-black/5 text-center text-text-muted text-sm font-primary"
+                      >
+                        Немає запланованих обробок від паразитів
                       </div>
-                    ))}
+                    )}
                   </div>
                 </section>
               )}
@@ -447,44 +454,53 @@ export const PetCareSchedulePage: FC<PetCareSchedulePageProps> = ({
                   </h2>
 
                   <div className="flex flex-col gap-3">
-                    {vaccineItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="bg-white rounded-3xl p-5 shadow-sm border border-black/5 flex items-center justify-between gap-4"
-                      >
-                        <div className="flex items-center gap-4 min-w-0">
-                          <div className="w-12 h-12 rounded-full bg-soft-blue/20 text-terracotta flex items-center justify-center shrink-0">
-                            <Icon name={item.iconName} size={22} />
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <h3 className="font-accented font-semibold text-base text-content-dark">
-                              {item.title}
-                            </h3>
-                            {item.drugName && (
-                              <span className="font-primary text-xs text-text-muted">
-                                {item.drugName}
-                              </span>
-                            )}
-                            {item.validUntilFormatted && (
-                              <span className="font-primary text-xs text-text-muted">
-                                {item.validUntilFormatted}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <span
-                          className={[
-                            'font-primary text-xs sm:text-sm font-medium shrink-0',
-                            item.statusType === 'success'
-                              ? 'text-status-success'
-                              : 'text-content-dark/70',
-                          ].join(' ')}
+                    {vaccineItems.length > 0 ? (
+                      vaccineItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="bg-white rounded-3xl p-5 shadow-sm border border-black/5 flex items-center justify-between gap-4"
                         >
-                          {item.statusText || item.badgeText}
-                        </span>
+                          <div className="flex items-center gap-4 min-w-0">
+                            <div className="w-12 h-12 rounded-full bg-soft-blue/20 text-terracotta flex items-center justify-center shrink-0">
+                              <Icon name={item.iconName} size={22} />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <h3 className="font-accented font-semibold text-base text-content-dark">
+                                {item.title}
+                              </h3>
+                              {item.drugName && (
+                                <span className="font-primary text-xs text-text-muted">
+                                  {item.drugName}
+                                </span>
+                              )}
+                              {item.validUntilFormatted && (
+                                <span className="font-primary text-xs text-text-muted">
+                                  {item.validUntilFormatted}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <span
+                            className={[
+                              'font-primary text-xs sm:text-sm font-medium shrink-0',
+                              item.statusType === 'success'
+                                ? 'text-status-success'
+                                : 'text-content-dark/70',
+                            ].join(' ')}
+                          >
+                            {item.statusText || item.badgeText}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div
+                        data-testid="empty-vaccines"
+                        className="bg-white rounded-3xl p-6 shadow-sm border border-black/5 text-center text-text-muted text-sm font-primary"
+                      >
+                        Немає даних про вакцинацію
                       </div>
-                    ))}
+                    )}
                   </div>
                 </section>
               )}

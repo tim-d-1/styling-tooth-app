@@ -287,16 +287,48 @@ describe('App Root and Auth Gating', () => {
         },
       },
     } as never);
+    const originalFrom = supabase.from.bind(supabase);
+    const fromSpy = vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+      if (table === 'pet_care_schedules') {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: vi.fn().mockResolvedValue({
+                data: [
+                  {
+                    id: 'sched-1',
+                    pet_id: 'p-test-1',
+                    category: 'parasites',
+                    title: 'Від кліщів та бліх',
+                    drug_name: 'Bravecto',
+                    due_date: '2026-08-15',
+                    badge_text: '✓ Захищено',
+                    valid_until_formatted: 'Наступна: 15 серп.',
+                    icon_name: 'fi-rr-shield-check',
+                    status_text: '✓ Захищено',
+                    status_type: 'warning',
+                    sort_order: 1,
+                  },
+                ],
+              }),
+            }),
+          }),
+        } as never;
+      }
+      return originalFrom(table as never);
+    });
 
     await act(async () => {
       render(<App />);
     });
 
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Графік профілактичних обробок' })
+      await screen.findByRole('heading', { level: 1, name: 'Графік профілактичних обробок' })
     ).toBeDefined();
-    expect(screen.getByText('Найближча обробка')).toBeDefined();
-    expect(screen.getByText('Медичні документи')).toBeDefined();
+    expect(await screen.findByText('Найближча обробка')).toBeDefined();
+    expect(await screen.findByText('Медичні документи')).toBeDefined();
+
+    fromSpy.mockRestore();
   });
 
   it('renders pet procedure history page via pathname /pets/:petId/history', async () => {

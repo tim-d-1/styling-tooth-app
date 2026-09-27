@@ -15,7 +15,7 @@ import type {
 } from './pet_types';
 import { getSpeciesEmoji, formatDateToUkrainian } from './pet_utils';
 import { formatPetAge } from '@/features/profile/profile_utils';
-import { getPetCareScheduleItems } from '@/config/care_schedule';
+import { mapRowToCareScheduleItem } from '@/config/care_schedule';
 import { supabase } from '@/lib/supabase';
 
 export interface PetDetailPageProps {
@@ -66,10 +66,8 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
   const [history, setHistory] = useState<PetProcedureHistory | null>(
     initialHistory !== undefined ? initialHistory : null
   );
-  const [schedule, setSchedule] = useState<CareScheduleItem[]>(() =>
-    initialSchedule !== undefined
-      ? initialSchedule
-      : getPetCareScheduleItems(paramPetId)
+  const [schedule, setSchedule] = useState<CareScheduleItem[]>(
+    initialSchedule || []
   );
 
   useEffect(() => {
@@ -241,8 +239,16 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
           isVip: totalVisits >= 5,
         });
 
+        const { data: scheduleData } = await supabase
+          .from('pet_care_schedules')
+          .select('*')
+          .eq('pet_id', currentDbPet.id)
+          .order('sort_order', { ascending: true });
+
+        if (!isMounted) return;
+
         if (initialSchedule === undefined) {
-          setSchedule(getPetCareScheduleItems(currentDbPet.id, currentDbPet.species));
+          setSchedule((scheduleData || []).map(mapRowToCareScheduleItem));
         }
 
         if (latestAppointment) {
@@ -283,7 +289,7 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
     };
   }, [paramPetId, initialPets, initialPetDetail, initialSchedule]);
 
-  const handleSelectPet = (id: string) => {
+  const handleSelectPet = async (id: string) => {
     setSelectedPetId(id);
     setPetsList((prev) =>
       prev.map((pet) => ({
@@ -292,8 +298,12 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
       }))
     );
     if (initialSchedule === undefined) {
-      const switchedPet = petsList.find((p) => p.id === id);
-      setSchedule(getPetCareScheduleItems(id, switchedPet?.species));
+      const { data: scheduleData } = await supabase
+        .from('pet_care_schedules')
+        .select('*')
+        .eq('pet_id', id)
+        .order('sort_order', { ascending: true });
+      setSchedule((scheduleData || []).map(mapRowToCareScheduleItem));
     }
     navigate(`/pets/${id}`);
   };

@@ -292,3 +292,29 @@ on conflict (id) do update set
   photo_type = excluded.photo_type,
   caption = excluded.caption,
   taken_at = excluded.taken_at;
+
+-- 12. Pet Care Schedules (Preventative Care and Treatments)
+insert into public.pet_care_schedules (
+  id, pet_id, category, title, drug_name, due_date, badge_text, valid_until_formatted, icon_name, status_text, status_type, sort_order
+) values
+  ('80000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000002', 'parasites', 'Від кліщів та бліх', 'Bravecto Plus', '2026-08-15', '✓ Захищено', 'Наступна: 15 серп.', 'fi-rr-shield-check', '✓ Захищено', 'success', 1),
+  ('80000000-0000-0000-0000-000000000002', '70000000-0000-0000-0000-000000000002', 'parasites', 'Дегельмінтизація', 'Milbemax', '2026-10-10', 'Через 1 міс.', 'Наступна: 10 вер.', 'fi-rr-medicine', 'Через 1 міс.', 'neutral', 2),
+  ('80000000-0000-0000-0000-000000000003', '70000000-0000-0000-0000-000000000002', 'vaccines', 'Комплексна вакцинація', 'Nobivac Tricat Trio', '2026-12-10', '✓ В нормі', 'Дійсна до 10 груд. 2026', 'fi-rr-syringe', '✓ В нормі', 'success', 3),
+  ('80000000-0000-0000-0000-000000000004', '70000000-0000-0000-0000-000000000002', 'vaccines', 'Сказ', 'Nobivac Rabies', '2026-12-15', '✓ В нормі', 'Дійсна до 15 груд. 2026', 'fi-rr-syringe', '✓ В нормі', 'success', 4),
+  ('80000000-0000-0000-0000-000000000005', '70000000-0000-0000-0000-000000000001', 'parasites', 'Від кліщів та бліх', 'Bravecto', '2026-08-15', '✓ Захищено', 'Наступна: 15 серп.', 'fi-rr-shield-check', '✓ Захищено', 'success', 1),
+  ('80000000-0000-0000-0000-000000000006', '70000000-0000-0000-0000-000000000001', 'parasites', 'Дегельмінтизація', 'Milbemax', '2026-10-10', 'Через 1 міс.', 'Наступна: 10 вер.', 'fi-rr-medicine', 'Через 1 міс.', 'neutral', 2),
+  ('80000000-0000-0000-0000-000000000007', '70000000-0000-0000-0000-000000000001', 'vaccines', 'Комплексна вакцинація', 'Nobivac DHPPi', '2026-12-10', '✓ В нормі', 'Дійсна до 10 груд. 2026', 'fi-rr-syringe', '✓ В нормі', 'success', 3),
+  ('80000000-0000-0000-0000-000000000008', '70000000-0000-0000-0000-000000000001', 'vaccines', 'Сказ + лептоспіроз', 'Nobivac Rabies', '2026-12-15', '✓ В нормі', 'Дійсна до 15 груд. 2026', 'fi-rr-syringe', '✓ В нормі', 'success', 4)
+on conflict (id) do update set
+  pet_id = excluded.pet_id,
+  category = excluded.category,
+  title = excluded.title,
+  drug_name = excluded.drug_name,
+  due_date = excluded.due_date,
+  badge_text = excluded.badge_text,
+  valid_until_formatted = excluded.valid_until_formatted,
+  icon_name = excluded.icon_name,
+  status_text = excluded.status_text,
+  status_type = excluded.status_type,
+  sort_order = excluded.sort_order;
+
