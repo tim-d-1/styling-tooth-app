@@ -22,6 +22,7 @@ import PaymentMethodsPage from '@/features/profile/PaymentMethodsPage';
 import ProfileUpcomingVisitsPage from '@/features/profile/ProfileUpcomingVisitsPage';
 import LoyaltyProgramPage from '@/features/profile/LoyaltyProgramPage';
 import QuickSchedulePage from '@/features/schedule/QuickSchedulePage';
+import ScrollToTop from '@/components/layout/ScrollToTop';
 import { supabase } from '@/lib/supabase';
 
 interface ProtectedRouteProps {
@@ -636,6 +637,7 @@ export function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AppRoutes />
     </BrowserRouter>
   );

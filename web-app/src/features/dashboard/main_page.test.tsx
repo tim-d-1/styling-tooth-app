@@ -121,6 +121,13 @@ describe('Main Page Components', () => {
       expect(handleBook).toHaveBeenCalled();
     });
 
+    it('renders loading skeleton when isLoading is true', () => {
+      render(<VisitSection isLoading={true} />);
+
+      expect(screen.getByRole('status', { name: 'Завантаження запланованого візиту' })).toBeDefined();
+      expect(screen.queryByText('Немає активних записів')).toBeNull();
+    });
+
     it('renders upcoming visit card with details and handles transfer switch', () => {
       const handleReschedule = vi.fn();
       const handleCancel = vi.fn();

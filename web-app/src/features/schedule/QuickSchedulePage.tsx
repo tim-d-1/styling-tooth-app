@@ -16,6 +16,7 @@ export interface QuickSchedulePageProps {
   onBookClick?: () => void;
   onToast?: (message: string) => void;
   initialVisit?: VisitData | null;
+  isLoading?: boolean;
   onCancelVisit?: (visitId: string) => void | Promise<void>;
   onReschedule?: () => void;
   onQuickBookClick?: () => void;
@@ -31,6 +32,7 @@ export const QuickSchedulePage: FC<QuickSchedulePageProps> = ({
   onBookClick,
   onToast,
   initialVisit,
+  isLoading: initialLoading,
   onCancelVisit,
   onReschedule,
   onQuickBookClick,
@@ -38,19 +40,30 @@ export const QuickSchedulePage: FC<QuickSchedulePageProps> = ({
   const [visit, setVisit] = useState<VisitData | null>(
     initialVisit !== undefined ? initialVisit : null
   );
+  const [isLoading, setIsLoading] = useState(
+    initialLoading !== undefined
+      ? initialLoading
+      : initialVisit === undefined && isLoggedIn
+  );
   const [isCancelling, setIsCancelling] = useState(false);
   const [userName, setUserName] = useState('');
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    if (initialLoading !== undefined) {
+      return;
+    }
+
     if (!isLoggedIn) {
       if (initialVisit === undefined) {
         setVisit(null);
       }
+      setIsLoading(false);
       return;
     }
 
     let isMounted = true;
+    setIsLoading(initialVisit === undefined);
 
     async function loadUserData() {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -139,6 +152,10 @@ export const QuickSchedulePage: FC<QuickSchedulePageProps> = ({
         }
       } catch (err) {
         console.error('Failed to load user visit data:', err);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
@@ -147,7 +164,7 @@ export const QuickSchedulePage: FC<QuickSchedulePageProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [isLoggedIn, initialVisit]);
+  }, [isLoggedIn, initialVisit, initialLoading]);
 
   const showToast = (message: string) => {
     if (onToast && message) {
@@ -210,6 +227,7 @@ export const QuickSchedulePage: FC<QuickSchedulePageProps> = ({
         <main className="w-full pt-8">
           <VisitSection
             visit={visit}
+            isLoading={isLoading}
             onBackClick={onBackClick}
             onBookClick={onBookClick}
             onReschedule={onReschedule}

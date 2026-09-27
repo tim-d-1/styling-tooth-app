@@ -6,6 +6,8 @@ import { supabase } from './lib/supabase';
 describe('App Root and Auth Gating', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    localStorage.clear();
+    window.scrollTo = vi.fn();
     window.history.pushState(null, '', '/');
   });
 
@@ -34,6 +36,20 @@ describe('App Root and Auth Gating', () => {
   });
 
   it('renders main page with no appointment state when user is authenticated', async () => {
+    const createChain = () => {
+      const chain: Record<string, unknown> = {};
+      chain.select = vi.fn(() => chain);
+      chain.eq = vi.fn(() => chain);
+      chain.neq = vi.fn(() => chain);
+      chain.gte = vi.fn(() => chain);
+      chain.order = vi.fn(() => chain);
+      chain.limit = vi.fn(() => chain);
+      chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+      chain.single = vi.fn().mockResolvedValue({ data: null, error: null });
+      return chain;
+    };
+    vi.spyOn(supabase, 'from').mockImplementation(() => createChain() as never);
+
     vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
       data: {
         session: {
@@ -57,7 +73,7 @@ describe('App Root and Auth Gating', () => {
     });
 
     expect(screen.getByText('Запланований візит')).toBeDefined();
-    expect(screen.getByText('Немає активних записів')).toBeDefined();
+    expect(await screen.findByText('Немає активних записів')).toBeDefined();
     expect(
       screen.getByRole('button', { name: /-20% на комплексний грумінг у будні/i })
     ).toBeDefined();

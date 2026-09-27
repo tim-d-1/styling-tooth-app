@@ -55,6 +55,9 @@ export const MainPage: FC<MainPageProps> = ({
   const [visit, setVisit] = useState<VisitData | null>(
     initialVisit !== undefined ? initialVisit : null
   );
+  const [isLoadingVisit, setIsLoadingVisit] = useState(
+    initialVisit === undefined && isLoggedIn
+  );
   const [isCancelling, setIsCancelling] = useState(false);
   const [activeNav, setActiveNav] = useState('home');
   const [userName, setUserName] = useState('');
@@ -151,6 +154,10 @@ export const MainPage: FC<MainPageProps> = ({
         }
       } catch (err) {
         console.error('Failed to load user data:', err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingVisit(false);
+        }
       }
     }
 
@@ -225,6 +232,7 @@ export const MainPage: FC<MainPageProps> = ({
 
         <VisitSection
           visit={visit}
+          isLoading={isLoadingVisit}
           isCancelling={isCancelling}
           onBookClick={() => showToast('')}
           onReschedule={() => showToast('')}

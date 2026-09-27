@@ -112,4 +112,11 @@ describe('QuickSchedulePage', () => {
     fireEvent.click(bannerBookBtn);
     expect(handleQuickBook).toHaveBeenCalled();
   });
+
+  it('renders loading skeleton when isLoading is true instead of empty state', () => {
+    render(<QuickSchedulePage isLoading={true} />);
+
+    expect(screen.getByRole('status', { name: 'Завантаження запланованого візиту' })).toBeDefined();
+    expect(screen.queryByText('Немає активних записів')).toBeNull();
+  });
 });

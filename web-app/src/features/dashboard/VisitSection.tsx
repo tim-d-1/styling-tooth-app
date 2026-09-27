@@ -7,6 +7,7 @@ export type VisitData = Omit<UpcomingVisitCardProps, 'onReschedule' | 'onCancel'
 
 export interface VisitSectionProps {
   visit?: VisitData | null;
+  isLoading?: boolean;
   onBookClick?: () => void;
   onReschedule?: () => void;
   onCancel?: () => void;
@@ -16,8 +17,76 @@ export interface VisitSectionProps {
   className?: string;
 }
 
+export const VisitSectionSkeleton: FC<{ onBackClick?: () => void; className?: string }> = ({
+  onBackClick,
+  className,
+}) => {
+  return (
+    <section
+      role="status"
+      aria-label="Завантаження запланованого візиту"
+      className={['max-w-[75rem] mx-auto my-6 px-6 sm:px-8 mb-10', className].filter(Boolean).join(' ')}
+    >
+      {onBackClick && (
+        <button
+          type="button"
+          onClick={onBackClick}
+          aria-label="Назад"
+          className="mb-4 inline-flex items-center justify-center p-1 text-content-dark hover:opacity-80 transition-opacity cursor-pointer border-0 bg-transparent"
+        >
+          <Icon name="fi-rr-arrow-left" size={20} color="var(--color-content-primary)" />
+        </button>
+      )}
+      <h2 className="text-2xl font-bold font-accented mb-4 text-content-dark">
+        Запланований візит
+      </h2>
+
+      <div className="bg-visit-gray rounded-[10px] p-4 sm:py-[1.0625rem] sm:pl-[1.9375rem] sm:pr-[1.625rem] flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-8 animate-pulse">
+        <div className="flex flex-col items-center justify-center shrink-0 w-16 gap-2">
+          <div className="w-10 h-5 bg-black/10 rounded" />
+          <div className="w-14 h-12 bg-black/10 rounded" />
+          <div className="w-10 h-4 bg-black/10 rounded" />
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-5 w-full lg:w-auto flex-1 justify-center">
+          <div className="w-full sm:w-[14rem] h-[8.6875rem] bg-surface-cream rounded-[10px] p-4 flex flex-col justify-between shadow-xs">
+            <div className="flex flex-col gap-2">
+              <div className="w-16 h-3 bg-black/10 rounded" />
+              <div className="w-28 h-4 bg-black/10 rounded" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="w-16 h-3 bg-black/10 rounded" />
+              <div className="w-32 h-4 bg-black/10 rounded" />
+            </div>
+          </div>
+
+          <div className="w-full sm:w-[20.4375rem] h-[8.6875rem] bg-surface-cream rounded-[10px] p-4 flex flex-col justify-between shadow-xs">
+            <div className="flex flex-col gap-2">
+              <div className="w-36 h-3 bg-black/10 rounded" />
+              <div className="w-20 h-4 bg-black/10 rounded" />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-col gap-2">
+                <div className="w-32 h-3 bg-black/10 rounded" />
+                <div className="w-16 h-4 bg-black/10 rounded" />
+              </div>
+              <div className="w-13 h-7 bg-black/10 rounded-full" />
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full lg:w-[11.4375rem] flex flex-col gap-4.5 justify-center shrink-0">
+          <div className="w-full h-11 bg-black/10 rounded-xl" />
+          <div className="w-full h-11 bg-black/10 rounded-xl" />
+        </div>
+      </div>
+    </section>
+  );
+};
+
 export const VisitSection: FC<VisitSectionProps> = ({
   visit = null,
+  isLoading = false,
   onBookClick,
   onReschedule,
   onCancel,
@@ -25,6 +94,10 @@ export const VisitSection: FC<VisitSectionProps> = ({
   isCancelling = false,
   className,
 }) => {
+  if (isLoading) {
+    return <VisitSectionSkeleton onBackClick={onBackClick} className={className} />;
+  }
+
   if (!visit) {
     return (
       <section className={['max-w-[75rem] mx-auto my-6 px-6 sm:px-8 mb-10', className].filter(Boolean).join(' ')}>
