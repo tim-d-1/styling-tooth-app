@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import PetCareSchedulePage from './PetCareSchedulePage';
 import { supabase } from '@/lib/supabase';
 import type { CareScheduleItem } from './pet_types';
@@ -227,4 +227,45 @@ describe('PetCareSchedulePage', () => {
 
     expect(screen.getByAltText('Катерина')).toBeDefined();
   });
+
+  it('loads cat care schedule for petId route parameter', async () => {
+    vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+      if (table === 'pets') {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: {
+                  id: '70000000-0000-0000-0000-000000000002',
+                  species: 'cat',
+                },
+              }),
+            }),
+          }),
+        } as never;
+      }
+      return {
+        select: () => ({
+          eq: () => ({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+          }),
+        }),
+      } as never;
+    });
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/pets/70000000-0000-0000-0000-000000000002/schedule']}>
+          <Routes>
+            <Route path="/pets/:petId/schedule" element={<PetCareSchedulePage />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    expect(screen.getByText('Дегельмінтизація')).toBeDefined();
+    expect(screen.getByText('Через 1 міс.')).toBeDefined();
+    expect(screen.getByText('Bravecto Plus')).toBeDefined();
+  });
 });
+

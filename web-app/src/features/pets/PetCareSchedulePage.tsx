@@ -4,6 +4,11 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Icon from '@/components/ui/Icon';
 import type { CareScheduleItem, CareScheduleNotification } from './pet_types';
+import {
+  getPetCareScheduleItems,
+  getPetCareNotification,
+  markPetCareNotificationRead,
+} from '@/config/care_schedule';
 import { supabase } from '@/lib/supabase';
 
 export interface PetCareSchedulePageProps {
@@ -20,56 +25,6 @@ export interface PetCareSchedulePageProps {
 
 type FilterCategory = 'all' | 'parasites' | 'vaccines';
 
-const defaultParasiteItems: CareScheduleItem[] = [
-  {
-    id: 'flea-tick',
-    title: 'Від кліщів та бліх',
-    badgeText: '✓ Захищено',
-    drugName: 'Bravecto',
-    validUntilFormatted: 'Наступна: 15 серп.',
-    iconName: 'fi-rr-shield-check',
-    category: 'parasites',
-    statusText: '✓ Захищено',
-    statusType: 'success',
-  },
-  {
-    id: 'deworming',
-    title: 'Дегельмінтизація',
-    badgeText: 'Через 1 міс.',
-    drugName: 'Milbemax',
-    validUntilFormatted: 'Наступна: 10 вер.',
-    iconName: 'fi-rr-medicine',
-    category: 'parasites',
-    statusText: 'Через 1 міс.',
-    statusType: 'neutral',
-  },
-];
-
-const defaultVaccineItems: CareScheduleItem[] = [
-  {
-    id: 'core-vaccine',
-    title: 'Комплексна вакцинація',
-    badgeText: '✓ В нормі',
-    drugName: 'Nobivac DHPPi',
-    validUntilFormatted: 'Дійсна до 10 груд. 2026',
-    iconName: 'fi-rr-syringe',
-    category: 'vaccines',
-    statusText: '✓ В нормі',
-    statusType: 'success',
-  },
-  {
-    id: 'rabies-vaccine',
-    title: 'Сказ + лептоспіроз',
-    badgeText: '✓ В нормі',
-    drugName: 'Nobivac Rabies',
-    validUntilFormatted: 'Дійсна до 15 груд. 2026',
-    iconName: 'fi-rr-syringe',
-    category: 'vaccines',
-    statusText: '✓ В нормі',
-    statusType: 'success',
-  },
-];
-
 export const PetCareSchedulePage: FC<PetCareSchedulePageProps> = ({
   onHomeClick,
   onProfileClick,
@@ -77,13 +32,7 @@ export const PetCareSchedulePage: FC<PetCareSchedulePageProps> = ({
   onBookClick,
   onAddDocumentClick,
   onToast,
-  initialNotification = {
-    id: 'notif-1',
-    title: 'Найближча обробка',
-    drugInfo: 'Обробка від кліщів (Bravecto)',
-    dueDateText: 'через 14 днів — 15 Серпня 2026',
-    isRead: false,
-  },
+  initialNotification,
   initialItems,
   initialDocumentsCount = 2,
 }) => {
@@ -94,14 +43,28 @@ export const PetCareSchedulePage: FC<PetCareSchedulePageProps> = ({
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<FilterCategory>('all');
-  const [notification, setNotification] = useState<CareScheduleNotification | null>(
-    initialNotification
+  const [notification, setNotification] = useState<CareScheduleNotification | null>(() =>
+    initialNotification !== undefined
+      ? initialNotification
+      : getPetCareNotification(petId)
   );
   const [documentsCount, setDocumentsCount] = useState<number>(initialDocumentsCount);
 
-  const [items] = useState<CareScheduleItem[]>(
-    initialItems || [...defaultParasiteItems, ...defaultVaccineItems]
+  const [items, setItems] = useState<CareScheduleItem[]>(() =>
+    initialItems !== undefined ? initialItems : getPetCareScheduleItems(petId)
   );
+
+  useEffect(() => {
+    if (initialItems !== undefined) {
+      setItems(initialItems);
+    }
+  }, [initialItems]);
+
+  useEffect(() => {
+    if (initialNotification !== undefined) {
+      setNotification(initialNotification);
+    }
+  }, [initialNotification]);
 
   const showToast = (message: string) => {
     if (onToast && message) {
@@ -149,6 +112,23 @@ export const PetCareSchedulePage: FC<PetCareSchedulePageProps> = ({
         if (resolvedName) setUserName(resolvedName);
         if (resolvedAvatar) setUserAvatarUrl(resolvedAvatar);
       }
+
+      if (petId) {
+        const { data: pet } = await supabase
+          .from('pets')
+          .select('species')
+          .eq('id', petId)
+          .maybeSingle();
+
+        if (isMounted && pet) {
+          if (initialItems === undefined) {
+            setItems(getPetCareScheduleItems(petId, pet.species));
+          }
+          if (initialNotification === undefined) {
+            setNotification(getPetCareNotification(petId, pet.species));
+          }
+        }
+      }
     }
 
     loadUserData();
@@ -156,7 +136,7 @@ export const PetCareSchedulePage: FC<PetCareSchedulePageProps> = ({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [petId, initialItems, initialNotification]);
 
   const handleHomeClick = () => {
     if (onHomeClick) {
@@ -185,6 +165,9 @@ export const PetCareSchedulePage: FC<PetCareSchedulePageProps> = ({
   };
 
   const handleMarkAsRead = () => {
+    if (petId) {
+      markPetCareNotificationRead(petId);
+    }
     setNotification(null);
     showToast('Сповіщення позначено як прочитане');
   };

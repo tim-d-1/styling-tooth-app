@@ -15,6 +15,7 @@ import type {
 } from './pet_types';
 import { getSpeciesEmoji, formatDateToUkrainian } from './pet_utils';
 import { formatPetAge } from '@/features/profile/profile_utils';
+import { getPetCareScheduleItems } from '@/config/care_schedule';
 import { supabase } from '@/lib/supabase';
 
 export interface PetDetailPageProps {
@@ -65,7 +66,17 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
   const [history, setHistory] = useState<PetProcedureHistory | null>(
     initialHistory !== undefined ? initialHistory : null
   );
-  const [schedule] = useState<CareScheduleItem[] | undefined>(initialSchedule);
+  const [schedule, setSchedule] = useState<CareScheduleItem[]>(() =>
+    initialSchedule !== undefined
+      ? initialSchedule
+      : getPetCareScheduleItems(paramPetId)
+  );
+
+  useEffect(() => {
+    if (initialSchedule !== undefined) {
+      setSchedule(initialSchedule);
+    }
+  }, [initialSchedule]);
 
   const showToast = (message: string) => {
     if (onToast && message) {
@@ -230,6 +241,10 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
           isVip: totalVisits >= 5,
         });
 
+        if (initialSchedule === undefined) {
+          setSchedule(getPetCareScheduleItems(currentDbPet.id, currentDbPet.species));
+        }
+
         if (latestAppointment) {
           const serviceRecord = Array.isArray(latestAppointment.service)
             ? latestAppointment.service[0]
@@ -266,7 +281,7 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [paramPetId, initialPets, initialPetDetail]);
+  }, [paramPetId, initialPets, initialPetDetail, initialSchedule]);
 
   const handleSelectPet = (id: string) => {
     setSelectedPetId(id);
@@ -276,6 +291,10 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
         isActive: pet.id === id,
       }))
     );
+    if (initialSchedule === undefined) {
+      const switchedPet = petsList.find((p) => p.id === id);
+      setSchedule(getPetCareScheduleItems(id, switchedPet?.species));
+    }
     navigate(`/pets/${id}`);
   };
 

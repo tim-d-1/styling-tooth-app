@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import PetProfileCard from './PetProfileCard';
 import PetHealthAlertCard from './PetHealthAlertCard';
 import PetCareScheduleCard from './PetCareScheduleCard';
@@ -496,5 +496,121 @@ describe('PetDetailPage Integration', () => {
     expect(screen.getByTestId('vip-badge')).toBeDefined();
     expect(screen.getByText('СПА-комплекс')).toBeDefined();
     expect(screen.getByText('1450 грн')).toBeDefined();
+    expect(screen.queryByTestId('empty-care-schedule')).toBeNull();
+    expect(screen.getByText('Дегельмінтизація')).toBeDefined();
+    expect(screen.getByText('Через 1 міс.')).toBeDefined();
+  });
+
+  it('renders pet care schedule with upcoming treatment for pet id 70000000-0000-0000-0000-000000000002', async () => {
+    const catPetId = '70000000-0000-0000-0000-000000000002';
+
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'usr-pet-100' },
+        },
+      },
+      error: null,
+    } as never);
+
+    vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: {
+                  full_name: 'Катерина',
+                  avatar_url: null,
+                },
+              }),
+            }),
+          }),
+        } as never;
+      }
+
+      if (table === 'pets') {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                order: vi.fn().mockResolvedValue({
+                  data: [
+                    {
+                      id: catPetId,
+                      name: 'Міся',
+                      species: 'cat',
+                      breed: 'Британська короткошерста',
+                      birth_date: '2023-05-10',
+                      weight_kg: 3.8,
+                      behavior_notes: null,
+                      medical_notes: null,
+                    },
+                  ],
+                }),
+              }),
+            }),
+          }),
+        } as never;
+      }
+
+      if (table === 'appointments') {
+        return {
+          select: (_cols: string, opts?: { count?: string; head?: boolean }) => {
+            if (opts?.count === 'exact') {
+              return {
+                eq: () => ({
+                  neq: vi.fn().mockResolvedValue({ count: 1 }),
+                }),
+              };
+            }
+            return {
+              eq: () => ({
+                neq: () => ({
+                  order: () => ({
+                    limit: () => ({
+                      maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+                    }),
+                  }),
+                }),
+              }),
+            };
+          },
+        } as never;
+      }
+
+      if (table === 'pet_media') {
+        return {
+          select: () => ({
+            eq: vi.fn().mockResolvedValue({ data: [] }),
+          }),
+        } as never;
+      }
+
+      return {
+        select: () => ({
+          eq: () => ({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+          }),
+        }),
+      } as never;
+    });
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={[`/pets/${catPetId}`]}>
+          <Routes>
+            <Route path="/pets/:petId" element={<PetDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Міся' })).toBeDefined();
+    expect(screen.queryByTestId('empty-care-schedule')).toBeNull();
+    expect(screen.getByText('Дегельмінтизація')).toBeDefined();
+    expect(screen.getByText('Через 1 міс.')).toBeDefined();
+    expect(screen.getByText(/Bravecto Plus/)).toBeDefined();
+    expect(screen.getByText(/Nobivac Tricat Trio/)).toBeDefined();
   });
 });
