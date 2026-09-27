@@ -1,7 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import PetRegisterPage from './PetRegisterPage';
-import { validatePetRegisterForm } from './pet_register_utils';
+import {
+  validatePetRegisterForm,
+  parsePetBirthDateInput,
+} from './pet_register_utils';
 
 describe('PetRegisterPage and Pet Register Utilities', () => {
   describe('validatePetRegisterForm', () => {
@@ -45,6 +48,139 @@ describe('PetRegisterPage and Pet Register Utilities', () => {
       });
       expect(result.isValid).toBe(true);
       expect(result.error).toBeNull();
+    });
+
+    it('approves valid age input "2"', () => {
+      const result = validatePetRegisterForm({
+        name: 'Барон',
+        species: 'dog',
+        birthDate: '2',
+      });
+      expect(result.isValid).toBe(true);
+      expect(result.error).toBeNull();
+    });
+
+    it('rejects invalid birth date text', () => {
+      const result = validatePetRegisterForm({
+        name: 'Барон',
+        species: 'dog',
+        birthDate: 'невідомо',
+      });
+      expect(result.isValid).toBe(false);
+      expect(result.error).toBe('Вкажіть коректну дату народження або вік (наприклад, 15.05.2022 або 2 роки)');
+    });
+  });
+
+  describe('parsePetBirthDateInput', () => {
+    const fixedNow = new Date('2026-09-27T12:00:00Z');
+
+    it('converts plain age string "2" to ISO date corresponding to 2 years ago', () => {
+      const result = parsePetBirthDateInput('2', fixedNow);
+      expect(result.error).toBeNull();
+      expect(result.dateString).toBe('2024-09-27');
+    });
+
+    it('converts decimal age string "0.5" and "1.5"', () => {
+      expect(parsePetBirthDateInput('0.5', fixedNow)).toEqual({
+        dateString: '2026-03-27',
+        error: null,
+      });
+      expect(parsePetBirthDateInput('1.5', fixedNow)).toEqual({
+        dateString: '2025-03-27',
+        error: null,
+      });
+    });
+
+    it('converts Ukrainian age strings: "2 роки", "1 рік", "5 років", "2 р"', () => {
+      expect(parsePetBirthDateInput('2 роки', fixedNow)).toEqual({
+        dateString: '2024-09-27',
+        error: null,
+      });
+      expect(parsePetBirthDateInput('1 рік', fixedNow)).toEqual({
+        dateString: '2025-09-27',
+        error: null,
+      });
+      expect(parsePetBirthDateInput('5 років', fixedNow)).toEqual({
+        dateString: '2021-09-27',
+        error: null,
+      });
+      expect(parsePetBirthDateInput('2 р', fixedNow)).toEqual({
+        dateString: '2024-09-27',
+        error: null,
+      });
+    });
+
+    it('converts months: "6 місяців", "3 місяці", "1 місяць", "6 міс"', () => {
+      expect(parsePetBirthDateInput('6 місяців', fixedNow)).toEqual({
+        dateString: '2026-03-27',
+        error: null,
+      });
+      expect(parsePetBirthDateInput('3 місяці', fixedNow)).toEqual({
+        dateString: '2026-06-27',
+        error: null,
+      });
+      expect(parsePetBirthDateInput('1 місяць', fixedNow)).toEqual({
+        dateString: '2026-08-27',
+        error: null,
+      });
+      expect(parsePetBirthDateInput('6 міс', fixedNow)).toEqual({
+        dateString: '2026-03-27',
+        error: null,
+      });
+    });
+
+    it('converts combined age: "2 роки 3 місяці"', () => {
+      expect(parsePetBirthDateInput('2 роки 3 місяці', fixedNow)).toEqual({
+        dateString: '2024-06-27',
+        error: null,
+      });
+    });
+
+    it('converts year string "2023" to "2023-01-01"', () => {
+      expect(parsePetBirthDateInput('2023', fixedNow)).toEqual({
+        dateString: '2023-01-01',
+        error: null,
+      });
+    });
+
+    it('converts standard date formats DD.MM.YYYY, DD/MM/YYYY, YYYY-MM-DD', () => {
+      expect(parsePetBirthDateInput('15.05.2024', fixedNow)).toEqual({
+        dateString: '2024-05-15',
+        error: null,
+      });
+      expect(parsePetBirthDateInput('15/05/2024', fixedNow)).toEqual({
+        dateString: '2024-05-15',
+        error: null,
+      });
+      expect(parsePetBirthDateInput('2024-05-15', fixedNow)).toEqual({
+        dateString: '2024-05-15',
+        error: null,
+      });
+    });
+
+    it('returns null dateString for empty or whitespace inputs', () => {
+      expect(parsePetBirthDateInput('', fixedNow)).toEqual({ dateString: null, error: null });
+      expect(parsePetBirthDateInput('   ', fixedNow)).toEqual({ dateString: null, error: null });
+      expect(parsePetBirthDateInput(null, fixedNow)).toEqual({ dateString: null, error: null });
+      expect(parsePetBirthDateInput(undefined, fixedNow)).toEqual({ dateString: null, error: null });
+    });
+
+    it('flags invalid calendar dates, future dates, and unrealistic ages', () => {
+      expect(parsePetBirthDateInput('32.05.2024', fixedNow).error).toBe(
+        'Вкажіть коректну дату (день від 1 до 31, місяць від 1 до 12)'
+      );
+      expect(parsePetBirthDateInput('2030-01-01', fixedNow).error).toBe(
+        'Дата народження не може бути в майбутньому'
+      );
+      expect(parsePetBirthDateInput('2030', fixedNow).error).toBe(
+        'Рік народження не може бути в майбутньому'
+      );
+      expect(parsePetBirthDateInput('100', fixedNow).error).toBe(
+        'Вкажіть реалістичний вік тваринки (до 40 років)'
+      );
+      expect(parsePetBirthDateInput('невідомо', fixedNow).error).toBe(
+        'Вкажіть коректну дату народження або вік (наприклад, 15.05.2022 або 2 роки)'
+      );
     });
   });
 
@@ -201,6 +337,69 @@ describe('PetRegisterPage and Pet Register Utilities', () => {
       const errorAlert = await screen.findByRole('alert');
       expect(errorAlert.textContent).toBe('Необхідно авторизуватися для реєстрації тваринки');
       expect(handleSuccess).not.toHaveBeenCalled();
+    });
+
+    it('normalizes age input "2" to valid ISO date string on submit and sends to Supabase', async () => {
+      const { supabase } = await import('@/lib/supabase');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: { user: { id: 'user-789' } } },
+        error: null,
+      } as never);
+
+      const selectMock = vi.fn().mockReturnValue({
+        maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'pet-123' }, error: null }),
+      });
+      const insertMock = vi.fn().mockReturnValue({
+        select: selectMock,
+      });
+      vi.spyOn(supabase, 'from').mockReturnValue({
+        insert: insertMock,
+      } as never);
+
+      const handleSuccess = vi.fn();
+      render(<PetRegisterPage onSuccess={handleSuccess} />);
+
+      fireEvent.change(screen.getByLabelText('Кличка тваринки'), { target: { value: 'Барон' } });
+      fireEvent.change(screen.getByLabelText('Дата народження / Вік'), { target: { value: '2' } });
+
+      const submitBtn = screen.getByRole('button', { name: 'Зберегти' });
+      await act(async () => {
+        fireEvent.click(submitBtn);
+      });
+
+      expect(insertMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          owner_id: 'user-789',
+          name: 'Барон',
+          birth_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        })
+      );
+
+      const calledBirthDate = insertMock.mock.calls[0][0].birth_date;
+      expect(calledBirthDate).not.toBe('2');
+      expect(handleSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('displays validation error and prevents insert when invalid birth date is entered', async () => {
+      const { supabase } = await import('@/lib/supabase');
+      const insertMock = vi.fn();
+      vi.spyOn(supabase, 'from').mockReturnValue({
+        insert: insertMock,
+      } as never);
+
+      render(<PetRegisterPage />);
+
+      fireEvent.change(screen.getByLabelText('Кличка тваринки'), { target: { value: 'Барон' } });
+      fireEvent.change(screen.getByLabelText('Дата народження / Вік'), { target: { value: 'невідомо' } });
+
+      const submitBtn = screen.getByRole('button', { name: 'Зберегти' });
+      await act(async () => {
+        fireEvent.click(submitBtn);
+      });
+
+      const errorAlert = await screen.findByRole('alert');
+      expect(errorAlert.textContent).toBe('Вкажіть коректну дату народження або вік (наприклад, 15.05.2022 або 2 роки)');
+      expect(insertMock).not.toHaveBeenCalled();
     });
   });
 });

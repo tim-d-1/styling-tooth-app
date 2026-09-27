@@ -2,6 +2,7 @@ import { useState, type FC, type FormEvent, type ChangeEvent } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   validatePetRegisterForm,
+  parsePetBirthDateInput,
   type PetSpecies,
   type PetSex,
 } from './pet_register_utils';
@@ -96,6 +97,8 @@ export const PetRegisterPage: FC<PetRegisterPageProps> = ({
         ? parseFloat(weight.replace(',', '.'))
         : null;
 
+      const { dateString: normalizedBirthDate } = parsePetBirthDateInput(birthDate);
+
       const { data: insertedPet, error: insertError } = await supabase
         .from('pets')
         .insert({
@@ -104,7 +107,7 @@ export const PetRegisterPage: FC<PetRegisterPageProps> = ({
           species,
           breed: breed.trim() || null,
           sex,
-          birth_date: birthDate.trim() || null,
+          birth_date: normalizedBirthDate,
           weight_kg: parsedWeight,
           behavior_notes: notes.trim() || null,
         })
