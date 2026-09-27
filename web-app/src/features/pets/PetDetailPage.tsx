@@ -354,6 +354,41 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
     }
   };
 
+  const handleAvatarChange = async (file: File) => {
+    if (!petDetail?.id) return;
+    try {
+      const fileExt = file.name.split('.').pop() || 'jpg';
+      const storagePath = `${petDetail.id}/${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('pet-media')
+        .upload(storagePath, file);
+      if (uploadError) {
+        showToast(`Помилка завантаження фото: ${uploadError.message}`);
+        return;
+      }
+      const { error: mediaError } = await supabase.from('pet_media').insert({
+        pet_id: petDetail.id,
+        storage_path: storagePath,
+        photo_type: 'general',
+      });
+      if (mediaError) {
+        showToast(`Помилка збереження медіа: ${mediaError.message}`);
+        return;
+      }
+      const { data: signedData } = await supabase.storage
+        .from('pet-media')
+        .createSignedUrl(storagePath, 3600);
+      const newUrl =
+        signedData?.signedUrl ||
+        supabase.storage.from('pet-media').getPublicUrl(storagePath).data.publicUrl;
+      setPetDetail((prev) => (prev ? { ...prev, avatarUrl: newUrl } : null));
+      showToast('Фото успішно оновлено');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Помилка оновлення фото';
+      showToast(msg);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-surface-cream text-content-dark font-primary flex flex-col justify-between">
       <div className="flex-1 pb-16">
@@ -445,6 +480,7 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
                       showToast(`Редагувати: ${petDetail.name}`);
                     }
                   }}
+                  onAvatarChange={handleAvatarChange}
                 />
 
                 <PetHealthAlertCard

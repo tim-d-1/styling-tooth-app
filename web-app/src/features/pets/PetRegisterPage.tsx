@@ -126,13 +126,21 @@ export const PetRegisterPage: FC<PetRegisterPageProps> = ({
           .from('pet-media')
           .upload(storagePath, petPhoto);
 
-        if (!uploadError) {
-          await supabase.from('pet_media').insert({
-            pet_id: insertedPet.id,
-            storage_path: storagePath,
-            photo_type: 'general',
-            created_by: currentUserId,
-          });
+        if (uploadError) {
+          setErrorMessage(uploadError.message);
+          return;
+        }
+
+        const { error: mediaError } = await supabase.from('pet_media').insert({
+          pet_id: insertedPet.id,
+          storage_path: storagePath,
+          photo_type: 'general',
+          created_by: currentUserId,
+        });
+
+        if (mediaError) {
+          setErrorMessage(mediaError.message);
+          return;
         }
       }
 

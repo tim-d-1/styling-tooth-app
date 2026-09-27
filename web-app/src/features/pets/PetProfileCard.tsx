@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC } from 'react';
+import { useState, useEffect, useRef, type FC, type ChangeEvent } from 'react';
 import Icon from '@/components/ui/Icon';
 import type { PetDetail } from './pet_types';
 import { formatPetSubtitle, formatVisitsCount } from './pet_utils';
@@ -6,16 +6,33 @@ import { formatPetSubtitle, formatVisitsCount } from './pet_utils';
 export interface PetProfileCardProps {
   pet: PetDetail;
   onEditClick?: () => void;
+  onAvatarChange?: (file: File) => Promise<void> | void;
 }
 
-export const PetProfileCard: FC<PetProfileCardProps> = ({ pet, onEditClick }) => {
+export const PetProfileCard: FC<PetProfileCardProps> = ({ pet, onEditClick, onAvatarChange }) => {
   const subtitle = formatPetSubtitle(pet.breed, pet.ageFormatted, pet.weightKg);
   const visitsText = formatVisitsCount(pet.visitsCount);
   const [avatarFailed, setAvatarFailed] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setAvatarFailed(false);
   }, [pet.avatarUrl]);
+
+  const handleAvatarClick = () => {
+    if (onAvatarChange) {
+      fileInputRef.current?.click();
+    } else if (onEditClick) {
+      onEditClick();
+    }
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onAvatarChange) {
+      onAvatarChange(file);
+    }
+  };
 
   return (
     <div
@@ -48,12 +65,23 @@ export const PetProfileCard: FC<PetProfileCardProps> = ({ pet, onEditClick }) =>
 
         <button
           type="button"
-          onClick={onEditClick}
+          onClick={handleAvatarClick}
           aria-label="Редагувати профіль улюбленця"
           className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-terracotta hover:bg-terracotta-hover text-white flex items-center justify-center shadow-md cursor-pointer transition-colors outline-none"
         >
           <Icon name="fi-rr-edit" size={14} />
         </button>
+
+        {onAvatarChange && (
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/heic"
+            className="hidden"
+            data-testid="pet-avatar-input"
+            onChange={handleFileChange}
+          />
+        )}
       </div>
 
       <h2 className="font-accented font-bold text-2xl text-white text-center mt-3">

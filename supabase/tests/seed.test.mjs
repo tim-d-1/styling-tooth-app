@@ -227,3 +227,48 @@ test("5. Pet Care Schedules Seeding Verification", async () => {
   assert.ok(misyaSchedules.some((s) => s.title === "Дегельмінтизація" && s.badge_text === "Через 1 міс."));
 });
 
+test("6. Pet Media Storage RLS & Signed URL Verification", async () => {
+  const clientSupabase = createClient(supabaseUrl, supabaseAnonKey);
+  const { data: authData, error: authErr } = await clientSupabase.auth.signInWithPassword({
+    email: "kateryna.kovalchuk@example.com",
+    password: "TestPass2026!",
+  });
+  assert.equal(authErr, null, `Client auth failed: ${authErr?.message}`);
+  assert.ok(authData?.session, "Client must receive valid session");
+
+  const { data: clientPets } = await clientSupabase
+    .from("pets")
+    .select("id, name");
+  assert.ok(clientPets && clientPets.length > 0, "Client must have at least one pet");
+  const pet = clientPets[0];
+
+  const testPath = `${pet.id}/test_${Date.now()}.jpg`;
+  const fileContent = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+
+  // Client uploads photo for their own pet
+  const { error: upErr } = await clientSupabase.storage
+    .from("pet-media")
+    .upload(testPath, fileContent, { contentType: "image/jpeg" });
+  assert.equal(upErr, null, `Upload for own pet must succeed: ${upErr?.message}`);
+
+  // Client creates signed URL
+  const { data: signedData, error: signErr } = await clientSupabase.storage
+    .from("pet-media")
+    .createSignedUrl(testPath, 60);
+  assert.equal(signErr, null, `Signed URL must succeed: ${signErr?.message}`);
+  assert.ok(signedData?.signedUrl, "Signed URL must be returned");
+
+  // Client attempts to upload to another pet's path (unowned pet)
+  const forbiddenPath = `70000000-0000-0000-0000-000000000002/forbidden_${Date.now()}.jpg`;
+  const { error: forbidErr } = await clientSupabase.storage
+    .from("pet-media")
+    .upload(forbiddenPath, fileContent, { contentType: "image/jpeg" });
+  assert.ok(forbidErr !== null, "Uploading to another user's pet folder must be blocked by RLS");
+
+  // Client deletes their own file
+  const { error: delErr } = await clientSupabase.storage
+    .from("pet-media")
+    .remove([testPath]);
+  assert.equal(delErr, null, `Deleting own file must succeed: ${delErr?.message}`);
+});
+

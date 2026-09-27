@@ -315,4 +315,12 @@ test("13. Pet Care Schedules RLS Scope", async () => {
   assert.equal(anonData?.length || 0, 0, "Anon cannot view pet care schedules");
 });
 
+test("14. Pet Media Storage Bucket Anon Access Guard", async () => {
+  const fileContent = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
+  const { error: upErr } = await supabase.storage
+    .from("pet-media")
+    .upload("test/anon.jpg", fileContent);
+  assert.ok(upErr !== null, "Anon upload to pet-media must be rejected by RLS");
+});
+
 

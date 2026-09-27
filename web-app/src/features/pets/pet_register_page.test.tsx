@@ -401,5 +401,109 @@ describe('PetRegisterPage and Pet Register Utilities', () => {
       expect(errorAlert.textContent).toBe('Вкажіть коректну дату народження або вік (наприклад, 15.05.2022 або 2 роки)');
       expect(insertMock).not.toHaveBeenCalled();
     });
+
+    it('displays error and stops when storage upload fails', async () => {
+      const { supabase } = await import('@/lib/supabase');
+      const handleSuccess = vi.fn();
+      vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
+        data: { user: { id: 'user-789' } as never },
+        error: null,
+      });
+
+      vi.spyOn(supabase, 'from').mockReturnValue({
+        insert: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { id: 'pet-123' },
+              error: null,
+            }),
+          }),
+        }),
+      } as never);
+
+      vi.spyOn(supabase.storage, 'from').mockReturnValue({
+        upload: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Storage policy violation' },
+        }),
+      } as never);
+
+      render(<PetRegisterPage onSuccess={handleSuccess} />);
+
+      fireEvent.change(screen.getByLabelText('Кличка тваринки'), { target: { value: 'Барон' } });
+      const file = new File(['dummy'], 'dog.jpg', { type: 'image/jpeg' });
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(fileInput, { target: { files: [file] } });
+
+      const submitBtn = screen.getByRole('button', { name: 'Зберегти' });
+      await act(async () => {
+        fireEvent.click(submitBtn);
+      });
+
+      const errorAlert = await screen.findByRole('alert');
+      expect(errorAlert.textContent).toBe('Storage policy violation');
+      expect(handleSuccess).not.toHaveBeenCalled();
+    });
+
+    it('uploads photo to storage and inserts row into pet_media on success', async () => {
+      const { supabase } = await import('@/lib/supabase');
+      const handleSuccess = vi.fn();
+      vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
+        data: { user: { id: 'user-789' } as never },
+        error: null,
+      });
+
+      const mediaInsertMock = vi.fn().mockResolvedValue({ data: null, error: null });
+      vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+        if (table === 'pets') {
+          return {
+            insert: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: { id: 'pet-123' },
+                  error: null,
+                }),
+              }),
+            }),
+          } as never;
+        }
+        if (table === 'pet_media') {
+          return {
+            insert: mediaInsertMock,
+          } as never;
+        }
+        return {} as never;
+      });
+
+      const storageUploadMock = vi.fn().mockResolvedValue({
+        data: { path: 'pet-123/file.jpg' },
+        error: null,
+      });
+      vi.spyOn(supabase.storage, 'from').mockReturnValue({
+        upload: storageUploadMock,
+      } as never);
+
+      render(<PetRegisterPage onSuccess={handleSuccess} />);
+
+      fireEvent.change(screen.getByLabelText('Кличка тваринки'), { target: { value: 'Барон' } });
+      const file = new File(['dummy'], 'dog.jpg', { type: 'image/jpeg' });
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(fileInput, { target: { files: [file] } });
+
+      const submitBtn = screen.getByRole('button', { name: 'Зберегти' });
+      await act(async () => {
+        fireEvent.click(submitBtn);
+      });
+
+      expect(storageUploadMock).toHaveBeenCalledTimes(1);
+      expect(mediaInsertMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pet_id: 'pet-123',
+          photo_type: 'general',
+          created_by: 'user-789',
+        })
+      );
+      expect(handleSuccess).toHaveBeenCalledTimes(1);
+    });
   });
 });
