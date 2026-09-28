@@ -45,6 +45,7 @@ export interface MainPageProps {
   onPromoClick?: (promoId: string) => void;
   onLocationClick?: () => void;
   selectedCity?: string;
+  onBookClick?: () => void;
 }
 
 export const MainPage: FC<MainPageProps> = ({
@@ -59,6 +60,7 @@ export const MainPage: FC<MainPageProps> = ({
   onPromoClick,
   onLocationClick,
   selectedCity,
+  onBookClick,
 }) => {
   const currentCity =
     selectedCity ||
@@ -251,7 +253,7 @@ export const MainPage: FC<MainPageProps> = ({
           visit={visit}
           isLoading={isLoadingVisit}
           isCancelling={isCancelling}
-          onBookClick={() => showToast('')}
+          onBookClick={onBookClick || (() => showToast(''))}
           onReschedule={() => showToast('')}
           onCancel={handleCancelVisit}
         />

@@ -23,6 +23,7 @@ import PaymentMethodsPage from '@/features/profile/PaymentMethodsPage';
 import ProfileUpcomingVisitsPage from '@/features/profile/ProfileUpcomingVisitsPage';
 import LoyaltyProgramPage from '@/features/profile/LoyaltyProgramPage';
 import QuickSchedulePage from '@/features/schedule/QuickSchedulePage';
+import BookingPage from '@/features/booking/BookingPage';
 import ArticleDetailPage from '@/features/articles/ArticleDetailPage';
 import PromoDetailPage from '@/features/promotions/PromoDetailPage';
 import CitySelectionPage from '@/features/location/CitySelectionPage';
@@ -212,10 +213,10 @@ export function AppRoutes() {
                 onRegisterClick={() => navigate('/register')}
                 onBookClick={() => {
                   if (isLoggedIn) {
-                    navigate('/main');
+                    navigate('/booking');
                   } else {
                     showToast('Увійдіть для запису на візит');
-                    navigate('/login');
+                    navigate('/login?from=/booking');
                   }
                 }}
                 onQuickBookClick={() => navigate('/quick-schedule')}
@@ -232,10 +233,10 @@ export function AppRoutes() {
               onRegisterClick={() => navigate('/register')}
               onBookClick={() => {
                 if (isLoggedIn) {
-                  navigate('/main');
+                  navigate('/booking');
                 } else {
                   showToast('Увійдіть для запису на візит');
-                  navigate('/login');
+                  navigate('/login?from=/booking');
                 }
               }}
               onQuickBookClick={() => navigate('/quick-schedule')}
@@ -255,18 +256,18 @@ export function AppRoutes() {
               onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
               onBookClick={() => {
                 if (isLoggedIn) {
-                  navigate('/main');
+                  navigate('/booking');
                 } else {
                   showToast('Увійдіть для запису на візит');
-                  navigate('/login');
+                  navigate('/login?from=/booking');
                 }
               }}
               onQuickBookClick={() => {
                 if (isLoggedIn) {
-                  navigate('/main');
+                  navigate('/booking');
                 } else {
                   showToast('Увійдіть для запису на візит');
-                  navigate('/login');
+                  navigate('/login?from=/booking');
                 }
               }}
               onToast={showToast}
@@ -277,6 +278,31 @@ export function AppRoutes() {
         <Route
           path="/quick-booking"
           element={<Navigate to="/quick-schedule" replace />}
+        />
+
+        <Route
+          path="/booking"
+          element={
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <BookingPage
+                isLoggedIn={isLoggedIn}
+                onLoginClick={() => navigate('/login')}
+                onRegisterClick={() => navigate('/register')}
+                onProfileClick={() => navigate('/profile')}
+                onBackClick={() => navigate(-1)}
+                onAddPetClick={() => navigate('/pet-register?from=/booking')}
+                onComplete={() => {
+                  navigate('/main');
+                  showToast('Візит успішно заброньовано!');
+                }}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/book"
+          element={<Navigate to="/booking" replace />}
         />
 
         <Route
@@ -350,6 +376,7 @@ export function AppRoutes() {
                 onLoginClick={() => navigate('/login')}
                 onRegisterClick={() => navigate('/register')}
                 onProfileClick={() => navigate('/profile')}
+                onBookClick={() => navigate('/booking')}
                 onArticleClick={(articleId) => navigate(`/articles/${articleId}`)}
                 onPromoClick={(promoId) => navigate(`/promotions/${promoId}`)}
                 onLocationClick={() => navigate('/select-city')}
@@ -420,7 +447,7 @@ export function AppRoutes() {
             <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
               <ProfilePage
                 onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
-                onBookClick={() => navigate('/main')}
+                onBookClick={() => navigate('/booking')}
                 onAddPetClick={() =>
                   navigate('/pet-register', { state: { from: '/profile' } })
                 }
@@ -606,7 +633,7 @@ export function AppRoutes() {
                 onAddPetClick={() =>
                   navigate('/pet-register', { state: { from: location.pathname } })
                 }
-                onBookClick={() => navigate('/main')}
+                onBookClick={() => navigate('/booking')}
                 onToast={showToast}
               />
             </ProtectedRoute>
@@ -623,7 +650,7 @@ export function AppRoutes() {
                 onAddPetClick={() =>
                   navigate('/pet-register', { state: { from: '/pets' } })
                 }
-                onBookClick={() => navigate('/main')}
+                onBookClick={() => navigate('/booking')}
                 onToast={showToast}
               />
             </ProtectedRoute>
@@ -640,7 +667,7 @@ export function AppRoutes() {
                 onAddPetClick={() =>
                   navigate('/pet-register', { state: { from: location.pathname } })
                 }
-                onBookClick={() => navigate('/main')}
+                onBookClick={() => navigate('/booking')}
                 onToast={showToast}
               />
             </ProtectedRoute>
@@ -655,7 +682,7 @@ export function AppRoutes() {
                 onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
                 onProfileClick={() => navigate('/profile')}
                 onPetsClick={() => navigate('/profile')}
-                onBookClick={() => navigate('/main')}
+                onBookClick={() => navigate('/booking')}
                 onToast={showToast}
               />
             </ProtectedRoute>
@@ -670,7 +697,7 @@ export function AppRoutes() {
                 onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
                 onProfileClick={() => navigate('/profile')}
                 onPetsClick={() => navigate('/profile')}
-                onBookClick={() => navigate('/main')}
+                onBookClick={() => navigate('/booking')}
                 onToast={showToast}
               />
             </ProtectedRoute>
@@ -685,7 +712,7 @@ export function AppRoutes() {
                 onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
                 onProfileClick={() => navigate('/profile')}
                 onPetsClick={() => navigate('/profile')}
-                onBookClick={() => navigate('/main')}
+                onBookClick={() => navigate('/booking')}
                 onToast={showToast}
               />
             </ProtectedRoute>
@@ -700,7 +727,7 @@ export function AppRoutes() {
                 onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
                 onProfileClick={() => navigate('/profile')}
                 onPetsClick={() => navigate('/profile')}
-                onBookClick={() => navigate('/main')}
+                onBookClick={() => navigate('/booking')}
                 onToast={showToast}
               />
             </ProtectedRoute>
@@ -715,7 +742,7 @@ export function AppRoutes() {
                 onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
                 onProfileClick={() => navigate('/profile')}
                 onPetsClick={() => navigate('/profile')}
-                onBookClick={() => navigate('/main')}
+                onBookClick={() => navigate('/booking')}
                 onToast={showToast}
               />
             </ProtectedRoute>
@@ -730,7 +757,7 @@ export function AppRoutes() {
                 onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
                 onProfileClick={() => navigate('/profile')}
                 onPetsClick={() => navigate('/profile')}
-                onBookClick={() => navigate('/main')}
+                onBookClick={() => navigate('/booking')}
                 onToast={showToast}
               />
             </ProtectedRoute>
@@ -744,7 +771,7 @@ export function AppRoutes() {
               <ProfileUpcomingVisitsPage
                 onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
                 onProfileClick={() => navigate('/profile')}
-                onBookClick={() => navigate('/main')}
+                onBookClick={() => navigate('/booking')}
                 onToast={showToast}
               />
             </ProtectedRoute>

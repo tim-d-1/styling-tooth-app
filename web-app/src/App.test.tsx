@@ -1049,5 +1049,111 @@ describe('App Root and Auth Gating', () => {
         await screen.findByRole('button', { name: /Поточна локація: м. Львів/i })
       ).toBeDefined();
     });
+
+    it('redirects unauthenticated user from /booking to /login with return path', async () => {
+      window.history.pushState(null, '', '/booking');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-booking-unauth',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(await screen.findByRole('heading', { level: 1, name: 'Вхід' })).toBeDefined();
+    });
+
+    it('renders BookingPage when authenticated user navigates to /booking', async () => {
+      const createChain = () => {
+        const chain: Record<string, unknown> = {};
+        chain.select = vi.fn(() => chain);
+        chain.eq = vi.fn(() => chain);
+        chain.order = vi.fn().mockResolvedValue({ data: [], error: null });
+        return chain;
+      };
+      vi.spyOn(supabase, 'from').mockImplementation(() => createChain() as never);
+
+      window.history.pushState(null, '', '/booking');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'user-booking-auth', email: 'booker@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-booking-auth',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(await screen.findByRole('heading', { level: 1, name: 'Оберіть улюбленця' })).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Додати нового улюбленця' })).toBeDefined();
+    });
+
+    it('navigates from main page to /booking when clicking book visit button in VisitSection', async () => {
+      const createChain = () => {
+        const chain: Record<string, unknown> = {};
+        chain.select = vi.fn(() => chain);
+        chain.eq = vi.fn(() => chain);
+        chain.neq = vi.fn(() => chain);
+        chain.gte = vi.fn(() => chain);
+        chain.order = vi.fn(() => chain);
+        chain.limit = vi.fn(() => chain);
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        chain.single = vi.fn().mockResolvedValue({ data: null, error: null });
+        return chain;
+      };
+      vi.spyOn(supabase, 'from').mockImplementation(() => createChain() as never);
+
+      window.history.pushState(null, '', '/main');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'user-nav-book', email: 'navbook@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-nav-book',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      const bookBtn = await screen.findByRole('button', { name: /Запланувати візит/i });
+      await act(async () => {
+        fireEvent.click(bookBtn);
+      });
+
+      expect(await screen.findByRole('heading', { level: 1, name: 'Оберіть улюбленця' })).toBeDefined();
+    });
   });
 });
