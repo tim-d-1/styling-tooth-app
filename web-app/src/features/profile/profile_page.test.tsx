@@ -553,6 +553,110 @@ describe('Profile Feature Components', () => {
       expect(handleToast).toHaveBeenCalledWith('Помилка скасування: State transition rejected');
       expect(screen.getByText('Повний комплекс')).toBeDefined();
     });
+
+    it('loads user pets with resolved avatar from pet_media and displays avatar on profile', async () => {
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'usr-pet-owner' },
+          },
+        },
+        error: null,
+      } as never);
+
+      vi.spyOn(supabase.storage, 'from').mockReturnValue({
+        createSignedUrl: vi.fn().mockResolvedValue({
+          data: { signedUrl: 'https://storage.supabase.co/signed-barni-avatar.jpg' },
+          error: null,
+        }),
+      } as never);
+
+      vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: { full_name: 'Оксана' },
+                }),
+              }),
+            }),
+          } as never;
+        }
+
+        if (table === 'pets') {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: () => ({
+                  order: vi.fn().mockResolvedValue({
+                    data: [
+                      {
+                        id: '70000000-0000-0000-0000-000000000001',
+                        name: 'Барні',
+                        species: 'dog',
+                        breed: 'Йорк',
+                        birth_date: '2023-01-01',
+                      },
+                    ],
+                  }),
+                }),
+              }),
+            }),
+          } as never;
+        }
+
+        if (table === 'pet_media') {
+          return {
+            select: () => ({
+              in: () => ({
+                order: vi.fn().mockResolvedValue({
+                  data: [
+                    {
+                      id: 'media-1',
+                      pet_id: '70000000-0000-0000-0000-000000000001',
+                      storage_path: '70000000-0000-0000-0000-000000000001/barni.jpg',
+                      photo_type: 'general',
+                      created_at: '2026-09-28T10:00:00Z',
+                    },
+                  ],
+                  error: null,
+                }),
+              }),
+            }),
+          } as never;
+        }
+
+        if (table === 'appointments') {
+          return {
+            select: () => ({
+              eq: () => ({
+                neq: () => ({
+                  gte: () => ({
+                    order: () => ({
+                      limit: () => ({
+                        maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
+          } as never;
+        }
+
+        return {} as never;
+      });
+
+      await act(async () => {
+        render(<ProfilePage />);
+      });
+
+      expect(screen.getByText('Барні')).toBeDefined();
+      const petAvatar = screen.getByRole('img', { name: 'Барні' }) as HTMLImageElement;
+      expect(petAvatar).toBeDefined();
+      expect(petAvatar.src).toBe('https://storage.supabase.co/signed-barni-avatar.jpg');
+    });
   });
 
   describe('profile_utils', () => {

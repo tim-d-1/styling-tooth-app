@@ -286,4 +286,78 @@ describe('BookingPage', () => {
       expect(screen.getByRole('radio', { name: /Барсик/i })).toBeDefined();
     });
   });
+
+  it('loads user pet 70000000-0000-0000-0000-000000000001 with custom avatar from pet_media on stage 1', async () => {
+    const mockUserPets = [
+      {
+        id: '70000000-0000-0000-0000-000000000001',
+        name: 'Барні',
+        species: 'dog',
+        breed: 'Йоркширський тер\'єр',
+      },
+    ];
+
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'owner-777', email: 'owner@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+
+    vi.spyOn(supabase.storage, 'from').mockReturnValue({
+      createSignedUrl: vi.fn().mockResolvedValue({
+        data: { signedUrl: 'https://storage.supabase.co/signed-barni-avatar.jpg' },
+        error: null,
+      }),
+    } as never);
+
+    vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
+      if (table === 'pets') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: mockUserPets, error: null }),
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === 'pet_media') {
+        return {
+          select: vi.fn().mockReturnValue({
+            in: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [
+                  {
+                    id: 'media-777',
+                    pet_id: '70000000-0000-0000-0000-000000000001',
+                    storage_path: '70000000-0000-0000-0000-000000000001/new-avatar.jpg',
+                    photo_type: 'general',
+                    created_at: '2026-09-28T12:00:00Z',
+                  },
+                ],
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      return {};
+    }) as never);
+
+    await act(async () => {
+      renderBooking({ isLoggedIn: true });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('radio', { name: /Барні/i })).toBeDefined();
+    });
+
+    const petImage = screen.getByRole('img', { name: 'Барні' }) as HTMLImageElement;
+    expect(petImage).toBeDefined();
+    expect(petImage.src).toBe('https://storage.supabase.co/signed-barni-avatar.jpg');
+  });
 });

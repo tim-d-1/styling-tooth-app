@@ -6,6 +6,7 @@ import Icon from '@/components/ui/Icon';
 import type { UpcomingVisitData, ProfilePet } from './profile_types';
 import { formatAppointmentDate } from './profile_utils';
 import { supabase } from '@/lib/supabase';
+import { fetchPetsAvatarMap } from '@/features/pets/pet_media_utils';
 
 export interface ProfileUpcomingVisitsPageProps {
   initialVisits?: UpcomingVisitData[];
@@ -91,6 +92,8 @@ export const ProfileUpcomingVisitsPage: FC<ProfileUpcomingVisitsPageProps> = ({
         );
       }
 
+      let avatarMap: Record<string, string> = {};
+
       if (!initialPets) {
         const { data: dbPets } = await supabase
           .from('pets')
@@ -100,13 +103,16 @@ export const ProfileUpcomingVisitsPage: FC<ProfileUpcomingVisitsPageProps> = ({
           .order('name', { ascending: true });
 
         if (isMounted && dbPets) {
+          avatarMap = await fetchPetsAvatarMap(dbPets.map((p) => p.id));
+          if (!isMounted) return;
+
           setPets(
             dbPets.map((p) => ({
               id: p.id,
               name: p.name,
               species: p.species === 'dog' ? 'Собака' : p.species === 'cat' ? 'Кіт' : 'Інше',
               breed: p.breed || null,
-              avatarUrl: null,
+              avatarUrl: avatarMap[p.id] || (p as any).avatar_url || null,
             }))
           );
         }
@@ -152,12 +158,13 @@ export const ProfileUpcomingVisitsPage: FC<ProfileUpcomingVisitsPageProps> = ({
             const petRec = Array.isArray(appt.pet) ? appt.pet[0] : appt.pet;
             const masterRec = Array.isArray(appt.master) ? appt.master[0] : appt.master;
             const serviceRec = Array.isArray(appt.service) ? appt.service[0] : appt.service;
+            const petId = appt.pet_id || petRec?.id;
 
             return {
               id: appt.id,
-              petId: appt.pet_id || petRec?.id || undefined,
+              petId: petId || undefined,
               petName: petRec?.name || 'Улюбленець',
-              petAvatarUrl: null,
+              petAvatarUrl: (petId && avatarMap[petId]) || null,
               serviceTitle: serviceRec?.name || 'Грумінг комплекс',
               masterName: masterRec?.display_name || 'Майстер салону',
               price: Number(appt.price) || 0,

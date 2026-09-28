@@ -10,6 +10,7 @@ import type { ProfileUser, UpcomingVisitData, ProfilePet } from './profile_types
 import { formatAppointmentDate, formatPetAge } from './profile_utils';
 import { supabase } from '@/lib/supabase';
 import { resolveLoyaltyTier, calculateCashbackPoints } from '@/config/loyalty';
+import { fetchPetsAvatarMap, fetchPetAvatarUrl } from '@/features/pets/pet_media_utils';
 
 export interface ProfilePageProps {
   onHomeClick?: () => void;
@@ -130,6 +131,9 @@ export const ProfilePage: FC<ProfilePageProps> = ({
 
       if (isMounted) {
         if (dbPets && dbPets.length > 0) {
+          const avatarMap = await fetchPetsAvatarMap(dbPets.map((p) => p.id));
+          if (!isMounted) return;
+
           setPets(
             dbPets.map((p) => ({
               id: p.id,
@@ -137,7 +141,7 @@ export const ProfilePage: FC<ProfilePageProps> = ({
               species: p.species === 'dog' ? 'Собака' : p.species === 'cat' ? 'Кіт' : 'Інше',
               breed: p.breed || null,
               ageFormatted: formatPetAge(p.birth_date),
-              avatarUrl: null,
+              avatarUrl: avatarMap[p.id] || (p as any).avatar_url || null,
               lastVisitFormatted: null,
             }))
           );
@@ -154,10 +158,11 @@ export const ProfilePage: FC<ProfilePageProps> = ({
         ? await apptFrom
             .select(`
               id,
+              pet_id,
               starts_at,
               price,
               status,
-              pet:pets(name, species),
+              pet:pets(id, name, species),
               master:masters(display_name),
               service:services!appointments_service_id_fkey(name)
             `)
@@ -181,10 +186,16 @@ export const ProfilePage: FC<ProfilePageProps> = ({
             ? dbAppointment.service[0]
             : dbAppointment.service;
 
+          const appointmentPetId = (dbAppointment as any).pet_id || petRecord?.id;
+          let apptAvatarUrl: string | null = null;
+          if (appointmentPetId) {
+            apptAvatarUrl = await fetchPetAvatarUrl(appointmentPetId);
+          }
+
           setVisit({
             id: dbAppointment.id,
             petName: petRecord?.name || 'Улюбленець',
-            petAvatarUrl: null,
+            petAvatarUrl: apptAvatarUrl,
             serviceTitle: serviceRecord?.name || 'Грумінг',
             masterName: masterRecord?.display_name || 'Майстер',
             price: Number(dbAppointment.price) || 0,

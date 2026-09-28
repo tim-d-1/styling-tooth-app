@@ -19,6 +19,7 @@ import {
   type MasterProfile,
 } from './booking_types';
 import { supabase } from '@/lib/supabase';
+import { fetchPetsAvatarMap } from '@/features/pets/pet_media_utils';
 
 export interface BookingPageProps {
   isLoggedIn?: boolean;
@@ -96,20 +97,31 @@ export const BookingPage: FC<BookingPageProps> = ({
 
         const { data: userPets } = await supabase
           .from('pets')
-          .select('id, name, species, breed, avatar_url')
+          .select('id, name, species, breed')
           .eq('owner_id', userId)
           .eq('is_active', true)
           .order('created_at', { ascending: false });
 
         if (isMounted && userPets && userPets.length > 0) {
-          setPets(userPets);
+          const avatarMap = await fetchPetsAvatarMap(userPets.map((p) => p.id));
+          if (!isMounted) return;
+
+          const mappedPets: PetOption[] = userPets.map((p) => ({
+            id: p.id,
+            name: p.name,
+            species: p.species === 'dog' ? 'Собака' : p.species === 'cat' ? 'Кіт' : p.species,
+            breed: p.breed || undefined,
+            avatar_url: avatarMap[p.id] || (p as any).avatar_url || null,
+          }));
+
+          setPets(mappedPets);
           setBookingState((prev) => ({
             ...prev,
-            petId: userPets[0].id,
-            petName: userPets[0].name,
-            petSpecies: userPets[0].species,
-            petBreed: userPets[0].breed || undefined,
-            petAvatarUrl: userPets[0].avatar_url || null,
+            petId: mappedPets[0].id,
+            petName: mappedPets[0].name,
+            petSpecies: mappedPets[0].species,
+            petBreed: mappedPets[0].breed,
+            petAvatarUrl: mappedPets[0].avatar_url || null,
           }));
         }
       } catch (err) {

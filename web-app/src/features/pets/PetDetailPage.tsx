@@ -17,6 +17,7 @@ import { getSpeciesEmoji, formatDateToUkrainian } from './pet_utils';
 import { formatPetAge } from '@/features/profile/profile_utils';
 import { mapRowToCareScheduleItem } from '@/config/care_schedule';
 import { supabase } from '@/lib/supabase';
+import { resolveStorageUrl } from './pet_media_utils';
 
 export interface PetDetailPageProps {
   onHomeClick?: () => void;
@@ -183,10 +184,14 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
           .limit(1)
           .maybeSingle();
 
-        const { data: mediaItems } = await supabase
+        let mediaQuery: any = supabase
           .from('pet_media')
           .select('*')
           .eq('pet_id', currentDbPet.id);
+        if (typeof mediaQuery?.order === 'function') {
+          mediaQuery = mediaQuery.order('created_at', { ascending: false });
+        }
+        const { data: mediaItems } = (await mediaQuery) || {};
 
         if (!isMounted) return;
 
@@ -196,21 +201,7 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
 
         if (mediaItems && mediaItems.length > 0) {
           for (const item of mediaItems) {
-            let itemUrl: string | null = null;
-            try {
-              const { data: signedData } = await supabase.storage
-                .from('pet-media')
-                .createSignedUrl(item.storage_path, 3600);
-              itemUrl = signedData?.signedUrl || null;
-            } catch {
-              itemUrl = null;
-            }
-
-            if (!itemUrl) {
-              itemUrl = supabase.storage
-                .from('pet-media')
-                .getPublicUrl(item.storage_path).data.publicUrl;
-            }
+            const itemUrl = await resolveStorageUrl(item.storage_path);
 
             if (item.photo_type === 'before' && !beforeUrl) {
               beforeUrl = itemUrl;
@@ -375,12 +366,7 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
         showToast(`Помилка збереження медіа: ${mediaError.message}`);
         return;
       }
-      const { data: signedData } = await supabase.storage
-        .from('pet-media')
-        .createSignedUrl(storagePath, 3600);
-      const newUrl =
-        signedData?.signedUrl ||
-        supabase.storage.from('pet-media').getPublicUrl(storagePath).data.publicUrl;
+      const newUrl = await resolveStorageUrl(storagePath);
       setPetDetail((prev) => (prev ? { ...prev, avatarUrl: newUrl } : null));
       showToast('Фото успішно оновлено');
     } catch (err: unknown) {
