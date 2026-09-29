@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import RegisterPage from './RegisterPage';
 import { validateRegisterForm, type RegisterFormData } from './register_utils';
 
@@ -342,6 +342,81 @@ describe('RegisterPage and Register Utilities', () => {
       expect(handleSuccess).not.toHaveBeenCalled();
       const errorAlert = await screen.findByRole('alert');
       expect(errorAlert.textContent).toBe('Phone number already registered');
+    });
+
+    it('displays error and does not call onSuccess when email is already registered (identities is empty array)', async () => {
+      const { supabase } = await import('@/lib/supabase');
+      vi.spyOn(supabase.auth, 'signUp').mockResolvedValueOnce({
+        data: {
+          user: {
+            id: 'fake-id',
+            email: 'existing@example.com',
+            identities: [],
+          },
+          session: null,
+        },
+        error: null,
+      } as never);
+
+      const handleSuccess = vi.fn();
+      render(<RegisterPage onSuccess={handleSuccess} />);
+
+      fireEvent.change(screen.getByLabelText('ім’я'), { target: { value: 'John' } });
+      fireEvent.change(screen.getByLabelText('Прізвище'), { target: { value: 'Carter' } });
+      fireEvent.change(screen.getByLabelText('ім’я користувача'), { target: { value: 'john123' } });
+      fireEvent.change(screen.getByLabelText('Email/номер телефону'), { target: { value: 'existing@example.com' } });
+      fireEvent.change(screen.getByLabelText('Пароль'), { target: { value: 'secret123' } });
+
+      const submitBtn = screen.getByRole('button', { name: 'Далі' });
+      await act(async () => {
+        fireEvent.click(submitBtn);
+      });
+
+      expect(handleSuccess).not.toHaveBeenCalled();
+      const errorAlert = await screen.findByRole('alert');
+      expect(errorAlert.textContent).toBe('Користувач із цією електронною адресою вже існує. Будь ласка, увійдіть.');
+    });
+
+    it('converts avatar photo to data URL and attaches to user metadata', async () => {
+      const { supabase } = await import('@/lib/supabase');
+      const signUpSpy = vi.spyOn(supabase.auth, 'signUp').mockResolvedValueOnce({
+        data: { user: { id: 'user-with-avatar', identities: [{ id: '1' }] }, session: null },
+        error: null,
+      } as never);
+
+      const handleSuccess = vi.fn();
+      const { container } = render(<RegisterPage onSuccess={handleSuccess} />);
+
+      fireEvent.change(screen.getByLabelText('ім’я'), { target: { value: 'Alice' } });
+      fireEvent.change(screen.getByLabelText('Прізвище'), { target: { value: 'Smith' } });
+      fireEvent.change(screen.getByLabelText('ім’я користувача'), { target: { value: 'alice123' } });
+      fireEvent.change(screen.getByLabelText('Email/номер телефону'), { target: { value: 'alice@example.com' } });
+      fireEvent.change(screen.getByLabelText('Пароль'), { target: { value: 'secret123' } });
+
+      const file = new File(['fake-image-bytes'], 'avatar.jpg', { type: 'image/jpeg' });
+      const fileInput = container.querySelector('#register-user-photo') as HTMLInputElement;
+      fireEvent.change(fileInput, { target: { files: [file] } });
+
+      const submitBtn = screen.getByRole('button', { name: 'Далі' });
+      await act(async () => {
+        fireEvent.click(submitBtn);
+      });
+
+      await waitFor(() => {
+        expect(signUpSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            email: 'alice@example.com',
+            password: 'secret123',
+            options: expect.objectContaining({
+              data: expect.objectContaining({
+                full_name: 'Alice Smith',
+                avatar_url: expect.stringContaining('data:'),
+              }),
+            }),
+          })
+        );
+      });
+      expect(handleSuccess).toHaveBeenCalledTimes(1);
     });
   });
 });

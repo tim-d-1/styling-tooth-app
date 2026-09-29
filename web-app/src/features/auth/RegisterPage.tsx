@@ -5,6 +5,7 @@ import {
   validateRegisterForm,
   isEmailIdentifier,
   normalizePhoneNumber,
+  fileToDataUrl,
 } from './register_utils';
 
 export interface RegisterPageProps {
@@ -125,6 +126,11 @@ export const RegisterPage: FC<RegisterPageProps> = ({
       const isEmail = isEmailIdentifier(trimmedIdentifier);
       const normalizedPhone = normalizePhoneNumber(trimmedIdentifier);
 
+      let avatarDataUrl: string | undefined;
+      if (avatarPhoto) {
+        avatarDataUrl = await fileToDataUrl(avatarPhoto);
+      }
+
       const metadata: Record<string, unknown> = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
@@ -134,38 +140,44 @@ export const RegisterPage: FC<RegisterPageProps> = ({
         phone: isEmail ? undefined : normalizedPhone,
       };
 
-      if (photoPreview) {
-        metadata.avatar_url = photoPreview;
+      if (avatarDataUrl) {
+        metadata.avatar_url = avatarDataUrl;
       }
 
+      let signUpResult;
       if (isEmail) {
-        const { error } = await supabase.auth.signUp({
+        signUpResult = await supabase.auth.signUp({
           email: trimmedIdentifier,
           password,
           options: {
             data: metadata,
           },
         });
-
-        if (error) {
-          setErrorMessage(error.message);
-          return;
-        }
       } else if (normalizedPhone) {
-        const { error } = await supabase.auth.signUp({
+        signUpResult = await supabase.auth.signUp({
           phone: normalizedPhone,
           password,
           options: {
             data: metadata,
           },
         });
-
-        if (error) {
-          setErrorMessage(error.message);
-          return;
-        }
       } else {
         setErrorMessage('Введіть коректний Email або номер телефону');
+        return;
+      }
+
+      if (signUpResult.error) {
+        setErrorMessage(signUpResult.error.message);
+        return;
+      }
+
+      const registeredUser = signUpResult.data?.user;
+      if (
+        registeredUser &&
+        Array.isArray(registeredUser.identities) &&
+        registeredUser.identities.length === 0
+      ) {
+        setErrorMessage('Користувач із цією електронною адресою вже існує. Будь ласка, увійдіть.');
         return;
       }
 
