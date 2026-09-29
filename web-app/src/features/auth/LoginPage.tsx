@@ -10,7 +10,6 @@ export interface LoginPageProps {
   onBack?: () => void;
   onSuccess?: () => void;
   onNavigateRegister?: () => void;
-  defaultUsername?: string;
   defaultIdentifier?: string;
 }
 
@@ -18,10 +17,8 @@ export const LoginPage: FC<LoginPageProps> = ({
   onBack,
   onSuccess,
   onNavigateRegister,
-  defaultUsername = '',
   defaultIdentifier = '',
 }) => {
-  const [username, setUsername] = useState(defaultUsername);
   const [identifier, setIdentifier] = useState(defaultIdentifier);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -73,7 +70,7 @@ export const LoginPage: FC<LoginPageProps> = ({
     e.preventDefault();
     setErrorMessage(null);
 
-    const validation = validateLoginForm(username, identifier, password);
+    const validation = validateLoginForm(identifier, password);
     if (!validation.isValid) {
       setErrorMessage(validation.error);
       return;
@@ -176,24 +173,6 @@ export const LoginPage: FC<LoginPageProps> = ({
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-14">
               <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-1.5 border-b border-text-muted focus-within:border-terracotta transition-colors pb-1">
-                  <label
-                    htmlFor="login-username"
-                    className="font-primary font-semibold text-[0.6875rem] leading-[1.5em] tracking-[-0.011em] uppercase text-text-muted"
-                  >
-                    ім’я користувача
-                  </label>
-                  <input
-                    id="login-username"
-                    name="username"
-                    type="text"
-                    autoComplete="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-transparent font-primary font-medium text-[0.9375rem] leading-[1.5em] tracking-[-0.011em] text-content-dark outline-none"
-                  />
-                </div>
-
                 <div className="flex flex-col gap-1.5 border-b border-text-muted focus-within:border-terracotta transition-colors pb-1">
                   <label
                     htmlFor="login-identifier"

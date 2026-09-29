@@ -8,7 +8,6 @@ describe('RegisterPage and Register Utilities', () => {
     const validData: RegisterFormData = {
       firstName: 'Maria',
       lastName: 'Bulakh',
-      username: 'marichka',
       identifier: 'maria@example.com',
       password: 'password123',
       city: 'м. Київ',
@@ -24,18 +23,6 @@ describe('RegisterPage and Register Utilities', () => {
       const result = validateRegisterForm({ ...validData, lastName: '' });
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('Введіть прізвище');
-    });
-
-    it('requires username', () => {
-      const result = validateRegisterForm({ ...validData, username: '' });
-      expect(result.isValid).toBe(false);
-      expect(result.error).toBe('Введіть ім’я користувача');
-    });
-
-    it('requires username minimum length', () => {
-      const result = validateRegisterForm({ ...validData, username: 'ab' });
-      expect(result.isValid).toBe(false);
-      expect(result.error).toBe('Ім’я користувача повинно містити не менше 3 символів');
     });
 
     it('requires identifier', () => {
@@ -75,14 +62,13 @@ describe('RegisterPage and Register Utilities', () => {
 
       const firstNameInput = screen.getByLabelText('ім’я');
       const lastNameInput = screen.getByLabelText('Прізвище');
-      const usernameInput = screen.getByLabelText('ім’я користувача');
       const identifierInput = screen.getByLabelText('Email/номер телефону');
       const passwordInput = screen.getByLabelText('Пароль');
       const cityInput = screen.getByLabelText('місто');
 
       expect(firstNameInput.getAttribute('placeholder')).toBeNull();
       expect(lastNameInput.getAttribute('placeholder')).toBeNull();
-      expect(usernameInput.getAttribute('placeholder')).toBeNull();
+      expect(screen.queryByLabelText('ім’я користувача')).toBeNull();
       expect(identifierInput.getAttribute('placeholder')).toBeNull();
       expect(passwordInput.getAttribute('placeholder')).toBeNull();
       expect(cityInput.getAttribute('placeholder')).toBeNull();
@@ -217,7 +203,6 @@ describe('RegisterPage and Register Utilities', () => {
 
       fireEvent.change(screen.getByLabelText('ім’я'), { target: { value: 'Maria' } });
       fireEvent.change(screen.getByLabelText('Прізвище'), { target: { value: 'Bulakh' } });
-      fireEvent.change(screen.getByLabelText('ім’я користувача'), { target: { value: 'marichka' } });
       fireEvent.change(screen.getByLabelText('Email/номер телефону'), { target: { value: 'maria@example.com' } });
       fireEvent.change(screen.getByLabelText('Пароль'), { target: { value: 'secret123' } });
 
@@ -241,7 +226,6 @@ describe('RegisterPage and Register Utilities', () => {
 
       fireEvent.change(screen.getByLabelText('ім’я'), { target: { value: 'Maria' } });
       fireEvent.change(screen.getByLabelText('Прізвище'), { target: { value: 'Bulakh' } });
-      fireEvent.change(screen.getByLabelText('ім’я користувача'), { target: { value: 'marichka' } });
       fireEvent.change(screen.getByLabelText('Email/номер телефону'), { target: { value: 'maria@example.com' } });
       fireEvent.change(screen.getByLabelText('Пароль'), { target: { value: 'secret123' } });
 
@@ -286,7 +270,6 @@ describe('RegisterPage and Register Utilities', () => {
 
       fireEvent.change(screen.getByLabelText('ім’я'), { target: { value: 'Оксана' } });
       fireEvent.change(screen.getByLabelText('Прізвище'), { target: { value: 'Лисенко' } });
-      fireEvent.change(screen.getByLabelText('ім’я користувача'), { target: { value: 'oksana' } });
       fireEvent.change(screen.getByLabelText('Email/номер телефону'), { target: { value: '0501234567' } });
       fireEvent.change(screen.getByLabelText('Пароль'), { target: { value: 'password123' } });
 
@@ -324,7 +307,6 @@ describe('RegisterPage and Register Utilities', () => {
 
       fireEvent.change(screen.getByLabelText('ім’я'), { target: { value: 'Оксана' } });
       fireEvent.change(screen.getByLabelText('Прізвище'), { target: { value: 'Лисенко' } });
-      fireEvent.change(screen.getByLabelText('ім’я користувача'), { target: { value: 'oksana' } });
       fireEvent.change(screen.getByLabelText('Email/номер телефону'), { target: { value: '+380501234567' } });
       fireEvent.change(screen.getByLabelText('Пароль'), { target: { value: 'password123' } });
 
@@ -363,7 +345,6 @@ describe('RegisterPage and Register Utilities', () => {
 
       fireEvent.change(screen.getByLabelText('ім’я'), { target: { value: 'John' } });
       fireEvent.change(screen.getByLabelText('Прізвище'), { target: { value: 'Carter' } });
-      fireEvent.change(screen.getByLabelText('ім’я користувача'), { target: { value: 'john123' } });
       fireEvent.change(screen.getByLabelText('Email/номер телефону'), { target: { value: 'existing@example.com' } });
       fireEvent.change(screen.getByLabelText('Пароль'), { target: { value: 'secret123' } });
 
@@ -389,7 +370,6 @@ describe('RegisterPage and Register Utilities', () => {
 
       fireEvent.change(screen.getByLabelText('ім’я'), { target: { value: 'Alice' } });
       fireEvent.change(screen.getByLabelText('Прізвище'), { target: { value: 'Smith' } });
-      fireEvent.change(screen.getByLabelText('ім’я користувача'), { target: { value: 'alice123' } });
       fireEvent.change(screen.getByLabelText('Email/номер телефону'), { target: { value: 'alice@example.com' } });
       fireEvent.change(screen.getByLabelText('Пароль'), { target: { value: 'secret123' } });
 

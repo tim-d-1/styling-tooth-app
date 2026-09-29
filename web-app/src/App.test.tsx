@@ -133,7 +133,8 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Реєстрація' })).toBeDefined();
     expect(screen.getByLabelText('ім’я')).toBeDefined();
     expect(screen.getByLabelText('Прізвище')).toBeDefined();
-    expect(screen.getByLabelText('ім’я користувача')).toBeDefined();
+    expect(screen.queryByLabelText('ім’я користувача')).toBeNull();
+    expect(screen.getByLabelText('Email/номер телефону')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Далі' })).toBeDefined();
   });
 

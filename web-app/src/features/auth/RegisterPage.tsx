@@ -23,7 +23,6 @@ export const RegisterPage: FC<RegisterPageProps> = ({
 }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [username, setUsername] = useState('');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [city, setCity] = useState(defaultCity);
@@ -107,7 +106,6 @@ export const RegisterPage: FC<RegisterPageProps> = ({
     const validation = validateRegisterForm({
       firstName,
       lastName,
-      username,
       identifier,
       password,
       city,
@@ -135,7 +133,6 @@ export const RegisterPage: FC<RegisterPageProps> = ({
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         full_name: `${firstName.trim()} ${lastName.trim()}`.trim(),
-        username: username.trim(),
         city: city.trim(),
         phone: isEmail ? undefined : normalizedPhone,
       };
@@ -264,24 +261,6 @@ export const RegisterPage: FC<RegisterPageProps> = ({
                     autoComplete="family-name"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="w-full bg-transparent font-primary font-medium text-[0.9375rem] leading-[1.5em] tracking-[-0.011em] text-content-dark outline-none"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5 border-b border-text-muted focus-within:border-terracotta transition-colors pb-1">
-                  <label
-                    htmlFor="register-username"
-                    className="font-primary font-semibold text-[0.6875rem] leading-[1.5em] tracking-[-0.011em] uppercase text-text-muted"
-                  >
-                    ім’я користувача
-                  </label>
-                  <input
-                    id="register-username"
-                    name="username"
-                    type="text"
-                    autoComplete="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
                     className="w-full bg-transparent font-primary font-medium text-[0.9375rem] leading-[1.5em] tracking-[-0.011em] text-content-dark outline-none"
                   />
                 </div>

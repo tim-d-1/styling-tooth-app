@@ -5,38 +5,26 @@ import { validateLoginForm, isEmailIdentifier } from './login_utils';
 
 describe('LoginPage and Login Utilities', () => {
   describe('validateLoginForm', () => {
-    it('validates minimum username length', () => {
-      const result = validateLoginForm('ab', 'test@example.com', 'password123');
-      expect(result.isValid).toBe(false);
-      expect(result.error).toBe('Ім’я користувача повинно містити не менше 3 символів');
-    });
-
     it('validates empty identifier', () => {
-      const result = validateLoginForm('user123', '', 'password123');
+      const result = validateLoginForm('', 'password123');
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('Введіть Email або номер телефону');
     });
 
     it('validates empty password', () => {
-      const result = validateLoginForm('user123', 'test@example.com', '   ');
+      const result = validateLoginForm('test@example.com', '   ');
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('Введіть пароль');
     });
 
     it('validates password length', () => {
-      const result = validateLoginForm('user123', 'test@example.com', '12345');
+      const result = validateLoginForm('test@example.com', '12345');
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('Пароль повинен містити не менше 6 символів');
     });
 
     it('approves valid form inputs', () => {
-      const result = validateLoginForm('Marichka_bkk', 'bulakhmaria@gmail.com', 'password123');
-      expect(result.isValid).toBe(true);
-      expect(result.error).toBeNull();
-    });
-
-    it('allows empty optional username if identifier and password are valid', () => {
-      const result = validateLoginForm('', 'bulakhmaria@gmail.com', 'password123');
+      const result = validateLoginForm('bulakhmaria@gmail.com', 'password123');
       expect(result.isValid).toBe(true);
       expect(result.error).toBeNull();
     });
@@ -63,16 +51,14 @@ describe('LoginPage and Login Utilities', () => {
         <LoginPage
           onBack={handleBack}
           onNavigateRegister={handleRegister}
-          defaultUsername=""
           defaultIdentifier=""
         />
       );
 
-      const usernameInput = screen.getByLabelText('ім’я користувача');
       const identifierInput = screen.getByLabelText('Email/номер телефону');
       const passwordInput = screen.getByLabelText('Пароль');
 
-      expect(usernameInput.getAttribute('placeholder')).toBeNull();
+      expect(screen.queryByLabelText('ім’я користувача')).toBeNull();
       expect(identifierInput.getAttribute('placeholder')).toBeNull();
       expect(passwordInput.getAttribute('placeholder')).toBeNull();
 
@@ -85,11 +71,9 @@ describe('LoginPage and Login Utilities', () => {
         screen.getByText(/Усі права захищено\.\s*© 2026 Стильний зубець\./)
       ).toBeDefined();
 
-      fireEvent.change(usernameInput, { target: { value: 'testuser' } });
       fireEvent.change(identifierInput, { target: { value: 'user@example.com' } });
       fireEvent.change(passwordInput, { target: { value: 'secret123' } });
 
-      expect((usernameInput as HTMLInputElement).value).toBe('testuser');
       expect((identifierInput as HTMLInputElement).value).toBe('user@example.com');
       expect((passwordInput as HTMLInputElement).value).toBe('secret123');
 
@@ -110,7 +94,6 @@ describe('LoginPage and Login Utilities', () => {
     it('shows validation error when submitted with invalid password', async () => {
       render(
         <LoginPage
-          defaultUsername="testuser"
           defaultIdentifier="user@example.com"
         />
       );
@@ -212,7 +195,6 @@ describe('LoginPage and Login Utilities', () => {
       render(
         <LoginPage
           onSuccess={handleSuccess}
-          defaultUsername="testuser"
           defaultIdentifier="user@example.com"
         />
       );
@@ -236,7 +218,6 @@ describe('LoginPage and Login Utilities', () => {
       render(
         <LoginPage
           onSuccess={handleSuccess}
-          defaultUsername="testuser"
           defaultIdentifier="user@example.com"
         />
       );
@@ -263,7 +244,6 @@ describe('LoginPage and Login Utilities', () => {
       render(
         <LoginPage
           onSuccess={handleSuccess}
-          defaultUsername="testuser"
           defaultIdentifier="0501234567"
         />
       );
@@ -294,7 +274,6 @@ describe('LoginPage and Login Utilities', () => {
       render(
         <LoginPage
           onSuccess={handleSuccess}
-          defaultUsername="testuser"
           defaultIdentifier="+380501234567"
         />
       );

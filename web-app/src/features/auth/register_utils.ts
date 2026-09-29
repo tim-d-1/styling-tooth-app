@@ -3,7 +3,6 @@ import { isEmailIdentifier, isPhoneIdentifier, normalizePhoneNumber } from './lo
 export interface RegisterFormData {
   firstName: string;
   lastName: string;
-  username: string;
   identifier: string;
   password: string;
   city: string;
@@ -17,12 +16,6 @@ export function validateRegisterForm(data: RegisterFormData): { isValid: boolean
   }
   if (!data.lastName.trim()) {
     return { isValid: false, error: 'Введіть прізвище' };
-  }
-  if (!data.username.trim()) {
-    return { isValid: false, error: 'Введіть ім’я користувача' };
-  }
-  if (data.username.trim().length < 3) {
-    return { isValid: false, error: 'Ім’я користувача повинно містити не менше 3 символів' };
   }
   const trimmedId = data.identifier.trim();
   if (!trimmedId) {

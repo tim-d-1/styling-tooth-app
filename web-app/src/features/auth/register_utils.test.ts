@@ -6,7 +6,6 @@ describe('register_utils', () => {
     const validData = {
       firstName: 'John',
       lastName: 'Carter',
-      username: 'john123',
       identifier: 'john@example.com',
       password: 'password123',
       city: 'м. Київ',
@@ -28,12 +27,6 @@ describe('register_utils', () => {
       const result = validateRegisterForm({ ...validData, lastName: '' });
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('Введіть прізвище');
-    });
-
-    it('fails when username is too short', () => {
-      const result = validateRegisterForm({ ...validData, username: 'ab' });
-      expect(result.isValid).toBe(false);
-      expect(result.error).toBe('Ім’я користувача повинно містити не менше 3 символів');
     });
 
     it('fails when password is too short', () => {
