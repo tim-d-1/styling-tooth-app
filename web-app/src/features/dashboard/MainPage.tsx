@@ -80,15 +80,21 @@ export const MainPage: FC<MainPageProps> = ({
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoggedIn) return;
     let isMounted = true;
 
-    async function loadUserData() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const currentUserId = sessionData?.session?.user?.id;
-      if (!currentUserId || !isMounted) return;
+    if (!isLoggedIn) {
+      setIsLoadingVisit(false);
+      return;
+    }
 
+    async function loadUserData() {
       try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const currentUserId = sessionData?.session?.user?.id;
+        if (!currentUserId || !isMounted) {
+          return;
+        }
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('full_name, avatar_url')
@@ -179,8 +185,15 @@ export const MainPage: FC<MainPageProps> = ({
 
     loadUserData();
 
+    const fallbackTimer = setTimeout(() => {
+      if (isMounted) {
+        setIsLoadingVisit(false);
+      }
+    }, 4000);
+
     return () => {
       isMounted = false;
+      clearTimeout(fallbackTimer);
     };
   }, [isLoggedIn, initialVisit]);
 

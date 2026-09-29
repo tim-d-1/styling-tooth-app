@@ -50,6 +50,7 @@ export const ProfileUpcomingVisitsPage: FC<ProfileUpcomingVisitsPageProps> = ({
 
   const [visits, setVisits] = useState<UpcomingVisitData[]>(initialVisits || []);
   const [pets, setPets] = useState<ProfilePet[]>(initialPets || []);
+  const [isLoading, setIsLoading] = useState(!initialVisits || !initialPets);
   const [userName, setUserName] = useState('');
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
@@ -69,9 +70,10 @@ export const ProfileUpcomingVisitsPage: FC<ProfileUpcomingVisitsPageProps> = ({
     let isMounted = true;
 
     async function loadData() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const currentUserId = sessionData?.session?.user?.id;
-      if (!currentUserId || !isMounted) return;
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const currentUserId = sessionData?.session?.user?.id;
+        if (!currentUserId || !isMounted) return;
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -176,12 +178,26 @@ export const ProfileUpcomingVisitsPage: FC<ProfileUpcomingVisitsPageProps> = ({
           setVisits(mapped);
         }
       }
+    } catch (err) {
+        console.error('Failed to load upcoming visits data:', err);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
     }
 
     loadData();
 
+    const fallbackTimer = setTimeout(() => {
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    }, 4000);
+
     return () => {
       isMounted = false;
+      clearTimeout(fallbackTimer);
     };
   }, [initialPets, initialVisits]);
 
@@ -369,32 +385,39 @@ export const ProfileUpcomingVisitsPage: FC<ProfileUpcomingVisitsPageProps> = ({
                     <span className="text-xs opacity-80">{visits.length}</span>
                   </button>
 
-                  {pets.map((pet) => {
-                    const isActive = selectedPetId === pet.id || selectedPetId === pet.name;
-                    const petVisitsCount = visits.filter((v) => v.petId === pet.id || v.petName === pet.name).length;
+                  {isLoading ? (
+                    <div className="flex flex-col gap-2 animate-pulse pt-1">
+                      <div className="w-full h-10 bg-black/10 rounded-xl" />
+                      <div className="w-full h-10 bg-black/10 rounded-xl" />
+                    </div>
+                  ) : (
+                    pets.map((pet) => {
+                      const isActive = selectedPetId === pet.id || selectedPetId === pet.name;
+                      const petVisitsCount = visits.filter((v) => v.petId === pet.id || v.petName === pet.name).length;
 
-                    return (
-                      <button
-                        key={pet.id}
-                        role="tab"
-                        type="button"
-                        aria-selected={isActive}
-                        onClick={() => setSelectedPetId(pet.id)}
-                        className={[
-                          'w-full py-2.5 px-4 rounded-xl text-left text-sm font-accented transition-colors cursor-pointer outline-none flex items-center justify-between',
-                          isActive
-                            ? 'bg-soft-blue text-white font-semibold shadow-xs'
-                            : 'bg-interactive-lightgray text-content-dark font-medium hover:bg-slate-200',
-                        ].join(' ')}
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <Icon name="fi-rr-paw" size={14} className="shrink-0" />
-                          <span className="truncate">{pet.name}</span>
-                        </div>
-                        <span className="text-xs opacity-80 shrink-0">{petVisitsCount}</span>
-                      </button>
-                    );
-                  })}
+                      return (
+                        <button
+                          key={pet.id}
+                          role="tab"
+                          type="button"
+                          aria-selected={isActive}
+                          onClick={() => setSelectedPetId(pet.id)}
+                          className={[
+                            'w-full py-2.5 px-4 rounded-xl text-left text-sm font-accented transition-colors cursor-pointer outline-none flex items-center justify-between',
+                            isActive
+                              ? 'bg-soft-blue text-white font-semibold shadow-xs'
+                              : 'bg-interactive-lightgray text-content-dark font-medium hover:bg-slate-200',
+                          ].join(' ')}
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <Icon name="fi-rr-paw" size={14} className="shrink-0" />
+                            <span className="truncate">{pet.name}</span>
+                          </div>
+                          <span className="text-xs opacity-80 shrink-0">{petVisitsCount}</span>
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
               </section>
 
@@ -508,7 +531,39 @@ export const ProfileUpcomingVisitsPage: FC<ProfileUpcomingVisitsPageProps> = ({
                 </div>
               </div>
 
-              {filteredVisits.length > 0 ? (
+              {isLoading ? (
+                <div
+                  role="status"
+                  aria-label="Завантаження візитів"
+                  className="flex flex-col gap-4 animate-pulse"
+                >
+                  {[1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="w-full bg-white rounded-3xl p-6 shadow-sm border border-black/5 flex flex-col justify-between gap-6"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="w-28 h-6 bg-black/10 rounded" />
+                        <div className="w-32 h-6 bg-black/10 rounded-full" />
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-full bg-black/10 shrink-0" />
+                          <div className="flex flex-col gap-2">
+                            <div className="w-40 h-5 bg-black/10 rounded" />
+                            <div className="w-28 h-4 bg-black/10 rounded" />
+                            <div className="w-20 h-4 bg-black/10 rounded" />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-24 h-11 bg-black/10 rounded-xl" />
+                          <div className="w-24 h-11 bg-black/10 rounded-xl" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredVisits.length > 0 ? (
                 <div className="flex flex-col gap-4">
                   {filteredVisits.map((visit) => {
                     const isItemCancelling = cancellingId === visit.id;

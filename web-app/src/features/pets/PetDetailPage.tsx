@@ -70,6 +70,9 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
   const [schedule, setSchedule] = useState<CareScheduleItem[]>(
     initialSchedule || []
   );
+  const [isLoading, setIsLoading] = useState(
+    initialPets === undefined && initialPetDetail === undefined
+  );
 
   useEffect(() => {
     if (initialSchedule !== undefined) {
@@ -93,9 +96,10 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
     let isMounted = true;
 
     async function loadData() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const currentUserId = sessionData?.session?.user?.id;
-      if (!currentUserId || !isMounted) return;
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const currentUserId = sessionData?.session?.user?.id;
+        if (!currentUserId || !isMounted) return;
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -269,16 +273,30 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
         setPetDetail(null);
         setHistory(null);
       }
+    } catch (err) {
+      console.error('Failed to load pet details:', err);
+    } finally {
+      if (isMounted) {
+        setIsLoading(false);
+      }
     }
+  }
 
-    if (initialPets === undefined || initialPetDetail === undefined) {
-      loadData();
+  if (initialPets === undefined || initialPetDetail === undefined) {
+    loadData();
+  }
+
+  const fallbackTimer = setTimeout(() => {
+    if (isMounted) {
+      setIsLoading(false);
     }
+  }, 4000);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [paramPetId, initialPets, initialPetDetail, initialSchedule]);
+  return () => {
+    isMounted = false;
+    clearTimeout(fallbackTimer);
+  };
+}, [paramPetId, initialPets, initialPetDetail, initialSchedule]);
 
   const handleSelectPet = async (id: string) => {
     setSelectedPetId(id);
@@ -423,25 +441,32 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
             </h1>
 
             <div className="flex items-center gap-3 overflow-x-auto pb-2">
-              {petsList.map((pet) => {
-                const isActive = pet.id === selectedPetId || pet.isActive;
-                return (
-                  <button
-                    key={pet.id}
-                    type="button"
-                    onClick={() => handleSelectPet(pet.id)}
-                    className={[
-                      'px-5 py-2.5 rounded-full flex items-center gap-2 font-accented font-semibold text-sm md:text-base shrink-0 transition-all cursor-pointer outline-none',
-                      isActive
-                        ? 'bg-soft-blue text-white shadow-sm'
-                        : 'bg-interactive-lightgray hover:bg-slate-200 text-content-dark',
-                    ].join(' ')}
-                  >
-                    <span>{getSpeciesEmoji(pet.species)}</span>
-                    <span>{pet.name}</span>
-                  </button>
-                );
-              })}
+              {isLoading ? (
+                <div className="flex items-center gap-3 animate-pulse">
+                  <div className="w-28 h-10 bg-black/10 rounded-full" />
+                  <div className="w-28 h-10 bg-black/10 rounded-full" />
+                </div>
+              ) : (
+                petsList.map((pet) => {
+                  const isActive = pet.id === selectedPetId || pet.isActive;
+                  return (
+                    <button
+                      key={pet.id}
+                      type="button"
+                      onClick={() => handleSelectPet(pet.id)}
+                      className={[
+                        'px-5 py-2.5 rounded-full flex items-center gap-2 font-accented font-semibold text-sm md:text-base shrink-0 transition-all cursor-pointer outline-none',
+                        isActive
+                          ? 'bg-soft-blue text-white shadow-sm'
+                          : 'bg-interactive-lightgray hover:bg-slate-200 text-content-dark',
+                      ].join(' ')}
+                    >
+                      <span>{getSpeciesEmoji(pet.species)}</span>
+                      <span>{pet.name}</span>
+                    </button>
+                  );
+                })
+              )}
 
               <button
                 type="button"
@@ -454,7 +479,34 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
             </div>
           </div>
 
-          {petDetail ? (
+          {isLoading ? (
+            <div
+              role="status"
+              aria-label="Завантаження інформації про улюбленця"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-pulse"
+            >
+              <div className="lg:col-span-4 flex flex-col gap-6">
+                <div className="w-full bg-white rounded-3xl p-6 shadow-sm border border-black/5 flex flex-col items-center gap-6">
+                  <div className="w-32 h-32 rounded-full bg-black/10" />
+                  <div className="flex flex-col items-center gap-2 w-full">
+                    <div className="w-36 h-6 bg-black/10 rounded" />
+                    <div className="w-24 h-4 bg-black/10 rounded" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 w-full">
+                    <div className="h-16 bg-black/5 rounded-2xl" />
+                    <div className="h-16 bg-black/5 rounded-2xl" />
+                  </div>
+                </div>
+              </div>
+              <div className="lg:col-span-8 flex flex-col gap-6">
+                <div className="w-full bg-white rounded-3xl p-6 shadow-sm border border-black/5 flex flex-col gap-4">
+                  <div className="w-48 h-6 bg-black/10 rounded" />
+                  <div className="h-24 bg-black/5 rounded-2xl" />
+                  <div className="h-24 bg-black/5 rounded-2xl" />
+                </div>
+              </div>
+            </div>
+          ) : petDetail ? (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               <div className="lg:col-span-4 flex flex-col gap-6">
                 <PetProfileCard

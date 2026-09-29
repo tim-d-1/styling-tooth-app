@@ -4,12 +4,14 @@ import type { ProfilePet } from './profile_types';
 
 export interface MyPetsSectionProps {
   pets?: ProfilePet[];
+  isLoading?: boolean;
   onAddPetClick?: () => void;
   onPetClick?: (pet: ProfilePet) => void;
 }
 
 export const MyPetsSection: FC<MyPetsSectionProps> = ({
   pets = [],
+  isLoading = false,
   onAddPetClick,
   onPetClick,
 }) => {
@@ -22,7 +24,32 @@ export const MyPetsSection: FC<MyPetsSectionProps> = ({
         Мої улюбленці
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {isLoading ? (
+        <div
+          role="status"
+          aria-label="Завантаження улюбленців"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
+          {[1, 2].map((idx) => (
+            <div
+              key={idx}
+              className="w-full min-h-[15.625rem] bg-white rounded-3xl p-6 shadow-sm border border-black/5 flex flex-col items-center justify-between text-center gap-4 animate-pulse"
+            >
+              <div className="w-20 h-20 rounded-full bg-black/10 shrink-0" />
+              <div className="flex flex-col items-center gap-2 w-full">
+                <div className="w-28 h-5 bg-black/10 rounded-md" />
+                <div className="w-36 h-3 bg-black/10 rounded-md" />
+              </div>
+              <div className="w-32 h-6 bg-black/10 rounded-xl" />
+            </div>
+          ))}
+          <div className="w-full min-h-[15.625rem] bg-white rounded-3xl p-6 border-2 border-dashed border-soft-blue/40 flex flex-col items-center justify-center gap-6 animate-pulse">
+            <div className="w-10 h-10 rounded-full bg-soft-blue/20" />
+            <div className="w-36 h-5 bg-black/10 rounded-md" />
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {pets.map((pet) => (
           <article
             key={pet.id}
@@ -86,7 +113,8 @@ export const MyPetsSection: FC<MyPetsSectionProps> = ({
           </span>
         </button>
       </div>
-    </section>
+    )}
+  </section>
   );
 };
 

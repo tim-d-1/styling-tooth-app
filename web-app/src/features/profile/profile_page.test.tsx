@@ -93,6 +93,11 @@ describe('Profile Feature Components', () => {
       fireEvent.click(viewAllButton);
       expect(handleViewAll).toHaveBeenCalledTimes(1);
     });
+
+    it('renders loading skeleton when isLoading is true', () => {
+      render(<ProfileUpcomingVisitCard isLoading={true} />);
+      expect(screen.getByRole('status', { name: 'Завантаження найближчого візиту' })).toBeDefined();
+    });
   });
 
   describe('LoyaltyCard', () => {
@@ -201,6 +206,11 @@ describe('Profile Feature Components', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /Додати улюбленця/i }));
       expect(handleAddPet).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders loading skeleton when isLoading is true', () => {
+      render(<MyPetsSection isLoading={true} />);
+      expect(screen.getByRole('status', { name: 'Завантаження улюбленців' })).toBeDefined();
     });
   });
 

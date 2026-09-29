@@ -1090,4 +1090,18 @@ describe('PetDetailPage Integration', () => {
       })
     );
   });
+
+  it('renders loading skeleton while fetching pet data', () => {
+    vi.spyOn(supabase.auth, 'getSession').mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <MemoryRouter initialEntries={['/pets/p-101']}>
+        <Routes>
+          <Route path="/pets/:petId" element={<PetDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('status', { name: 'Завантаження інформації про улюбленця' })).toBeDefined();
+  });
 });

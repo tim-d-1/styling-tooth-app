@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import BookingPage from './BookingPage';
+import BookingPetStep from './steps/BookingPetStep';
 import { supabase } from '@/lib/supabase';
 import { PROCEDURES_CATALOG, DEMO_MASTERS } from './booking_types';
 
@@ -34,6 +35,20 @@ describe('BookingPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Додати нового улюбленця' }));
     expect(handleAddPet).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders loading skeleton in pet step when isLoading is true', () => {
+    render(
+      <BookingPetStep
+        pets={[]}
+        isLoading={true}
+        onSelectPet={vi.fn()}
+        onAddPetClick={vi.fn()}
+        onNext={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('status', { name: 'Завантаження улюбленців' })).toBeDefined();
   });
 
   it('allows selecting another pet and advances to procedure stage', () => {
@@ -359,5 +374,12 @@ describe('BookingPage', () => {
     const petImage = screen.getByRole('img', { name: 'Барні' }) as HTMLImageElement;
     expect(petImage).toBeDefined();
     expect(petImage.src).toBe('https://storage.supabase.co/signed-barni-avatar.jpg');
+  });
+
+  it('renders loading skeleton while pets are loading for authenticated user', () => {
+    vi.spyOn(supabase.auth, 'getSession').mockReturnValueOnce(new Promise(() => {}) as never);
+
+    renderBooking({ isLoggedIn: true });
+    expect(screen.getByRole('status', { name: 'Завантаження улюбленців' })).toBeDefined();
   });
 });

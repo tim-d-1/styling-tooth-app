@@ -64,24 +64,26 @@ export const ProfilePage: FC<ProfilePageProps> = ({
   const [visit, setVisit] = useState<UpcomingVisitData | null>(
     initialVisit !== undefined ? initialVisit : null
   );
-
+  const [isLoadingVisit, setIsLoadingVisit] = useState(initialVisit === undefined);
   const [isCancelling, setIsCancelling] = useState(false);
   const [pets, setPets] = useState<ProfilePet[]>(initialPets || []);
+  const [isLoadingPets, setIsLoadingPets] = useState(initialPets === undefined);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadProfileData() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const sessionUser = sessionData?.session?.user;
-      const currentUserId = sessionUser?.id;
-      if (!currentUserId || !isMounted) return;
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const sessionUser = sessionData?.session?.user;
+        const currentUserId = sessionUser?.id;
+        if (!currentUserId || !isMounted) return;
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUserId)
-        .maybeSingle();
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUserId)
+          .maybeSingle();
 
       let discountPct = 0;
 
@@ -230,12 +232,28 @@ export const ProfilePage: FC<ProfilePageProps> = ({
           }
         }
       }
+    } catch (err) {
+        console.error('Failed to load profile data:', err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingPets(false);
+          setIsLoadingVisit(false);
+        }
+      }
     }
 
     loadProfileData();
 
+    const fallbackTimer = setTimeout(() => {
+      if (isMounted) {
+        setIsLoadingPets(false);
+        setIsLoadingVisit(false);
+      }
+    }, 4000);
+
     return () => {
       isMounted = false;
+      clearTimeout(fallbackTimer);
     };
   }, [initialPets, initialVisit]);
 
@@ -314,6 +332,7 @@ export const ProfilePage: FC<ProfilePageProps> = ({
           <div className="w-full flex flex-col lg:flex-row items-stretch justify-between gap-6">
             <ProfileUpcomingVisitCard
               visit={visit}
+              isLoading={isLoadingVisit}
               isCancelling={isCancelling}
               onCancel={handleCancelVisit}
               onReschedule={() => showToast('Перенесення візиту')}
@@ -334,6 +353,7 @@ export const ProfilePage: FC<ProfilePageProps> = ({
 
           <MyPetsSection
             pets={pets}
+            isLoading={isLoadingPets}
             onAddPetClick={onAddPetClick}
             onPetClick={(pet) => {
               if (onPetClick) {

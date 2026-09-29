@@ -4,6 +4,7 @@ import type { UpcomingVisitData } from './profile_types';
 
 export interface ProfileUpcomingVisitCardProps {
   visit?: UpcomingVisitData | null;
+  isLoading?: boolean;
   onReschedule?: () => void;
   onCancel?: () => void;
   onBookClick?: () => void;
@@ -13,6 +14,7 @@ export interface ProfileUpcomingVisitCardProps {
 
 export const ProfileUpcomingVisitCard: FC<ProfileUpcomingVisitCardProps> = ({
   visit,
+  isLoading = false,
   onReschedule,
   onCancel,
   onViewAllUpcoming,
@@ -32,7 +34,7 @@ export const ProfileUpcomingVisitCard: FC<ProfileUpcomingVisitCardProps> = ({
         </h2>
 
         <div className="flex items-center gap-3">
-          {visit && (
+          {visit && !isLoading && (
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-soft-blue text-white text-xs font-primary">
               <Icon name="fi-rr-clock" size={12} className="text-white" />
               <span>{visit.scheduledAtFormatted}</span>
@@ -50,7 +52,26 @@ export const ProfileUpcomingVisitCard: FC<ProfileUpcomingVisitCardProps> = ({
             <Icon name="fi-rr-arrow-right" size={12} />
           </button>
 
-      {visit ? (
+      {isLoading ? (
+        <div
+          role="status"
+          aria-label="Завантаження найближчого візиту"
+          className="w-full bg-surface-cream/50 rounded-2xl p-4 sm:p-6 border border-black/5 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-pulse"
+        >
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div className="w-12 h-12 rounded-full bg-black/10 shrink-0" />
+            <div className="flex flex-col gap-2">
+              <div className="w-28 h-5 bg-black/10 rounded" />
+              <div className="w-36 h-4 bg-black/10 rounded" />
+              <div className="w-44 h-3 bg-black/10 rounded" />
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-24 h-11 bg-black/10 rounded-xl" />
+            <div className="w-24 h-11 bg-black/10 rounded-xl" />
+          </div>
+        </div>
+      ) : visit ? (
         <div className="w-full bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-black/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             {visit.petAvatarUrl && !petAvatarFailed ? (

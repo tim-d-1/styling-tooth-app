@@ -5,6 +5,7 @@ import type { PetOption } from '../booking_types';
 
 export interface BookingPetStepProps {
   pets: PetOption[];
+  isLoading?: boolean;
   selectedPetId?: string;
   onSelectPet: (pet: PetOption) => void;
   onAddPetClick: () => void;
@@ -13,6 +14,7 @@ export interface BookingPetStepProps {
 
 export const BookingPetStep: FC<BookingPetStepProps> = ({
   pets,
+  isLoading = false,
   selectedPetId,
   onSelectPet,
   onAddPetClick,
@@ -24,11 +26,37 @@ export const BookingPetStep: FC<BookingPetStepProps> = ({
         Оберіть улюбленця
       </h1>
 
-      <div
-        role="radiogroup"
-        aria-label="Оберіть улюбленця"
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6"
-      >
+      {isLoading ? (
+        <div
+          role="status"
+          aria-label="Завантаження улюбленців"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 animate-pulse"
+        >
+          <div className="aspect-square w-full rounded-2xl border-2 border-dashed border-[#B2B2B2]/60 flex flex-col items-center justify-center p-4">
+            <div className="w-12 h-12 rounded-full bg-black/10 mb-3" />
+            <div className="w-28 h-4 bg-black/10 rounded" />
+          </div>
+          {[1, 2].map((idx) => (
+            <div
+              key={idx}
+              className="aspect-square w-full rounded-2xl overflow-hidden border-2 border-[#ECEEF1] bg-white flex flex-col"
+            >
+              <div className="relative w-full flex-1 bg-black/10" />
+              <div className="p-3 bg-white flex items-center justify-between border-t border-[#ECEEF1]/60">
+                <div className="flex flex-col gap-1.5 w-full">
+                  <div className="w-24 h-4 bg-black/10 rounded" />
+                  <div className="w-16 h-3 bg-black/10 rounded" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div
+          role="radiogroup"
+          aria-label="Оберіть улюбленця"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6"
+        >
         <button
           type="button"
           onClick={onAddPetClick}
@@ -98,6 +126,7 @@ export const BookingPetStep: FC<BookingPetStepProps> = ({
           );
         })}
       </div>
+    )}
 
       <div className="mt-8 sm:mt-12">
         <button

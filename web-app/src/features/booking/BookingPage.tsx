@@ -35,7 +35,7 @@ export interface BookingPageProps {
 }
 
 export const BookingPage: FC<BookingPageProps> = ({
-  isLoggedIn = true,
+  isLoggedIn = false,
   initialStage = 'pet',
   initialPets,
   onBackClick,
@@ -86,10 +86,15 @@ export const BookingPage: FC<BookingPageProps> = ({
     paymentMethod: 'apple_pay',
   });
 
+  const [isLoadingPets, setIsLoadingPets] = useState(!initialPets && isLoggedIn);
+
   useEffect(() => {
     let isMounted = true;
     async function loadUserPets() {
-      if (!isLoggedIn || initialPets) return;
+      if (!isLoggedIn || initialPets) {
+        setIsLoadingPets(false);
+        return;
+      }
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const userId = sessionData?.session?.user?.id;
@@ -126,12 +131,24 @@ export const BookingPage: FC<BookingPageProps> = ({
         }
       } catch (err) {
         console.error('Failed to load user pets for booking:', err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingPets(false);
+        }
       }
     }
 
     loadUserPets();
+
+    const fallbackTimer = setTimeout(() => {
+      if (isMounted) {
+        setIsLoadingPets(false);
+      }
+    }, 4000);
+
     return () => {
       isMounted = false;
+      clearTimeout(fallbackTimer);
     };
   }, [isLoggedIn, initialPets]);
 
@@ -332,6 +349,7 @@ export const BookingPage: FC<BookingPageProps> = ({
       {stage === 'pet' && (
         <BookingPetStep
           pets={pets}
+          isLoading={isLoadingPets}
           selectedPetId={bookingState.petId}
           onSelectPet={handleSelectPet}
           onAddPetClick={

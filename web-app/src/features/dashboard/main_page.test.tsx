@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import Header from '@/components/layout/Header';
 import LocationBar from './LocationBar';
 import GuestBanner from './GuestBanner';
@@ -559,6 +559,20 @@ describe('Main Page Components', () => {
       expect(
         screen.getByRole('button', { name: /Поточна локація: м. Одеса/i })
       ).toBeDefined();
+    });
+
+    it('stops loading skeleton and displays empty visit state when session user is null (prevents infinite skeleton)', async () => {
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValueOnce({
+        data: { session: null },
+        error: null,
+      } as never);
+
+      render(<MainPage isLoggedIn={true} />);
+
+      await waitFor(() => {
+        expect(screen.queryByRole('status', { name: 'Завантаження запланованого візиту' })).toBeNull();
+        expect(screen.getByText('Немає активних записів')).toBeDefined();
+      });
     });
   });
 });

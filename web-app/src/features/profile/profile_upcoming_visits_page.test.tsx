@@ -338,4 +338,16 @@ describe('ProfileUpcomingVisitsPage', () => {
     expect(screen.getByText('Майстер: Іван Т.')).toBeDefined();
     expect(screen.getByText('1 500 грн')).toBeDefined();
   });
+
+  it('renders loading skeleton while fetching upcoming visits and pets', () => {
+    vi.spyOn(supabase.auth, 'getSession').mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <MemoryRouter>
+        <ProfileUpcomingVisitsPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('status', { name: 'Завантаження візитів' })).toBeDefined();
+  });
 });
