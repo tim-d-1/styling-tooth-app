@@ -1,5 +1,6 @@
 import { useState, type FC, type FormEvent, type ChangeEvent } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useFileDropAndPaste } from '@/hooks/useFileDropAndPaste';
 import {
   validateRegisterForm,
   isEmailIdentifier,
@@ -25,7 +26,7 @@ export const RegisterPage: FC<RegisterPageProps> = ({
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [city, setCity] = useState(defaultCity);
-  const [petPhoto, setPetPhoto] = useState<File | null>(null);
+  const [avatarPhoto, setAvatarPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,12 +47,16 @@ export const RegisterPage: FC<RegisterPageProps> = ({
     setLanguage((prev) => (prev === 'UA' ? 'EN' : 'UA'));
   };
 
+  const handleFileSelect = (file: File) => {
+    setAvatarPhoto(file);
+    const previewUrl = URL.createObjectURL(file);
+    setPhotoPreview(previewUrl);
+  };
+
   const handlePhotoSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setPetPhoto(file);
-      const previewUrl = URL.createObjectURL(file);
-      setPhotoPreview(previewUrl);
+      handleFileSelect(file);
     }
   };
 
@@ -59,9 +64,14 @@ export const RegisterPage: FC<RegisterPageProps> = ({
     if (photoPreview) {
       URL.revokeObjectURL(photoPreview);
     }
-    setPetPhoto(null);
+    setAvatarPhoto(null);
     setPhotoPreview(null);
   };
+
+  const { isDragging, dragProps } = useFileDropAndPaste({
+    onFileSelect: handleFileSelect,
+    accept: 'image/*',
+  });
 
   const handleSocialLogin = async (provider: 'Google' | 'Apple') => {
     try {
@@ -100,7 +110,8 @@ export const RegisterPage: FC<RegisterPageProps> = ({
       identifier,
       password,
       city,
-      petPhoto,
+      avatarPhoto,
+      petPhoto: avatarPhoto,
     });
 
     if (!validation.isValid) {
@@ -114,7 +125,7 @@ export const RegisterPage: FC<RegisterPageProps> = ({
       const isEmail = isEmailIdentifier(trimmedIdentifier);
       const normalizedPhone = normalizePhoneNumber(trimmedIdentifier);
 
-      const metadata = {
+      const metadata: Record<string, unknown> = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         full_name: `${firstName.trim()} ${lastName.trim()}`.trim(),
@@ -122,6 +133,10 @@ export const RegisterPage: FC<RegisterPageProps> = ({
         city: city.trim(),
         phone: isEmail ? undefined : normalizedPhone,
       };
+
+      if (photoPreview) {
+        metadata.avatar_url = photoPreview;
+      }
 
       if (isEmail) {
         const { error } = await supabase.auth.signUp({
@@ -203,7 +218,7 @@ export const RegisterPage: FC<RegisterPageProps> = ({
               Реєстрація
             </h1>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+            <form onSubmit={handleSubmit} onPaste={dragProps.onPaste} className="flex flex-col gap-8">
               <div className="flex flex-col gap-5">
                 <div className="flex flex-col gap-1.5 border-b border-text-muted focus-within:border-terracotta transition-colors pb-1">
                   <label
@@ -325,34 +340,46 @@ export const RegisterPage: FC<RegisterPageProps> = ({
 
                 <div className="flex flex-col gap-1.5">
                   <label
-                    htmlFor="register-pet-photo"
+                    htmlFor="register-user-photo"
                     className="font-primary font-semibold text-[0.6875rem] leading-[1.5em] tracking-[-0.011em] uppercase text-text-muted"
                   >
-                    Фото тваринки
+                    Фото профілю
                   </label>
                   <div className="relative">
                     <input
-                      id="register-pet-photo"
-                      name="petPhoto"
+                      id="register-user-photo"
+                      data-testid="register-photo-input"
+                      name="avatarPhoto"
                       type="file"
                       accept="image/*"
                       onChange={handlePhotoSelect}
                       className="sr-only"
                     />
                     <label
-                      htmlFor="register-pet-photo"
-                      className="w-full h-[6.75rem] rounded-[10px] border border-dashed border-[#B2B2B2] hover:border-terracotta transition-colors bg-white/40 flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group"
+                      htmlFor="register-user-photo"
+                      tabIndex={0}
+                      aria-label="Завантажити фото профілю"
+                      onDragEnter={dragProps.onDragEnter}
+                      onDragOver={dragProps.onDragOver}
+                      onDragLeave={dragProps.onDragLeave}
+                      onDrop={dragProps.onDrop}
+                      onPaste={dragProps.onPaste}
+                      className={`w-full h-[6.75rem] rounded-[10px] border border-dashed transition-colors flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group outline-none focus:ring-2 focus:ring-terracotta/40 ${
+                        isDragging
+                          ? 'border-terracotta bg-soft-ice/60 ring-2 ring-terracotta/30'
+                          : 'border-[#B2B2B2] hover:border-terracotta bg-white/40'
+                      }`}
                     >
                       {photoPreview ? (
                         <div className="flex items-center gap-3 p-2 w-full h-full justify-center">
                           <img
                             src={photoPreview}
-                            alt="Фото тваринки"
+                            alt="Фото профілю"
                             className="w-16 h-16 rounded-lg object-cover border border-text-muted/20 shrink-0"
                           />
                           <div className="flex flex-col">
                             <span className="text-xs font-medium text-content-dark truncate max-w-[10rem]">
-                              {petPhoto?.name}
+                              {avatarPhoto?.name}
                             </span>
                             <button
                               type="button"
@@ -369,9 +396,17 @@ export const RegisterPage: FC<RegisterPageProps> = ({
                         </div>
                       ) : (
                         <div className="flex flex-col items-center gap-1.5">
-                          <i className="fi fi-rr-camera text-2xl text-text-muted group-hover:text-terracotta transition-colors leading-none" />
-                          <span className="font-primary text-xs text-text-muted group-hover:text-content-dark transition-colors">
-                            Завантажити фото
+                          <i
+                            className={`fi fi-rr-camera text-2xl transition-colors leading-none ${
+                              isDragging ? 'text-terracotta' : 'text-text-muted group-hover:text-terracotta'
+                            }`}
+                          />
+                          <span
+                            className={`font-primary text-xs transition-colors ${
+                              isDragging ? 'text-terracotta font-semibold' : 'text-text-muted group-hover:text-content-dark'
+                            }`}
+                          >
+                            {isDragging ? 'Відпустіть файл для завантаження' : 'Завантажити фото або перетягніть сюди'}
                           </span>
                         </div>
                       )}

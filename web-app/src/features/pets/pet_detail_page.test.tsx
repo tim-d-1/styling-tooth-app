@@ -827,4 +827,267 @@ describe('PetDetailPage Integration', () => {
     const updatedImg = await screen.findByRole('img', { name: 'Барон' });
     expect(updatedImg.getAttribute('src')).toBe('https://storage.example.com/p-101/new_avatar.jpg');
   });
+
+  it('uploads new avatar via drag and drop onto pet card', async () => {
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'u-1', email: 'owner@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+
+    const uploadMock = vi.fn().mockResolvedValue({ data: { path: 'p-101/drag.jpg' }, error: null });
+    vi.spyOn(supabase.storage, 'from').mockReturnValue({
+      upload: uploadMock,
+      createSignedUrl: vi.fn().mockResolvedValue({
+        data: { signedUrl: 'https://storage.example.com/p-101/drag_avatar.jpg' },
+      }),
+    } as never);
+
+    const insertMock = vi.fn().mockResolvedValue({ error: null });
+    vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: {
+                  full_name: 'Катерина',
+                  avatar_url: null,
+                },
+              }),
+            }),
+          }),
+        } as never;
+      }
+      if (table === 'pets') {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                order: vi.fn().mockResolvedValue({
+                  data: [
+                    {
+                      id: 'p-101',
+                      name: 'Барон',
+                      species: 'dog',
+                      breed: 'Мальтіпу',
+                      birth_date: '2022-04-15',
+                      weight_kg: '4.5',
+                      behavior_notes: null,
+                      medical_notes: null,
+                    },
+                  ],
+                }),
+              }),
+            }),
+          }),
+        } as never;
+      }
+      if (table === 'pet_media') {
+        return {
+          insert: insertMock,
+          select: () => ({
+            eq: vi.fn().mockResolvedValue({ data: [] }),
+          }),
+        } as never;
+      }
+      if (table === 'appointments') {
+        return {
+          select: (_cols: string, opts?: { count?: string; head?: boolean }) => {
+            if (opts?.count === 'exact') {
+              return {
+                eq: () => ({
+                  neq: vi.fn().mockResolvedValue({ count: 1 }),
+                }),
+              };
+            }
+            return {
+              eq: () => ({
+                neq: () => ({
+                  order: () => ({
+                    limit: () => ({
+                      maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+                    }),
+                  }),
+                }),
+              }),
+            };
+          },
+        } as never;
+      }
+      return {
+        select: () => ({
+          eq: () => ({
+            order: vi.fn().mockResolvedValue({ data: [] }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+          }),
+        }),
+      } as never;
+    });
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/pets/p-101']}>
+          <Routes>
+            <Route path="/pets/:petId" element={<PetDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    const card = screen.getByTestId('pet-profile-card');
+    const file = new File(['drag-data'], 'baron-drag.jpg', { type: 'image/jpeg' });
+
+    await act(async () => {
+      fireEvent.drop(card.querySelector('.relative.w-24.h-24') as HTMLElement, {
+        dataTransfer: { files: [file] },
+      });
+    });
+
+    expect(uploadMock).toHaveBeenCalledTimes(1);
+    expect(insertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pet_id: 'p-101',
+        photo_type: 'general',
+      })
+    );
+  });
+
+  it('uploads new avatar via clipboard paste onto pet card', async () => {
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'u-1', email: 'owner@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+
+    const uploadMock = vi.fn().mockResolvedValue({ data: { path: 'p-101/paste.jpg' }, error: null });
+    vi.spyOn(supabase.storage, 'from').mockReturnValue({
+      upload: uploadMock,
+      createSignedUrl: vi.fn().mockResolvedValue({
+        data: { signedUrl: 'https://storage.example.com/p-101/paste_avatar.jpg' },
+      }),
+    } as never);
+
+    const insertMock = vi.fn().mockResolvedValue({ error: null });
+    vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: {
+                  full_name: 'Катерина',
+                  avatar_url: null,
+                },
+              }),
+            }),
+          }),
+        } as never;
+      }
+      if (table === 'pets') {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                order: vi.fn().mockResolvedValue({
+                  data: [
+                    {
+                      id: 'p-101',
+                      name: 'Барон',
+                      species: 'dog',
+                      breed: 'Мальтіпу',
+                      birth_date: '2022-04-15',
+                      weight_kg: '4.5',
+                      behavior_notes: null,
+                      medical_notes: null,
+                    },
+                  ],
+                }),
+              }),
+            }),
+          }),
+        } as never;
+      }
+      if (table === 'pet_media') {
+        return {
+          insert: insertMock,
+          select: () => ({
+            eq: vi.fn().mockResolvedValue({ data: [] }),
+          }),
+        } as never;
+      }
+      if (table === 'appointments') {
+        return {
+          select: (_cols: string, opts?: { count?: string; head?: boolean }) => {
+            if (opts?.count === 'exact') {
+              return {
+                eq: () => ({
+                  neq: vi.fn().mockResolvedValue({ count: 1 }),
+                }),
+              };
+            }
+            return {
+              eq: () => ({
+                neq: () => ({
+                  order: () => ({
+                    limit: () => ({
+                      maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+                    }),
+                  }),
+                }),
+              }),
+            };
+          },
+        } as never;
+      }
+      return {
+        select: () => ({
+          eq: () => ({
+            order: vi.fn().mockResolvedValue({ data: [] }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+          }),
+        }),
+      } as never;
+    });
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/pets/p-101']}>
+          <Routes>
+            <Route path="/pets/:petId" element={<PetDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    const card = screen.getByTestId('pet-profile-card');
+    const file = new File(['paste-data'], 'baron-paste.jpg', { type: 'image/jpeg' });
+
+    await act(async () => {
+      fireEvent.paste(card, {
+        clipboardData: {
+          items: [
+            {
+              kind: 'file',
+              getAsFile: () => file,
+            },
+          ],
+        },
+      });
+    });
+
+    expect(uploadMock).toHaveBeenCalledTimes(1);
+    expect(insertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pet_id: 'p-101',
+        photo_type: 'general',
+      })
+    );
+  });
 });

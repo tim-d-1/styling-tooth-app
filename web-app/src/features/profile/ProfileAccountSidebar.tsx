@@ -1,5 +1,6 @@
 import { useRef, type FC, type ChangeEvent } from 'react';
 import Icon from '@/components/ui/Icon';
+import { useFileDropAndPaste } from '@/hooks/useFileDropAndPaste';
 
 export interface ProfileAccountSidebarProps {
   activeTab: 'personal-data' | 'addresses' | 'payment-methods';
@@ -37,15 +38,35 @@ export const ProfileAccountSidebar: FC<ProfileAccountSidebarProps> = ({
     }
   };
 
+  const handleDropOrPaste = (file: File) => {
+    if (onAvatarChange) {
+      onAvatarChange(file);
+    }
+  };
+
+  const { isDragging, dragProps } = useFileDropAndPaste({
+    onFileSelect: handleDropOrPaste,
+    accept: 'image/*',
+    disabled: !onAvatarChange,
+  });
+
   const firstName = userData.fullName.split(' ')[0] || userData.fullName || 'Користувач';
 
   return (
     <aside className="lg:col-span-4 flex flex-col gap-6 w-full">
       <section
         aria-label="Картка користувача"
+        onPaste={dragProps.onPaste}
         className="bg-[#232a35] rounded-3xl p-6 text-white text-center flex flex-col items-center gap-4 shadow-sm"
       >
-        <div className="relative w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-[#fbcfe8] to-[#f472b6] flex items-center justify-center">
+        <div
+          tabIndex={0}
+          aria-label="Змінити аватар користувача"
+          {...dragProps}
+          className={`relative w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-[#fbcfe8] to-[#f472b6] flex items-center justify-center transition-transform outline-none focus:ring-4 focus:ring-terracotta/40 ${
+            isDragging ? 'scale-105 ring-4 ring-terracotta' : ''
+          }`}
+        >
           <img
             src={userData.avatarUrl || '/assets/images/default-avatar.svg'}
             alt={userData.fullName}

@@ -1,8 +1,9 @@
-import { useState, useEffect, type FC } from 'react';
+import { useState, useEffect, useRef, type FC, type ChangeEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Icon from '@/components/ui/Icon';
+import { useFileDropAndPaste } from '@/hooks/useFileDropAndPaste';
 import type { CareScheduleItem, CareScheduleNotification } from './pet_types';
 import {
   mapRowToCareScheduleItem,
@@ -170,12 +171,32 @@ export const PetCareSchedulePage: FC<PetCareSchedulePageProps> = ({
     showToast('Сповіщення позначено як прочитане');
   };
 
+  const docFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDocFileSelect = (_file: File) => {
+    setDocumentsCount((prev) => prev + 1);
+    showToast('Додано новий документ');
+  };
+
+  const handleDocFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleDocFileSelect(file);
+    }
+  };
+
+  const { isDragging: isDocDragging, dragProps: docDragProps } = useFileDropAndPaste({
+    onFileSelect: handleDocFileSelect,
+    accept: 'image/*,application/pdf,.pdf,.doc,.docx,.jpg,.jpeg,.png',
+  });
+
   const handleAddDocument = () => {
     if (onAddDocumentClick) {
       onAddDocumentClick();
     } else {
       setDocumentsCount((prev) => prev + 1);
       showToast('Додано новий документ');
+      docFileInputRef.current?.click();
     }
   };
 
@@ -291,7 +312,18 @@ export const PetCareSchedulePage: FC<PetCareSchedulePageProps> = ({
 
                 <div
                   data-testid="medical-documents-card"
-                  className="bg-white rounded-3xl p-6 shadow-sm border border-black/5 flex flex-col items-center justify-center text-center gap-4"
+                  tabIndex={0}
+                  aria-label="Медичні документи"
+                  onDragEnter={docDragProps.onDragEnter}
+                  onDragOver={docDragProps.onDragOver}
+                  onDragLeave={docDragProps.onDragLeave}
+                  onDrop={docDragProps.onDrop}
+                  onPaste={docDragProps.onPaste}
+                  className={`bg-white rounded-3xl p-6 shadow-sm border transition-colors flex flex-col items-center justify-center text-center gap-4 outline-none focus:ring-2 focus:ring-terracotta/40 ${
+                    isDocDragging
+                      ? 'border-terracotta ring-2 ring-terracotta/30 bg-soft-ice/40'
+                      : 'border-black/5 hover:border-terracotta/40'
+                  }`}
                 >
                   <div className="w-16 h-16 rounded-full bg-soft-blue/20 text-terracotta flex items-center justify-center">
                     <Icon name="fi-rr-document" size={28} />
@@ -321,6 +353,15 @@ export const PetCareSchedulePage: FC<PetCareSchedulePageProps> = ({
                   >
                     Додати
                   </button>
+
+                  <input
+                    ref={docFileInputRef}
+                    type="file"
+                    accept="image/*,application/pdf,.pdf,.doc,.docx"
+                    className="hidden"
+                    data-testid="doc-file-input"
+                    onChange={handleDocFileChange}
+                  />
                 </div>
               </div>
             </div>

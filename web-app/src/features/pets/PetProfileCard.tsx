@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, type FC, type ChangeEvent } from 'react';
 import Icon from '@/components/ui/Icon';
+import { useFileDropAndPaste } from '@/hooks/useFileDropAndPaste';
 import type { PetDetail } from './pet_types';
 import { formatPetSubtitle, formatVisitsCount } from './pet_utils';
 
@@ -34,17 +35,39 @@ export const PetProfileCard: FC<PetProfileCardProps> = ({ pet, onEditClick, onAv
     }
   };
 
+  const handleDropOrPaste = (file: File) => {
+    if (onAvatarChange) {
+      onAvatarChange(file);
+    }
+  };
+
+  const { isDragging, dragProps } = useFileDropAndPaste({
+    onFileSelect: handleDropOrPaste,
+    accept: 'image/jpeg,image/png,image/webp,image/heic,image/*',
+    disabled: !onAvatarChange,
+  });
+
   return (
     <div
       data-testid="pet-profile-card"
+      onPaste={dragProps.onPaste}
       className="w-full rounded-3xl p-6 text-white relative shadow-md"
       style={{
         background:
           'radial-gradient(circle at 49% 53%, rgba(60, 71, 76, 1) 0%, rgba(36, 47, 53, 1) 100%)',
       }}
     >
-      <div className="relative w-24 h-24 mx-auto">
-        <div className="w-full h-full rounded-full overflow-hidden border-[3px] border-soft-blue shadow-md flex items-center justify-center bg-content-dark/60">
+      <div
+        className={`relative w-24 h-24 mx-auto rounded-full transition-transform ${
+          isDragging ? 'scale-105 ring-4 ring-terracotta/40' : ''
+        }`}
+        {...dragProps}
+      >
+        <div
+          className={`w-full h-full rounded-full overflow-hidden border-[3px] shadow-md flex items-center justify-center bg-content-dark/60 transition-colors ${
+            isDragging ? 'border-terracotta' : 'border-soft-blue'
+          }`}
+        >
           {pet.avatarUrl && !avatarFailed ? (
             <img
               src={pet.avatarUrl}

@@ -88,7 +88,7 @@ describe('RegisterPage and Register Utilities', () => {
       expect(cityInput.getAttribute('placeholder')).toBeNull();
 
       expect((cityInput as HTMLInputElement).value).toBe('м. Київ');
-      expect(screen.getByText('Фото тваринки')).toBeDefined();
+      expect(screen.getByText('Фото профілю')).toBeDefined();
     });
 
     it('renders centered legal footer text', () => {
@@ -142,19 +142,57 @@ describe('RegisterPage and Register Utilities', () => {
     it('handles photo upload selection and clear', () => {
       const { container } = render(<RegisterPage />);
 
-      const file = new File(['test-image'], 'mypet.png', { type: 'image/png' });
-      const fileInput = container.querySelector('#register-pet-photo') as HTMLInputElement;
+      const file = new File(['test-image'], 'mypfp.png', { type: 'image/png' });
+      const fileInput = container.querySelector('#register-user-photo') as HTMLInputElement;
 
       fireEvent.change(fileInput, { target: { files: [file] } });
 
-      expect(screen.getByText('mypet.png')).toBeDefined();
+      expect(screen.getByText('mypfp.png')).toBeDefined();
       expect(screen.getByRole('button', { name: 'Видалити фото' })).toBeDefined();
 
       const deleteBtn = screen.getByRole('button', { name: 'Видалити фото' });
       fireEvent.click(deleteBtn);
 
-      expect(screen.queryByText('mypet.png')).toBeNull();
-      expect(screen.getByText('Завантажити фото')).toBeDefined();
+      expect(screen.queryByText('mypfp.png')).toBeNull();
+      expect(screen.getByText(/Завантажити фото або перетягніть сюди/)).toBeDefined();
+    });
+
+    it('handles photo drag and drop upload', () => {
+      render(<RegisterPage />);
+
+      const file = new File(['drag-image'], 'avatar-drop.png', { type: 'image/png' });
+      const dropzone = screen.getByLabelText('Завантажити фото профілю');
+
+      fireEvent.dragEnter(dropzone, {
+        dataTransfer: { items: [{ kind: 'file' }] },
+      });
+      expect(screen.getByText('Відпустіть файл для завантаження')).toBeDefined();
+
+      fireEvent.drop(dropzone, {
+        dataTransfer: { files: [file] },
+      });
+
+      expect(screen.getByText('avatar-drop.png')).toBeDefined();
+    });
+
+    it('handles photo clipboard paste upload', () => {
+      const { container } = render(<RegisterPage />);
+
+      const file = new File(['pasted-image'], 'avatar-paste.png', { type: 'image/png' });
+      const form = container.querySelector('form') as HTMLFormElement;
+
+      fireEvent.paste(form, {
+        clipboardData: {
+          items: [
+            {
+              kind: 'file',
+              getAsFile: () => file,
+            },
+          ],
+        },
+      });
+
+      expect(screen.getByText('avatar-paste.png')).toBeDefined();
     });
 
     it('shows validation error when fields are empty', async () => {

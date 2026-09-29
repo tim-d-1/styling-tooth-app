@@ -1,5 +1,6 @@
 import { useState, type FC, type FormEvent, type ChangeEvent } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useFileDropAndPaste } from '@/hooks/useFileDropAndPaste';
 import {
   validatePetRegisterForm,
   parsePetBirthDateInput,
@@ -45,12 +46,16 @@ export const PetRegisterPage: FC<PetRegisterPageProps> = ({
     setLanguage((prev) => (prev === 'UA' ? 'EN' : 'UA'));
   };
 
+  const handleFileSelect = (file: File) => {
+    setPetPhoto(file);
+    const previewUrl = URL.createObjectURL(file);
+    setPhotoPreview(previewUrl);
+  };
+
   const handlePhotoSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setPetPhoto(file);
-      const previewUrl = URL.createObjectURL(file);
-      setPhotoPreview(previewUrl);
+      handleFileSelect(file);
     }
   };
 
@@ -61,6 +66,11 @@ export const PetRegisterPage: FC<PetRegisterPageProps> = ({
     setPetPhoto(null);
     setPhotoPreview(null);
   };
+
+  const { isDragging, dragProps } = useFileDropAndPaste({
+    onFileSelect: handleFileSelect,
+    accept: 'image/*',
+  });
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -194,7 +204,7 @@ export const PetRegisterPage: FC<PetRegisterPageProps> = ({
               Реєстрація улюбленця
             </h1>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-7">
+            <form onSubmit={handleSubmit} onPaste={dragProps.onPaste} className="flex flex-col gap-7">
               <div className="flex flex-col gap-5">
                 <div className="flex flex-col gap-1.5 border-b border-text-muted focus-within:border-terracotta transition-colors pb-1">
                   <label
@@ -376,7 +386,18 @@ export const PetRegisterPage: FC<PetRegisterPageProps> = ({
                     />
                     <label
                       htmlFor="pet-photo-upload"
-                      className="w-full h-[6.75rem] rounded-[10px] border border-dashed border-[#B2B2B2] hover:border-terracotta transition-colors bg-white/40 flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group"
+                      tabIndex={0}
+                      aria-label="Завантажити фото тваринки"
+                      onDragEnter={dragProps.onDragEnter}
+                      onDragOver={dragProps.onDragOver}
+                      onDragLeave={dragProps.onDragLeave}
+                      onDrop={dragProps.onDrop}
+                      onPaste={dragProps.onPaste}
+                      className={`w-full h-[6.75rem] rounded-[10px] border border-dashed transition-colors flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group outline-none focus:ring-2 focus:ring-terracotta/40 ${
+                        isDragging
+                          ? 'border-terracotta bg-soft-ice/60 ring-2 ring-terracotta/30'
+                          : 'border-[#B2B2B2] hover:border-terracotta bg-white/40'
+                      }`}
                     >
                       {photoPreview ? (
                         <div className="flex items-center gap-3 p-2 w-full h-full justify-center">
@@ -404,9 +425,17 @@ export const PetRegisterPage: FC<PetRegisterPageProps> = ({
                         </div>
                       ) : (
                         <div className="flex flex-col items-center gap-1.5">
-                          <i className="fi fi-rr-camera text-2xl text-text-muted group-hover:text-terracotta transition-colors leading-none" />
-                          <span className="font-primary text-xs text-text-muted group-hover:text-content-dark transition-colors">
-                            Завантажити фото
+                          <i
+                            className={`fi fi-rr-camera text-2xl transition-colors leading-none ${
+                              isDragging ? 'text-terracotta' : 'text-text-muted group-hover:text-terracotta'
+                            }`}
+                          />
+                          <span
+                            className={`font-primary text-xs transition-colors ${
+                              isDragging ? 'text-terracotta font-semibold' : 'text-text-muted group-hover:text-content-dark'
+                            }`}
+                          >
+                            {isDragging ? 'Відпустіть файл для завантаження' : 'Завантажити фото або перетягніть сюди'}
                           </span>
                         </div>
                       )}

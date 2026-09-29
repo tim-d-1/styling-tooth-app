@@ -358,5 +358,64 @@ describe('PetCareSchedulePage', () => {
     expect(screen.getByText('Немає даних про вакцинацію')).toBeDefined();
     expect(screen.queryByTestId('upcoming-treatment-notification')).toBeNull();
   });
+
+  it('handles document drag and drop on medical documents card', async () => {
+    const handleToast = vi.fn();
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <PetCareSchedulePage
+            initialDocumentsCount={1}
+            onToast={handleToast}
+          />
+        </MemoryRouter>
+      );
+    });
+
+    const card = screen.getByTestId('medical-documents-card');
+    const pdfFile = new File(['%PDF-1.4'], 'vet-passport.pdf', { type: 'application/pdf' });
+
+    fireEvent.dragEnter(card, {
+      dataTransfer: { items: [{ kind: 'file' }] },
+    });
+
+    fireEvent.drop(card, {
+      dataTransfer: { files: [pdfFile] },
+    });
+
+    expect(screen.getByText('Завантажено 2 файли')).toBeDefined();
+    expect(handleToast).toHaveBeenCalledWith('Додано новий документ');
+  });
+
+  it('handles document clipboard paste on medical documents card', async () => {
+    const handleToast = vi.fn();
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <PetCareSchedulePage
+            initialDocumentsCount={0}
+            onToast={handleToast}
+          />
+        </MemoryRouter>
+      );
+    });
+
+    const card = screen.getByTestId('medical-documents-card');
+    const docFile = new File(['document-data'], 'record.png', { type: 'image/png' });
+
+    fireEvent.paste(card, {
+      clipboardData: {
+        items: [
+          {
+            kind: 'file',
+            getAsFile: () => docFile,
+          },
+        ],
+      },
+    });
+
+    expect(screen.getByText('Завантажено 1 файл')).toBeDefined();
+    expect(handleToast).toHaveBeenCalledWith('Додано новий документ');
+  });
 });
 

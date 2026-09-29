@@ -84,6 +84,61 @@ describe('PersonalDataPage', () => {
     createObjectURLSpy.mockRestore();
   });
 
+  it('handles user avatar drag and drop upload', () => {
+    const handleToast = vi.fn();
+    const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test-avatar-drag');
+
+    render(
+      <MemoryRouter>
+        <PersonalDataPage onToast={handleToast} initialData={{ fullName: 'Катерина' }} />
+      </MemoryRouter>
+    );
+
+    const avatarZone = screen.getByLabelText('Змінити аватар користувача');
+    const dragFile = new File(['drag-avatar'], 'user-drag.png', { type: 'image/png' });
+
+    fireEvent.dragEnter(avatarZone, {
+      dataTransfer: { items: [{ kind: 'file' }] },
+    });
+
+    fireEvent.drop(avatarZone, {
+      dataTransfer: { files: [dragFile] },
+    });
+
+    expect(createObjectURLSpy).toHaveBeenCalledWith(dragFile);
+    expect(handleToast).toHaveBeenCalledWith('Аватар оновлено');
+    createObjectURLSpy.mockRestore();
+  });
+
+  it('handles user avatar clipboard paste upload', () => {
+    const handleToast = vi.fn();
+    const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test-avatar-paste');
+
+    const { container } = render(
+      <MemoryRouter>
+        <PersonalDataPage onToast={handleToast} initialData={{ fullName: 'Катерина' }} />
+      </MemoryRouter>
+    );
+
+    const userCard = container.querySelector('section[aria-label="Картка користувача"]') as HTMLElement;
+    const pasteFile = new File(['paste-avatar'], 'user-paste.png', { type: 'image/png' });
+
+    fireEvent.paste(userCard, {
+      clipboardData: {
+        items: [
+          {
+            kind: 'file',
+            getAsFile: () => pasteFile,
+          },
+        ],
+      },
+    });
+
+    expect(createObjectURLSpy).toHaveBeenCalledWith(pasteFile);
+    expect(handleToast).toHaveBeenCalledWith('Аватар оновлено');
+    createObjectURLSpy.mockRestore();
+  });
+
   it('renders sidebar navigation items and handles clicks', async () => {
     const handleAddresses = vi.fn();
     const handlePaymentMethods = vi.fn();

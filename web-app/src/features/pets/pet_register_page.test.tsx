@@ -263,7 +263,7 @@ describe('PetRegisterPage and Pet Register Utilities', () => {
       fireEvent.click(deleteBtn);
 
       expect(screen.queryByText('cat.jpg')).toBeNull();
-      expect(screen.getByText('Завантажити фото')).toBeDefined();
+      expect(screen.getByText(/Завантажити фото або перетягніть сюди/)).toBeDefined();
     });
 
     it('shows validation error when submitted with empty name', async () => {
@@ -504,6 +504,44 @@ describe('PetRegisterPage and Pet Register Utilities', () => {
         })
       );
       expect(handleSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('handles photo drag and drop upload', () => {
+      render(<PetRegisterPage />);
+
+      const file = new File(['dog-drag'], 'rex-drop.jpg', { type: 'image/jpeg' });
+      const dropzone = screen.getByLabelText('Завантажити фото тваринки');
+
+      fireEvent.dragEnter(dropzone, {
+        dataTransfer: { items: [{ kind: 'file' }] },
+      });
+      expect(screen.getByText('Відпустіть файл для завантаження')).toBeDefined();
+
+      fireEvent.drop(dropzone, {
+        dataTransfer: { files: [file] },
+      });
+
+      expect(screen.getByText('rex-drop.jpg')).toBeDefined();
+    });
+
+    it('handles photo clipboard paste upload', () => {
+      const { container } = render(<PetRegisterPage />);
+
+      const file = new File(['dog-paste'], 'rex-paste.jpg', { type: 'image/jpeg' });
+      const form = container.querySelector('form') as HTMLFormElement;
+
+      fireEvent.paste(form, {
+        clipboardData: {
+          items: [
+            {
+              kind: 'file',
+              getAsFile: () => file,
+            },
+          ],
+        },
+      });
+
+      expect(screen.getByText('rex-paste.jpg')).toBeDefined();
     });
   });
 });

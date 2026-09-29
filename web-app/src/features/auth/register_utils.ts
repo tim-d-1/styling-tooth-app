@@ -7,6 +7,7 @@ export interface RegisterFormData {
   identifier: string;
   password: string;
   city: string;
+  avatarPhoto?: File | null;
   petPhoto?: File | null;
 }
 
