@@ -82,8 +82,9 @@ export const LoginPage: FC<LoginPageProps> = ({
       const isEmail = isEmailIdentifier(trimmedIdentifier);
       const normalizedPhone = normalizePhoneNumber(trimmedIdentifier);
 
+      let signedInUser = null;
       if (isEmail) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email: trimmedIdentifier,
           password,
         });
@@ -99,8 +100,9 @@ export const LoginPage: FC<LoginPageProps> = ({
           }
           return;
         }
+        signedInUser = data?.user ?? null;
       } else if (normalizedPhone) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           phone: normalizedPhone,
           password,
         });
@@ -117,9 +119,23 @@ export const LoginPage: FC<LoginPageProps> = ({
           }
           return;
         }
+        signedInUser = data?.user ?? null;
       } else {
         setErrorMessage('Введіть коректний Email або номер телефону');
         return;
+      }
+
+      if (signedInUser) {
+        try {
+          const role =
+            (signedInUser.user_metadata?.role as string) ||
+            (signedInUser.app_metadata?.role as string);
+          if (role) {
+            localStorage.setItem('user_role', role);
+          }
+        } catch {
+          // ignore storage error
+        }
       }
 
       onSuccess?.();

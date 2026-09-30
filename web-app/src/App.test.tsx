@@ -1893,6 +1893,138 @@ describe('App Root and Auth Gating', () => {
 
       expect(screen.getByText('Запланований візит')).toBeDefined();
     });
+
+    it('redirects master accessing /dashboard to /admin/requests', async () => {
+      window.history.pushState(null, '', '/dashboard');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: {
+              id: 'master-user-dash',
+              email: 'master@example.com',
+              user_metadata: { role: 'master' },
+            },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
+        data: {
+          user: {
+            id: 'master-user-dash',
+            email: 'master@example.com',
+            user_metadata: { role: 'master' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-master-dash',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: { role: 'master' },
+                  error: null,
+                }),
+              }),
+            }),
+          } as never;
+        }
+        if (table === 'appointments' || table === 'masters') {
+          return {
+            select: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({ data: [], error: null }),
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          } as never;
+        }
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        } as never;
+      }) as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Обробка заявок' })).toBeDefined();
+    });
+
+    it('renders RequestProcessingPage when user has master role', async () => {
+      window.history.pushState(null, '', '/admin/requests');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'master-user-req', email: 'master2@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
+        data: { user: { id: 'master-user-req', email: 'master2@example.com' } },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-master-role',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: { role: 'master' },
+                  error: null,
+                }),
+              }),
+            }),
+          } as never;
+        }
+        if (table === 'appointments' || table === 'masters') {
+          return {
+            select: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({ data: [], error: null }),
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          } as never;
+        }
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        } as never;
+      }) as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Обробка заявок' })).toBeDefined();
+    });
   });
 });
 

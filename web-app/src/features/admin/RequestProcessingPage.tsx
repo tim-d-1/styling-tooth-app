@@ -213,6 +213,7 @@ export const RequestProcessingPage: FC<RequestProcessingPageProps> = ({
         customNavItems={[
           { id: 'admin/requests', label: 'Заявки' },
           { id: 'admin/support', label: 'Служба підтримки' },
+          { id: 'home', label: 'Головна' },
         ]}
       />
 

@@ -432,12 +432,17 @@ export const ProfilePage: FC<ProfilePageProps> = ({
                 title: 'Часті запитання (FAQ)',
                 iconName: 'fi-rr-interrogation',
               },
-              ...(userRole === 'admin' || userRole === 'receptionist'
+              ...(userRole === 'admin' || userRole === 'receptionist' || userRole === 'master'
                 ? [
                     {
                       id: 'dashboard',
                       title: 'Обробка заявок',
-                      subtitle: 'Панель адміністратора',
+                      subtitle:
+                        userRole === 'master'
+                          ? 'Панель майстра'
+                          : userRole === 'admin'
+                          ? 'Панель адміністратора'
+                          : 'Панель рецепції',
                       iconName: 'fi-rr-folder',
                     },
                   ]

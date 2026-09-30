@@ -281,7 +281,7 @@ export const MainPage: FC<MainPageProps> = ({
           onNotificationClick={() => showToast('')}
         />
 
-        {(userRole === 'admin' || userRole === 'receptionist') && (
+        {(userRole === 'admin' || userRole === 'receptionist' || userRole === 'master') && (
           <div className="max-w-[75rem] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
             <div
               data-testid="staff-role-banner"
@@ -293,10 +293,17 @@ export const MainPage: FC<MainPageProps> = ({
                 </div>
                 <div>
                   <p className="font-accented font-bold text-base text-content-dark m-0">
-                    Ви увійшли як {userRole === 'admin' ? 'Адміністратор' : 'Рецепція'}
+                    Ви увійшли як{' '}
+                    {userRole === 'admin'
+                      ? 'Адміністратор'
+                      : userRole === 'master'
+                      ? 'Майстер'
+                      : 'Рецепція'}
                   </p>
                   <p className="font-primary text-xs sm:text-sm text-content-dark/70 m-0">
-                    Керування заявками на візити та зверненнями клієнтів
+                    {userRole === 'master'
+                      ? 'Перегляд призначених візитів, заявок та робочого графіка'
+                      : 'Керування заявками на візити та зверненнями клієнтів'}
                   </p>
                 </div>
               </div>

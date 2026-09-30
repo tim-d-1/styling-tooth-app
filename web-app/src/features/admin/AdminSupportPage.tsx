@@ -149,6 +149,7 @@ export const AdminSupportPage: FC<AdminSupportPageProps> = ({
         customNavItems={[
           { id: 'admin/requests', label: 'Заявки' },
           { id: 'admin/support', label: 'Служба підтримки' },
+          { id: 'home', label: 'Головна' },
         ]}
       />
 

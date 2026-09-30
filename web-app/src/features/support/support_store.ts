@@ -175,7 +175,7 @@ export async function sendMessage(
 
   const senderName = profile?.full_name || 'Користувач';
   const senderAvatar = profile?.avatar_url || null;
-  const senderRole = ['admin', 'receptionist'].includes(profile?.role || '')
+  const senderRole = ['admin', 'receptionist', 'master'].includes(profile?.role || '')
     ? 'staff' as const
     : 'client' as const;
 
