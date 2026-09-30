@@ -102,6 +102,13 @@ export const MainPage: FC<MainPageProps> = ({
           .maybeSingle();
 
         if (isMounted) {
+          if (!profile) {
+            const { error: userError } = await supabase.auth.getUser();
+            if (userError) {
+              await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+              return;
+            }
+          }
           const resolvedName =
             profile?.full_name?.trim() ||
             sessionData?.session?.user?.user_metadata?.first_name ||

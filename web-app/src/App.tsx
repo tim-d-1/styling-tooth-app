@@ -152,26 +152,68 @@ export function AppRoutes() {
   };
 
   useEffect(() => {
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        const authed = Boolean(session?.user);
-        setIsLoggedIn(authed);
+    let isMounted = true;
+
+    async function initAuth() {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const session = sessionData?.session;
+
+        if (!session?.user) {
+          if (isMounted) {
+            setIsLoggedIn(false);
+            setIsAuthLoading(false);
+          }
+          return;
+        }
+
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (!isMounted) return;
+
+        if (userError || !userData?.user) {
+          await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+          if (isMounted) {
+            setIsLoggedIn(false);
+            setIsAuthLoading(false);
+          }
+          return;
+        }
+
+        setIsLoggedIn(true);
         setIsAuthLoading(false);
-      })
-      .catch(() => {
-        setIsAuthLoading(false);
-      });
+      } catch {
+        if (isMounted) {
+          setIsLoggedIn(false);
+          setIsAuthLoading(false);
+        }
+      }
+    }
+
+    initAuth();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      const authed = Boolean(session?.user);
-      setIsLoggedIn(authed);
-      setIsAuthLoading(false);
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        return;
+      }
+      if (event === 'SIGNED_OUT' || !session?.user) {
+        if (isMounted) {
+          setIsLoggedIn(false);
+          setIsAuthLoading(false);
+        }
+        return;
+      }
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        if (isMounted) {
+          setIsLoggedIn(true);
+          setIsAuthLoading(false);
+        }
+      }
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -195,7 +237,9 @@ export function AppRoutes() {
         <Route
           path="/"
           element={
-            isLoggedIn ? (
+            isAuthLoading ? (
+              <div className="min-h-screen bg-surface-cream" />
+            ) : isLoggedIn ? (
               <MainPage
                 isLoggedIn={isLoggedIn}
                 onLoginClick={() => navigate('/login')}

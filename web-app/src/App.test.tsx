@@ -9,6 +9,13 @@ describe('App Root and Auth Gating', () => {
     localStorage.clear();
     window.scrollTo = vi.fn();
     window.history.pushState(null, '', '/');
+    vi.spyOn(supabase.auth, 'getUser').mockImplementation(async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.user) {
+        return { data: { user: data.session.user }, error: null } as never;
+      }
+      return { data: { user: null }, error: new Error('Auth session missing') } as never;
+    });
   });
 
   it('renders landing page when user is not authenticated', async () => {
@@ -33,6 +40,71 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Хто ми' })).toBeDefined();
     expect(screen.getByRole('heading', { level: 2, name: 'Наші послуги' })).toBeDefined();
     expect(screen.queryByText('Запланований візит')).toBeNull();
+  });
+
+  it('clears stale session and renders landing page when getUser returns error', async () => {
+    const signOutSpy = vi.spyOn(supabase.auth, 'signOut').mockResolvedValue({ error: null } as never);
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'deleted-user', email: 'deleted@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
+      data: { user: null },
+      error: { message: 'User from sub claim in JWT does not exist', status: 401 } as never,
+    });
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-1',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(signOutSpy).toHaveBeenCalled();
+    expect(screen.getByRole('heading', { level: 2, name: 'Хто ми' })).toBeDefined();
+    expect(screen.queryByText('Запланований візит')).toBeNull();
+  });
+
+  it('clears stale session and renders landing page when session exists but getUser user is null', async () => {
+    const signOutSpy = vi.spyOn(supabase.auth, 'signOut').mockResolvedValue({ error: null } as never);
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'phantom-user', email: 'phantom@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
+      data: { user: null },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-1',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(signOutSpy).toHaveBeenCalled();
+    expect(screen.getByRole('heading', { level: 2, name: 'Хто ми' })).toBeDefined();
   });
 
   it('renders main page with no appointment state when user is authenticated', async () => {

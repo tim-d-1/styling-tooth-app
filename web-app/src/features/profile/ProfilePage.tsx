@@ -85,6 +85,16 @@ export const ProfilePage: FC<ProfilePageProps> = ({
           .eq('id', currentUserId)
           .maybeSingle();
 
+        if (isMounted) {
+          if (!profileData) {
+            const { error: userError } = await supabase.auth.getUser();
+            if (userError) {
+              await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+              return;
+            }
+          }
+        }
+
       let discountPct = 0;
 
       if (isMounted) {
