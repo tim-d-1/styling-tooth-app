@@ -309,7 +309,7 @@ export const SupportCallPage: FC<SupportCallPageProps> = ({
                     }`}
                   >
                     <Icon
-                      name={isMuted ? 'fi-rr-microphone' : 'fi-rr-microphone'}
+                      name={isMuted ? 'fi-rr-microphone-slash' : 'fi-rr-microphone'}
                       size={22}
                     />
                   </div>
@@ -360,7 +360,7 @@ export const SupportCallPage: FC<SupportCallPageProps> = ({
                   aria-label="Завершити дзвінок"
                   className="w-[4.5rem] h-[4.5rem] rounded-full bg-[#FF383C] hover:bg-[#E03034] text-white flex items-center justify-center shadow-xl transition-transform active:scale-95 cursor-pointer border-0"
                 >
-                  <Icon name="fi-rr-phone-call" size={26} className="transform rotate-135" />
+                  <Icon name="fi-rr-phone-call" size={26} className="transform rotate-[135deg]" />
                 </button>
               </div>
             </footer>

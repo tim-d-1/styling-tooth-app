@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Icon from '@/components/ui/Icon';
+import SocialIcon from '@/components/ui/SocialIcon';
 import ProfileAccountSidebar from './ProfileAccountSidebar';
 import type { PersonalDataForm } from './profile_types';
 import { supabase } from '@/lib/supabase';
+import { generateTelegramLink } from './telegram_service';
 
 export interface PersonalDataPageProps {
   onHomeClick?: () => void;
@@ -23,6 +25,7 @@ const initialEmptyFormData: PersonalDataForm = {
   phone: '',
   isPhoneVerified: false,
   email: '',
+  isEmailVerified: false,
   birthDate: '',
   avatarUrl: null,
   isVip: false,
@@ -53,6 +56,33 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
   const showToast = (message: string) => {
     if (onToast && message) {
       onToast(message);
+    }
+  };
+
+  const handleVerifyPhoneViaTelegram = async () => {
+    try {
+      const linkInfo = await generateTelegramLink();
+      window.open(linkInfo.linkUrl, '_blank');
+      showToast('Відкриваємо Telegram бота для підтвердження');
+    } catch {
+      showToast('Помилка створення посилання');
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    if (!formData.email) return;
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: formData.email,
+      });
+      if (error) {
+        showToast('Помилка відправки підтвердження');
+      } else {
+        showToast('Лист із підтвердженням надіслано на вашу пошту');
+      }
+    } catch {
+      showToast('Помилка відправки підтвердження');
     }
   };
 
@@ -91,11 +121,24 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
           ? rawAvatar.trim()
           : null;
 
+      const isPhoneConfirmed = Boolean(
+        profile?.phone_confirmed ||
+        userMeta?.phone_confirmed ||
+        (profile?.phone && profile?.telegram_chat_id)
+      );
+
+      const isEmailConfirmed = Boolean(
+        profile?.email_confirmed ||
+        sessionData?.session?.user?.email_confirmed_at
+      );
+
       setFormData((prev) => ({
         ...prev,
         fullName: resolvedName,
         email: resolvedEmail,
         phone: resolvedPhone,
+        isPhoneVerified: isPhoneConfirmed || prev.isPhoneVerified,
+        isEmailVerified: isEmailConfirmed || prev.isEmailVerified,
         avatarUrl: resolvedAvatar || prev.avatarUrl,
         birthDate: userMeta?.birth_date || prev.birthDate,
       }));
@@ -321,7 +364,7 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
                     </div>
                   </div>
 
-                  {formData.isPhoneVerified && (
+                  {formData.isPhoneVerified ? (
                     <div
                       data-testid="phone-verified-badge"
                       className="flex items-center gap-1.5 text-[#34C759] font-primary font-medium text-xs sm:text-sm shrink-0"
@@ -329,7 +372,17 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
                       <Icon name="fi-rr-check" size={14} />
                       <span>Підтверджено</span>
                     </div>
-                  )}
+                  ) : formData.phone ? (
+                    <button
+                      type="button"
+                      onClick={handleVerifyPhoneViaTelegram}
+                      data-testid="verify-phone-telegram-btn"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-soft-blue/10 hover:bg-soft-blue/20 text-soft-blue text-xs font-semibold cursor-pointer border-0 transition-colors"
+                    >
+                      <SocialIcon platform="Telegram" size={14} colorScheme="Original" />
+                      <span>Підтвердити через Telegram</span>
+                    </button>
+                  ) : null}
                 </div>
 
                 <div className="py-5 flex items-center justify-between gap-4">
@@ -360,14 +413,36 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingEmail((prev) => !prev)}
-                    aria-label="Редагувати Електронну пошту"
-                    className="text-text-muted hover:text-terracotta transition-colors p-2 cursor-pointer outline-none shrink-0"
-                  >
-                    <Icon name="fi-rr-edit" size={18} />
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {formData.isEmailVerified ? (
+                      <div
+                        data-testid="email-verified-badge"
+                        className="flex items-center gap-1.5 text-[#34C759] font-primary font-medium text-xs sm:text-sm"
+                      >
+                        <Icon name="fi-rr-check" size={14} />
+                        <span>Підтверджено</span>
+                      </div>
+                    ) : formData.email ? (
+                      <button
+                        type="button"
+                        onClick={handleVerifyEmail}
+                        data-testid="verify-email-btn"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-soft-blue/10 hover:bg-soft-blue/20 text-soft-blue text-xs font-semibold cursor-pointer border-0 transition-colors"
+                      >
+                        <Icon name="fi-rr-envelope" size={14} />
+                        <span>Підтвердити</span>
+                      </button>
+                    ) : null}
+
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingEmail((prev) => !prev)}
+                      aria-label="Редагувати Електронну пошту"
+                      className="text-text-muted hover:text-terracotta transition-colors p-2 cursor-pointer outline-none"
+                    >
+                      <Icon name="fi-rr-edit" size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="pt-5 flex items-center justify-between gap-4">

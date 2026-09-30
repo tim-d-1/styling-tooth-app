@@ -42,6 +42,7 @@ export interface PersonalDataForm {
   phone: string;
   isPhoneVerified: boolean;
   email: string;
+  isEmailVerified?: boolean;
   birthDate: string;
   avatarUrl?: string | null;
   isVip?: boolean;

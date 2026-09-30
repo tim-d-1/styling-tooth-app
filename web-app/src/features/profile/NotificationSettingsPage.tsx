@@ -11,6 +11,10 @@ import {
   type NotificationPreferences,
   DEFAULT_NOTIFICATION_PREFERENCES,
 } from './notification_types';
+import {
+  generateTelegramLink,
+  sendTestTelegramNotification,
+} from './telegram_service';
 
 export type { NotificationPreferences };
 
@@ -33,6 +37,10 @@ export const NotificationSettingsPage: FC<NotificationSettingsPageProps> = ({
   );
   const [userName, setUserName] = useState('');
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+  const [telegramChatId, setTelegramChatId] = useState<string | null>(null);
+  const [telegramUsername, setTelegramUsername] = useState<string | null>(null);
+  const [isLinking, setIsLinking] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
 
   const showToast = (message: string) => {
     if (onToast && message) {
@@ -56,6 +64,37 @@ export const NotificationSettingsPage: FC<NotificationSettingsPageProps> = ({
     }
   };
 
+  const handleConnectTelegram = async () => {
+    setIsLinking(true);
+    try {
+      const linkInfo = await generateTelegramLink();
+      window.open(linkInfo.linkUrl, '_blank');
+      showToast('Відкриваємо Telegram бота...');
+    } catch {
+      showToast('Помилка відкриття Telegram');
+    } finally {
+      setIsLinking(false);
+    }
+  };
+
+  const handleSendTestNotification = async () => {
+    setIsTesting(true);
+    try {
+      const ok = await sendTestTelegramNotification(
+        '🐾 Вітаємо! Це тестове сповіщення від салону «Стильний Зубець». Ваш Telegram підключено успішно!'
+      );
+      if (ok) {
+        showToast('Тестове сповіщення надіслано в Telegram');
+      } else {
+        showToast('Сповіщення збережено');
+      }
+    } catch {
+      showToast('Не вдалося надіслати сповіщення');
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -75,6 +114,17 @@ export const NotificationSettingsPage: FC<NotificationSettingsPageProps> = ({
           user.user_metadata?.picture ||
           null
         );
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('telegram_chat_id, telegram_username')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (isMounted && profile?.telegram_chat_id) {
+          setTelegramChatId(profile.telegram_chat_id);
+          setTelegramUsername(profile.telegram_username);
+        }
 
         if (!initialPreferences) {
           const saved = user.user_metadata?.notification_preferences;
@@ -229,14 +279,45 @@ export const NotificationSettingsPage: FC<NotificationSettingsPageProps> = ({
                         <span className="font-primary font-medium text-base text-content-dark">
                           Telegram
                         </span>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#34C759]/10 text-[#34C759] text-xs font-medium">
-                          <Icon name="fi-rr-check" size={11} className="text-[#34C759]" />
-                          <span>Підтверджено</span>
-                        </span>
+                        {preferences.channels.telegram ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#34C759]/10 text-[#34C759] text-xs font-medium">
+                            <Icon name="fi-rr-check" size={11} className="text-[#34C759]" />
+                            <span>Підтверджено</span>
+                            {telegramUsername ? (
+                              <span className="opacity-80">(@{telegramUsername})</span>
+                            ) : null}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 text-xs font-medium">
+                            <span>Вимкнено</span>
+                          </span>
+                        )}
                       </div>
                       <span className="font-primary text-xs sm:text-sm text-content-dark/70">
                         Отримувати повідомлення через Telegram бота
                       </span>
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          type="button"
+                          onClick={handleConnectTelegram}
+                          disabled={isLinking}
+                          aria-label="Підключити Telegram"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-soft-blue/10 hover:bg-soft-blue/20 text-soft-blue text-xs font-semibold cursor-pointer border-0 transition-colors"
+                        >
+                          <SocialIcon platform="Telegram" size={12} colorScheme="Original" />
+                          <span>{telegramChatId ? 'Перепідключити' : 'Підключити бота'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSendTestNotification}
+                          disabled={isTesting}
+                          aria-label="Тестове сповіщення"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-visit-gray hover:bg-visit-gray/80 text-content-dark text-xs font-semibold cursor-pointer border-0 transition-colors"
+                        >
+                          <Icon name="fi-rr-bell" size={12} />
+                          <span>Тестове сповіщення</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <Switch
