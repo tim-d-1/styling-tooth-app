@@ -53,37 +53,48 @@ export const BookingPage: FC<BookingPageProps> = ({
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const [pets, setPets] = useState<PetOption[]>(() => {
-    return initialPets && initialPets.length > 0 ? initialPets : DEMO_PETS;
+    if (initialPets) return initialPets;
+    if (isLoggedIn) return [];
+    return DEMO_PETS;
   });
 
-  const [bookingState, setBookingState] = useState<BookingState>({
-    petId: DEMO_PETS[0].id,
-    petName: DEMO_PETS[0].name,
-    petSpecies: DEMO_PETS[0].species,
-    petBreed: DEMO_PETS[0].breed,
-    petAvatarUrl: DEMO_PETS[0].avatar_url,
+  const [bookingState, setBookingState] = useState<BookingState>(() => {
+    const defaultPet =
+      initialPets && initialPets.length > 0
+        ? initialPets[0]
+        : !isLoggedIn
+        ? DEMO_PETS[0]
+        : null;
 
-    procedureId: PROCEDURES_CATALOG[0].id,
-    procedureName: PROCEDURES_CATALOG[0].name,
-    procedurePrice: PROCEDURES_CATALOG[0].price,
-    procedureDurationMin: PROCEDURES_CATALOG[0].durationMin,
+    return {
+      petId: defaultPet?.id || '',
+      petName: defaultPet?.name || '',
+      petSpecies: defaultPet?.species || '',
+      petBreed: defaultPet?.breed,
+      petAvatarUrl: defaultPet?.avatar_url || null,
 
-    masterId: DEMO_MASTERS[0].id,
-    masterName: DEMO_MASTERS[0].name,
-    masterRole: DEMO_MASTERS[0].role,
-    masterAvatarUrl: DEMO_MASTERS[0].avatarUrl,
+      procedureId: PROCEDURES_CATALOG[0].id,
+      procedureName: PROCEDURES_CATALOG[0].name,
+      procedurePrice: PROCEDURES_CATALOG[0].price,
+      procedureDurationMin: PROCEDURES_CATALOG[0].durationMin,
 
-    date: '2026-08-11',
-    dateFormatted: '11.08.2026',
-    timeSlot: '16:00',
+      masterId: DEMO_MASTERS[0].id,
+      masterName: DEMO_MASTERS[0].name,
+      masterRole: DEMO_MASTERS[0].role,
+      masterAvatarUrl: DEMO_MASTERS[0].avatarUrl,
 
-    clientNote: '',
-    transferEnabled: false,
-    transferPrice: 100,
-    transferAddress: '',
-    behaviorNotes: '',
+      date: '2026-08-11',
+      dateFormatted: '11.08.2026',
+      timeSlot: '16:00',
 
-    paymentMethod: 'apple_pay',
+      clientNote: '',
+      transferEnabled: false,
+      transferPrice: 100,
+      transferAddress: '',
+      behaviorNotes: '',
+
+      paymentMethod: 'apple_pay',
+    };
   });
 
   const [isLoadingPets, setIsLoadingPets] = useState(!initialPets && isLoggedIn);
@@ -107,27 +118,39 @@ export const BookingPage: FC<BookingPageProps> = ({
           .eq('is_active', true)
           .order('created_at', { ascending: false });
 
-        if (isMounted && userPets && userPets.length > 0) {
-          const avatarMap = await fetchPetsAvatarMap(userPets.map((p) => p.id));
-          if (!isMounted) return;
+        if (isMounted) {
+          if (userPets && userPets.length > 0) {
+            const avatarMap = await fetchPetsAvatarMap(userPets.map((p) => p.id));
+            if (!isMounted) return;
 
-          const mappedPets: PetOption[] = userPets.map((p) => ({
-            id: p.id,
-            name: p.name,
-            species: p.species === 'dog' ? 'Собака' : p.species === 'cat' ? 'Кіт' : p.species,
-            breed: p.breed || undefined,
-            avatar_url: avatarMap[p.id] || (p as any).avatar_url || null,
-          }));
+            const mappedPets: PetOption[] = userPets.map((p) => ({
+              id: p.id,
+              name: p.name,
+              species: p.species === 'dog' ? 'Собака' : p.species === 'cat' ? 'Кіт' : p.species,
+              breed: p.breed || undefined,
+              avatar_url: avatarMap[p.id] || (p as any).avatar_url || null,
+            }));
 
-          setPets(mappedPets);
-          setBookingState((prev) => ({
-            ...prev,
-            petId: mappedPets[0].id,
-            petName: mappedPets[0].name,
-            petSpecies: mappedPets[0].species,
-            petBreed: mappedPets[0].breed,
-            petAvatarUrl: mappedPets[0].avatar_url || null,
-          }));
+            setPets(mappedPets);
+            setBookingState((prev) => ({
+              ...prev,
+              petId: mappedPets[0].id,
+              petName: mappedPets[0].name,
+              petSpecies: mappedPets[0].species,
+              petBreed: mappedPets[0].breed,
+              petAvatarUrl: mappedPets[0].avatar_url || null,
+            }));
+          } else {
+            setPets([]);
+            setBookingState((prev) => ({
+              ...prev,
+              petId: '',
+              petName: '',
+              petSpecies: '',
+              petBreed: undefined,
+              petAvatarUrl: null,
+            }));
+          }
         }
       } catch (err) {
         console.error('Failed to load user pets for booking:', err);

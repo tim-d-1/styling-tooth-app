@@ -382,4 +382,53 @@ describe('BookingPage', () => {
     renderBooking({ isLoggedIn: true });
     expect(screen.getByRole('status', { name: 'Завантаження улюбленців' })).toBeDefined();
   });
+
+  it('renders zero pets and disabled next button when authenticated user has no pets in database', async () => {
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'empty-user-1', email: 'empty@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+
+    vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
+      if (table === 'pets') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          }),
+        };
+      }
+      return {};
+    }) as never);
+
+    const handleAddPet = vi.fn();
+
+    await act(async () => {
+      renderBooking({ isLoggedIn: true, onAddPetClick: handleAddPet });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('status', { name: 'Завантаження улюбленців' })).toBeNull();
+    });
+
+    expect(screen.queryByRole('radio', { name: /Барон/i })).toBeNull();
+    expect(screen.queryByRole('radio', { name: /Альфа/i })).toBeNull();
+    expect(screen.queryByRole('radio', { name: /Рекс/i })).toBeNull();
+    expect(screen.queryAllByRole('radio')).toHaveLength(0);
+
+    const nextBtn = screen.getByRole('button', { name: 'Далі' });
+    expect(nextBtn).toBeDefined();
+    expect(nextBtn.hasAttribute('disabled')).toBe(true);
+
+    const addPetBtn = screen.getByRole('button', { name: 'Додати нового улюбленця' });
+    fireEvent.click(addPetBtn);
+    expect(handleAddPet).toHaveBeenCalledTimes(1);
+  });
 });
