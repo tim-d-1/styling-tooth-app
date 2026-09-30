@@ -34,6 +34,8 @@ import NotificationSettingsPage from '@/features/profile/NotificationSettingsPag
 import FaqPage from '@/features/faq/FaqPage';
 import PrivacyPolicyPage from '@/features/legal/PrivacyPolicyPage';
 import TermsOfUsePage from '@/features/legal/TermsOfUsePage';
+import RequestProcessingPage from '@/features/admin/RequestProcessingPage';
+import type { UserRole } from '@/features/auth/auth_types';
 import { CITY_STORAGE_KEY } from '@/features/location/city_types';
 import ScrollToTop from '@/components/layout/ScrollToTop';
 import { supabase } from '@/lib/supabase';
@@ -64,6 +66,45 @@ export function ProtectedRoute({
         replace
       />
     );
+  }
+
+  return <>{children}</>;
+}
+
+export interface RoleRouteProps {
+  isLoggedIn: boolean;
+  isAuthLoading: boolean;
+  userRole?: UserRole;
+  allowedRoles: UserRole[];
+  children: ReactNode;
+}
+
+export function RoleRoute({
+  isLoggedIn,
+  isAuthLoading,
+  userRole = 'client',
+  allowedRoles,
+  children,
+}: RoleRouteProps) {
+  const location = useLocation();
+
+  if (isAuthLoading) {
+    return <div className="min-h-screen bg-surface-cream" />;
+  }
+
+  if (!isLoggedIn) {
+    const returnTo = location.pathname + location.search;
+    return (
+      <Navigate
+        to={`/login?from=${encodeURIComponent(returnTo)}`}
+        state={{ from: returnTo }}
+        replace
+      />
+    );
+  }
+
+  if (!allowedRoles.includes(userRole)) {
+    return <Navigate to="/main" replace />;
   }
 
   return <>{children}</>;
@@ -140,6 +181,7 @@ function CitySelectionRouteWrapper({
 export function AppRoutes() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [userRole, setUserRole] = useState<UserRole>('client');
   const [selectedCity, setSelectedCity] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem(CITY_STORAGE_KEY) || 'Запоріжжя';
@@ -169,6 +211,7 @@ export function AppRoutes() {
         if (!session?.user) {
           if (isMounted) {
             setIsLoggedIn(false);
+            setUserRole('client');
             setIsAuthLoading(false);
           }
           return;
@@ -181,6 +224,7 @@ export function AppRoutes() {
           await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
           if (isMounted) {
             setIsLoggedIn(false);
+            setUserRole('client');
             setIsAuthLoading(false);
           }
           return;
@@ -188,9 +232,24 @@ export function AppRoutes() {
 
         setIsLoggedIn(true);
         setIsAuthLoading(false);
+
+        supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', userData.user.id)
+          .maybeSingle()
+          .then(
+            ({ data: profile }) => {
+              if (isMounted && profile?.role) {
+                setUserRole(profile.role as UserRole);
+              }
+            },
+            () => {}
+          );
       } catch {
         if (isMounted) {
           setIsLoggedIn(false);
+          setUserRole('client');
           setIsAuthLoading(false);
         }
       }
@@ -207,6 +266,7 @@ export function AppRoutes() {
       if (event === 'SIGNED_OUT' || !session?.user) {
         if (isMounted) {
           setIsLoggedIn(false);
+          setUserRole('client');
           setIsAuthLoading(false);
         }
         return;
@@ -215,6 +275,19 @@ export function AppRoutes() {
         if (isMounted) {
           setIsLoggedIn(true);
           setIsAuthLoading(false);
+          supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .maybeSingle()
+            .then(
+              ({ data: profile }) => {
+                if (isMounted && profile?.role) {
+                  setUserRole(profile.role as UserRole);
+                }
+              },
+              () => {}
+            );
         }
       }
     });
@@ -511,6 +584,8 @@ export function AppRoutes() {
                 onNotificationsClick={() => navigate('/profile/notifications')}
                 onSupportClick={() => navigate('/support/chat')}
                 onFaqClick={() => navigate('/faq')}
+                onDashboardClick={() => navigate('/admin/requests')}
+                userRole={userRole}
                 onToast={showToast}
               />
             </ProtectedRoute>
@@ -975,6 +1050,43 @@ export function AppRoutes() {
         <Route
           path="/support/create"
           element={<Navigate to="/support/new-ticket" replace />}
+        />
+
+        <Route
+          path="/admin/requests"
+          element={
+            <RoleRoute
+              isLoggedIn={isLoggedIn}
+              isAuthLoading={isAuthLoading}
+              userRole={userRole}
+              allowedRoles={['admin', 'receptionist']}
+            >
+              <RequestProcessingPage
+                isLoggedIn={isLoggedIn}
+                onLoginClick={() => navigate('/login')}
+                onRegisterClick={() => navigate('/register')}
+                onProfileClick={() => navigate('/profile')}
+                onNavClick={(nav) => {
+                  if (nav === 'home') navigate(isLoggedIn ? '/main' : '/');
+                  else navigate(`/${nav}`);
+                }}
+                onToast={showToast}
+              />
+            </RoleRoute>
+          }
+        />
+        <Route path="/admin" element={<Navigate to="/admin/requests" replace />} />
+        <Route path="/receptionist" element={<Navigate to="/admin/requests" replace />} />
+        <Route path="/dashboard/requests" element={<Navigate to="/admin/requests" replace />} />
+        <Route
+          path="/dashboard"
+          element={
+            userRole === 'admin' || userRole === 'receptionist' ? (
+              <Navigate to="/admin/requests" replace />
+            ) : (
+              <Navigate to="/main" replace />
+            )
+          }
         />
 
         <Route path="*" element={<Navigate to="/" replace />} />

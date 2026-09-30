@@ -25,6 +25,8 @@ export interface ProfilePageProps {
   onNotificationsClick?: () => void;
   onSupportClick?: () => void;
   onFaqClick?: () => void;
+  onDashboardClick?: () => void;
+  userRole?: string;
   onToast?: (message: string) => void;
   initialUser?: ProfileUser;
   initialVisit?: UpcomingVisitData | null;
@@ -45,6 +47,8 @@ export const ProfilePage: FC<ProfilePageProps> = ({
   onNotificationsClick,
   onSupportClick,
   onFaqClick,
+  onDashboardClick,
+  userRole,
   onToast,
   initialUser,
   initialVisit,
@@ -428,8 +432,22 @@ export const ProfilePage: FC<ProfilePageProps> = ({
                 title: 'Часті запитання (FAQ)',
                 iconName: 'fi-rr-interrogation',
               },
+              ...(userRole === 'admin' || userRole === 'receptionist'
+                ? [
+                    {
+                      id: 'dashboard',
+                      title: 'Обробка заявок',
+                      subtitle: 'Панель адміністратора',
+                      iconName: 'fi-rr-folder',
+                    },
+                  ]
+                : []),
             ]}
             onSelectSetting={(settingId) => {
+              if (settingId === 'dashboard' && onDashboardClick) {
+                onDashboardClick();
+                return;
+              }
               if (settingId === 'personal_info' && onPersonalInfoClick) {
                 onPersonalInfoClick();
                 return;
