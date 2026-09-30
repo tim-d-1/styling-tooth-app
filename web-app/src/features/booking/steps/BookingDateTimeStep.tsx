@@ -1,55 +1,195 @@
-import { useState, type FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import Icon from '@/components/ui/Icon';
 import BookingProgressBar from '../components/BookingProgressBar';
 import { TIME_SLOTS, type WeekDayOption } from '../booking_types';
+import { supabase } from '@/lib/supabase';
 
 export interface BookingDateTimeStepProps {
   selectedDate?: string;
   selectedTimeSlot?: string;
+  masterId?: string;
+  procedureId?: string;
   onSelectDateTime: (date: string, timeSlot: string, formattedDate: string) => void;
   onNext: () => void;
+  onBack?: () => void;
 }
 
-const DEFAULT_DAYS: WeekDayOption[] = [
-  { dayName: 'Пн', dayNumber: 9, fullDate: '2026-08-09' },
-  { dayName: 'Вт', dayNumber: 10, fullDate: '2026-08-10' },
-  { dayName: 'Ср', dayNumber: 11, fullDate: '2026-08-11' },
-  { dayName: 'Чт', dayNumber: 12, fullDate: '2026-08-12' },
-  { dayName: 'Пт', dayNumber: 13, fullDate: '2026-08-13' },
-  { dayName: 'Сб', dayNumber: 14, fullDate: '2026-08-14' },
-  { dayName: 'Нд', dayNumber: 15, fullDate: '2026-08-15' },
+const UK_MONTH_NAMES = [
+  'Січень',
+  'Лютий',
+  'Березень',
+  'Квітень',
+  'Травень',
+  'Червень',
+  'Липень',
+  'Серпень',
+  'Вересень',
+  'Жовтень',
+  'Листопад',
+  'Грудень',
 ];
+
+const UK_DAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
+
+function getWeekDays(startFullDate: string): WeekDayOption[] {
+  const start = new Date(startFullDate + 'T00:00:00Z');
+  const days: WeekDayOption[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start.getTime() + i * 86400000);
+    const dayNumber = d.getUTCDate();
+    const dayName = UK_DAY_NAMES[i];
+    const fullDate = d.toISOString().split('T')[0];
+    days.push({ dayName, dayNumber, fullDate });
+  }
+  return days;
+}
 
 export const BookingDateTimeStep: FC<BookingDateTimeStepProps> = ({
   selectedDate,
   selectedTimeSlot,
+  masterId,
+  procedureId,
   onSelectDateTime,
   onNext,
 }) => {
+  const [weekStartDate, setWeekStartDate] = useState<string>('2026-08-09');
   const [currentDate, setCurrentDate] = useState<string>(
     selectedDate || '2026-08-11'
   );
   const [currentTimeSlot, setCurrentTimeSlot] = useState<string>(
     selectedTimeSlot || '16:00'
   );
+  const [availableSlots, setAvailableSlots] = useState<string[]>(TIME_SLOTS);
+
+  const weekDays = getWeekDays(weekStartDate);
+  const midDay = weekDays[3] || weekDays[0];
+  const monthName =
+    UK_MONTH_NAMES[new Date(midDay.fullDate + 'T00:00:00Z').getUTCMonth()];
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadSlots() {
+      const isUUID = (v?: string) =>
+        Boolean(
+          v &&
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+              v
+            )
+        );
+
+      if (procedureId && isUUID(procedureId)) {
+        try {
+          if (masterId && isUUID(masterId)) {
+            const { data, error } = await supabase.rpc('get_available_slots', {
+              p_master_id: masterId,
+              p_service_id: procedureId,
+              p_date: currentDate,
+            });
+            if (isMounted && !error && Array.isArray(data) && data.length > 0) {
+              const formatted = data.map((row: { slot_start: string }) => {
+                const d = new Date(row.slot_start);
+                return d.toLocaleTimeString('uk-UA', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  timeZone: 'Europe/Kyiv',
+                });
+              });
+              setAvailableSlots(formatted);
+              if (!formatted.includes(currentTimeSlot)) {
+                setCurrentTimeSlot(formatted[0] || '');
+              }
+              return;
+            }
+          } else if (masterId === 'any' || !masterId) {
+            const { data, error } = await supabase.rpc(
+              'get_available_slots_all_masters',
+              {
+                p_service_id: procedureId,
+                p_date: currentDate,
+              }
+            );
+            if (isMounted && !error && Array.isArray(data) && data.length > 0) {
+              const uniqueSlots = Array.from(
+                new Set(
+                  data.map((row: { slot_start: string }) => {
+                    const d = new Date(row.slot_start);
+                    return d.toLocaleTimeString('uk-UA', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      timeZone: 'Europe/Kyiv',
+                    });
+                  })
+                )
+              ).sort();
+              setAvailableSlots(uniqueSlots);
+              if (!uniqueSlots.includes(currentTimeSlot)) {
+                setCurrentTimeSlot(uniqueSlots[0] || '');
+              }
+              return;
+            }
+          }
+        } catch {
+          // Fallback to TIME_SLOTS
+        }
+      }
+
+      if (isMounted) {
+        setAvailableSlots(TIME_SLOTS);
+      }
+    }
+
+    loadSlots();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentDate, masterId, procedureId]);
+
+  const handlePrevWeek = () => {
+    const prevDate = new Date(
+      new Date(weekStartDate + 'T00:00:00Z').getTime() - 7 * 86400000
+    )
+      .toISOString()
+      .split('T')[0];
+    setWeekStartDate(prevDate);
+  };
+
+  const handleNextWeek = () => {
+    const nextDate = new Date(
+      new Date(weekStartDate + 'T00:00:00Z').getTime() + 7 * 86400000
+    )
+      .toISOString()
+      .split('T')[0];
+    setWeekStartDate(nextDate);
+  };
+
+  const formatDayString = (dayFullDate: string) => {
+    const d = new Date(dayFullDate + 'T00:00:00Z');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const year = d.getUTCFullYear();
+    return `${day}.${month}.${year}`;
+  };
 
   const handleSelectDay = (day: WeekDayOption) => {
     setCurrentDate(day.fullDate);
-    const dayFormatted = `${day.dayNumber < 10 ? '0' : ''}${day.dayNumber}.08.2026`;
-    onSelectDateTime(day.fullDate, currentTimeSlot, dayFormatted);
+    onSelectDateTime(
+      day.fullDate,
+      currentTimeSlot,
+      formatDayString(day.fullDate)
+    );
   };
 
   const handleSelectSlot = (slot: string) => {
     setCurrentTimeSlot(slot);
-    const dayObj = DEFAULT_DAYS.find((d) => d.fullDate === currentDate) || DEFAULT_DAYS[2];
-    const dayFormatted = `${dayObj.dayNumber < 10 ? '0' : ''}${dayObj.dayNumber}.08.2026`;
-    onSelectDateTime(currentDate, slot, dayFormatted);
+    onSelectDateTime(currentDate, slot, formatDayString(currentDate));
   };
 
   const handleContinue = () => {
-    const dayObj = DEFAULT_DAYS.find((d) => d.fullDate === currentDate) || DEFAULT_DAYS[2];
-    const dayFormatted = `${dayObj.dayNumber < 10 ? '0' : ''}${dayObj.dayNumber}.08.2026`;
-    onSelectDateTime(currentDate, currentTimeSlot, dayFormatted);
+    onSelectDateTime(
+      currentDate,
+      currentTimeSlot,
+      formatDayString(currentDate)
+    );
     onNext();
   };
 
@@ -63,6 +203,7 @@ export const BookingDateTimeStep: FC<BookingDateTimeStepProps> = ({
         <div className="flex items-center justify-between mb-6">
           <button
             type="button"
+            onClick={handlePrevWeek}
             aria-label="Попередній тиждень"
             className="w-10 h-10 rounded-full border border-[#242F35] flex items-center justify-center text-content-dark hover:border-terracotta hover:text-terracotta transition-colors cursor-pointer bg-white outline-none"
           >
@@ -70,11 +211,12 @@ export const BookingDateTimeStep: FC<BookingDateTimeStepProps> = ({
           </button>
 
           <h2 className="text-xl font-bold font-accented text-content-dark m-0">
-            Серпень
+            {monthName}
           </h2>
 
           <button
             type="button"
+            onClick={handleNextWeek}
             aria-label="Наступний тиждень"
             className="w-10 h-10 rounded-full border border-[#242F35] flex items-center justify-center text-content-dark hover:border-terracotta hover:text-terracotta transition-colors cursor-pointer bg-white outline-none"
           >
@@ -83,7 +225,7 @@ export const BookingDateTimeStep: FC<BookingDateTimeStepProps> = ({
         </div>
 
         <div className="flex items-center justify-between gap-1.5 sm:gap-3 max-w-[28rem] mx-auto">
-          {DEFAULT_DAYS.map((day) => {
+          {weekDays.map((day) => {
             const isSelected = day.fullDate === currentDate;
             return (
               <button
@@ -115,7 +257,7 @@ export const BookingDateTimeStep: FC<BookingDateTimeStepProps> = ({
         aria-label="Оберіть час"
         className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-x-6 sm:gap-y-4 mt-8"
       >
-        {TIME_SLOTS.map((slot) => {
+        {availableSlots.map((slot) => {
           const isSelected = slot === currentTimeSlot;
           return (
             <button

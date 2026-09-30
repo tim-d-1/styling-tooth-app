@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import BookingProgressBar from '../components/BookingProgressBar';
+import ProcedureDetailCard from '../components/ProcedureDetailCard';
 import { PROCEDURES_CATALOG, type ProcedureOption } from '../booking_types';
 
 export interface BookingProcedureStepProps {
@@ -15,6 +16,8 @@ export const BookingProcedureStep: FC<BookingProcedureStepProps> = ({
   onSelectProcedure,
   onNext,
 }) => {
+  const selectedProcedure = procedures.find((p) => p.id === selectedProcedureId);
+
   return (
     <div className="flex flex-col">
       <h1 className="text-2xl sm:text-[1.625rem] font-bold text-content-dark font-accented leading-snug mb-8 sm:mb-10">
@@ -47,6 +50,12 @@ export const BookingProcedureStep: FC<BookingProcedureStepProps> = ({
           );
         })}
       </div>
+
+      {selectedProcedure && (
+        <div className="mt-6">
+          <ProcedureDetailCard procedure={selectedProcedure} />
+        </div>
+      )}
 
       <div className="mt-8 sm:mt-12">
         <button

@@ -11,7 +11,6 @@ import BookingPaymentStep from './steps/BookingPaymentStep';
 import {
   DEMO_PETS,
   PROCEDURES_CATALOG,
-  DEMO_MASTERS,
   type BookingStage,
   type BookingState,
   type PetOption,
@@ -25,6 +24,7 @@ export interface BookingPageProps {
   isLoggedIn?: boolean;
   initialStage?: BookingStage;
   initialPets?: PetOption[];
+  initialMasters?: MasterProfile[];
   onBackClick?: () => void;
   onAddPetClick?: () => void;
   onLoginClick?: () => void;
@@ -38,6 +38,7 @@ export const BookingPage: FC<BookingPageProps> = ({
   isLoggedIn = false,
   initialStage = 'pet',
   initialPets,
+  initialMasters,
   onBackClick,
   onAddPetClick,
   onLoginClick,
@@ -78,10 +79,10 @@ export const BookingPage: FC<BookingPageProps> = ({
       procedurePrice: PROCEDURES_CATALOG[0].price,
       procedureDurationMin: PROCEDURES_CATALOG[0].durationMin,
 
-      masterId: DEMO_MASTERS[0].id,
-      masterName: DEMO_MASTERS[0].name,
-      masterRole: DEMO_MASTERS[0].role,
-      masterAvatarUrl: DEMO_MASTERS[0].avatarUrl,
+      masterId: (initialMasters && initialMasters[0]?.id) || 'any',
+      masterName: (initialMasters && initialMasters[0]?.name) || 'Будь-який вільний майстер',
+      masterRole: initialMasters && initialMasters[0]?.role,
+      masterAvatarUrl: initialMasters && initialMasters[0]?.avatarUrl,
 
       date: '2026-08-11',
       dateFormatted: '11.08.2026',
@@ -97,7 +98,81 @@ export const BookingPage: FC<BookingPageProps> = ({
     };
   });
 
+  const [masters, setMasters] = useState<MasterProfile[]>(initialMasters || []);
+  const [procedures, setProcedures] = useState<ProcedureOption[]>(PROCEDURES_CATALOG);
   const [isLoadingPets, setIsLoadingPets] = useState(!initialPets && isLoggedIn);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadServices() {
+      try {
+        const { data, error } = await supabase
+          .from('services')
+          .select('id, name, description, price, duration_min')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+
+        if (isMounted && !error && data && data.length > 0) {
+          const mapped: ProcedureOption[] = data.map((s) => ({
+            id: s.id,
+            name: s.name,
+            duration: `${s.duration_min} хв`,
+            description: s.description || '',
+            priceFormatted: `від ${Math.round(Number(s.price))} ₴`,
+            priceNumber: Number(s.price),
+            durationMin: s.duration_min,
+            price: Number(s.price),
+          }));
+          setProcedures(mapped);
+        }
+      } catch {
+        if (isMounted) {
+          setProcedures(PROCEDURES_CATALOG);
+        }
+      }
+    }
+    loadServices();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadMasters() {
+      if (initialMasters) return;
+      try {
+        const { data, error } = await supabase
+          .from('masters')
+          .select('id, display_name, specialization, avatar_url, bio')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+
+        if (isMounted) {
+          if (!error && data && data.length > 0) {
+            const mapped: MasterProfile[] = data.map((m) => ({
+              id: m.id,
+              name: m.display_name,
+              role: m.specialization || 'Грумер',
+              avatarUrl: m.avatar_url || '/assets/images/default-avatar.svg',
+              specialties: m.bio ? [m.bio] : ['Грумінг'],
+              reviewsCount: 0,
+              reviews: [],
+            }));
+            setMasters(mapped);
+          } else {
+            setMasters([]);
+          }
+        }
+      } catch {
+        if (isMounted) setMasters([]);
+      }
+    }
+    loadMasters();
+    return () => {
+      isMounted = false;
+    };
+  }, [initialMasters]);
 
   useEffect(() => {
     let isMounted = true;
@@ -313,6 +388,10 @@ export const BookingPage: FC<BookingPageProps> = ({
             bookingState.masterId.startsWith('m-')
               ? undefined
               : bookingState.masterId,
+          service_id:
+            bookingState.procedureId.startsWith('p-')
+              ? undefined
+              : bookingState.procedureId,
           price:
             bookingState.procedurePrice +
             (bookingState.transferEnabled ? bookingState.transferPrice : 0),
@@ -384,7 +463,7 @@ export const BookingPage: FC<BookingPageProps> = ({
 
       {stage === 'procedure' && (
         <BookingProcedureStep
-          procedures={PROCEDURES_CATALOG}
+          procedures={procedures}
           selectedProcedureId={bookingState.procedureId}
           onSelectProcedure={handleSelectProcedure}
           onNext={() => handleNextFromStep('master')}
@@ -393,7 +472,7 @@ export const BookingPage: FC<BookingPageProps> = ({
 
       {stage === 'master' && (
         <BookingMasterStep
-          masters={DEMO_MASTERS}
+          masters={masters}
           selectedMasterId={bookingState.masterId}
           onSelectMaster={handleSelectMaster}
           onWriteReviewClick={() => {
@@ -407,8 +486,11 @@ export const BookingPage: FC<BookingPageProps> = ({
         <BookingDateTimeStep
           selectedDate={bookingState.date}
           selectedTimeSlot={bookingState.timeSlot}
+          masterId={bookingState.masterId}
+          procedureId={bookingState.procedureId}
           onSelectDateTime={handleSelectDateTime}
           onNext={() => handleNextFromStep('remarks')}
+          onBack={handleBack}
         />
       )}
 

@@ -15,6 +15,7 @@ export interface HeaderProps {
   hasNotification?: boolean;
   userAvatarUrl?: string;
   userName?: string;
+  userRole?: string;
   className?: string;
   customNavItems?: { id: string; label: string }[];
 }
@@ -31,6 +32,7 @@ export const Header: FC<HeaderProps> = ({
   hasNotification = false,
   userAvatarUrl = '/assets/images/default-avatar.svg',
   userName = 'Користувач',
+  userRole,
   className,
   customNavItems,
 }) => {
@@ -112,6 +114,18 @@ export const Header: FC<HeaderProps> = ({
                 {hasNotification && (
                   <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-terracotta" aria-hidden="true" />
                 )}
+              </button>
+            )}
+
+            {(userRole === 'admin' || userRole === 'receptionist') && (
+              <button
+                type="button"
+                onClick={() => onNavClick?.('admin/requests')}
+                aria-label="Панель заявок"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-soft-blue text-white hover:bg-soft-blue/90 transition-all text-xs font-accented font-semibold cursor-pointer border-0 outline-none shadow-xs"
+              >
+                <Icon name="fi-rr-apps" size={14} />
+                <span>Заявки</span>
               </button>
             )}
 

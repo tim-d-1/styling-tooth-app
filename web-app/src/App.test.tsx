@@ -9,6 +9,10 @@ describe('App Root and Auth Gating', () => {
     localStorage.clear();
     window.scrollTo = vi.fn();
     window.history.pushState(null, '', '/');
+    vi.spyOn(supabase, 'channel').mockReturnValue({
+      on: () => ({ subscribe: () => ({}) }),
+    } as never);
+    vi.spyOn(supabase, 'removeChannel').mockReturnValue(Promise.resolve('ok') as never);
     vi.spyOn(supabase.auth, 'getUser').mockImplementation(async () => {
       const { data } = await supabase.auth.getSession();
       if (data?.session?.user) {
@@ -1711,6 +1715,11 @@ describe('App Root and Auth Gating', () => {
         },
       } as never);
 
+      vi.spyOn(supabase, 'channel').mockReturnValue({
+        on: () => ({ subscribe: () => ({}) }),
+      } as never);
+      vi.spyOn(supabase, 'removeChannel').mockReturnValue(Promise.resolve('ok') as never);
+
       vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
         if (table === 'profiles') {
           return {
@@ -1749,6 +1758,142 @@ describe('App Root and Auth Gating', () => {
         screen.getByRole('heading', { level: 1, name: 'Служба підтримки' })
       ).toBeDefined();
     });
+
+    it('redirects unauthenticated user accessing /dashboard to /login', async () => {
+      window.history.pushState(null, '', '/dashboard');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-dashboard-noauth',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Вхід' })).toBeDefined();
+    });
+
+    it('redirects receptionist accessing /dashboard to /admin/requests', async () => {
+      window.history.pushState(null, '', '/dashboard');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: {
+              id: 'receptionist-user-dash',
+              email: 'receptionist@example.com',
+              user_metadata: { role: 'receptionist' },
+            },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
+        data: {
+          user: {
+            id: 'receptionist-user-dash',
+            email: 'receptionist@example.com',
+            user_metadata: { role: 'receptionist' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-receptionist-dash',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: { role: 'receptionist' },
+                  error: null,
+                }),
+              }),
+            }),
+          } as never;
+        }
+        if (table === 'appointments' || table === 'masters') {
+          return {
+            select: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({ data: [], error: null }),
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          } as never;
+        }
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        } as never;
+      }) as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Обробка заявок' })).toBeDefined();
+    });
+
+    it('redirects client accessing /dashboard to /main', async () => {
+      window.history.pushState(null, '', '/dashboard');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: {
+              id: 'client-user-dash',
+              email: 'client@example.com',
+              user_metadata: { role: 'client' },
+            },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
+        data: {
+          user: {
+            id: 'client-user-dash',
+            email: 'client@example.com',
+            user_metadata: { role: 'client' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-client-dash',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByText('Запланований візит')).toBeDefined();
+    });
   });
 });
+
 

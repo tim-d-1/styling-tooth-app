@@ -24,7 +24,7 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
   dayOfWeek = 'СЕР',
   dayNumber = '10',
   timeSlot = '16:00',
-  masterName = 'Марія Шевченко',
+  masterName = 'Майстер салону',
   procedureName = 'Комплексний грумінг',
   basePrice = 1300,
   transferPrice = 100,
@@ -40,7 +40,7 @@ export const UpcomingVisitCard: FC<UpcomingVisitCardProps> = ({
   const effectiveDayOfWeek = dayOfWeek?.trim() || 'СЕР';
   const effectiveDayNumber = dayNumber?.trim() || '10';
   const effectiveTimeSlot = timeSlot?.trim() || '16:00';
-  const effectiveMasterName = masterName?.trim() || 'Марія Шевченко';
+  const effectiveMasterName = masterName?.trim() || 'Майстер салону';
   const effectiveProcedureName = procedureName?.trim() || 'Комплексний грумінг';
 
   const currentProcedureCost = basePrice;

@@ -139,7 +139,7 @@ export const QuickSchedulePage: FC<QuickSchedulePageProps> = ({
                 dayOfWeek: dateDetails.dayOfWeek,
                 dayNumber: dateDetails.dayNumber,
                 timeSlot: dateDetails.timeSlot,
-                masterName: masterRecord?.display_name || 'Марія Шевченко',
+                masterName: masterRecord?.display_name || 'Майстер салону',
                 procedureName: serviceRecord?.name || 'Комплексний грумінг',
                 basePrice: Number(dbAppointment.price) || 1300,
                 transferPrice: 100,

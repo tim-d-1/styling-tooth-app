@@ -20,6 +20,9 @@ export interface ProcedureOption {
   name: string;
   price: number;
   durationMin: number;
+  duration: string;
+  description: string;
+  priceFormatted: string;
 }
 
 export interface MasterReview {
@@ -81,115 +84,78 @@ export interface BookingState {
 
 export const PROCEDURES_CATALOG: ProcedureOption[] = [
   {
-    id: 'complex-grooming',
-    name: 'Комплексний грумінг',
-    price: 1300,
-    durationMin: 90,
-  },
-  {
-    id: 'hygiene-care',
-    name: 'Гігієнічний догляд',
-    price: 300,
-    durationMin: 30,
-  },
-  {
     id: 'express-grooming',
     name: 'Експрес-грумінг',
-    price: 500,
-    durationMin: 45,
-  },
-  {
-    id: 'combing',
-    name: 'Вичісування',
-    price: 450,
-    durationMin: 60,
+    duration: '60 – 90 хв',
+    durationMin: 75,
+    description:
+      'Швидке освіження зовнішнього вигляду без повної стрижки: купання, сушіння, легке вичісування та гігієнічний догляд.',
+    price: 850,
+    priceFormatted: 'від 850 ₴',
   },
   {
     id: 'spa-complex',
     name: 'SPA-комплекс',
-    price: 600,
+    duration: '60 хв',
     durationMin: 60,
-  },
-  {
-    id: 'breed-haircut',
-    name: 'Породна стрижка',
-    price: 950,
-    durationMin: 100,
+    description:
+      'Розслаблюючий догляд із професійною косметикою: зволоження шерсті, маска, масаж і делікатне очищення шкіри.',
+    price: 700,
+    priceFormatted: 'від 700 ₴',
   },
   {
     id: 'ozone-therapy',
     name: 'Озонотерапія',
-    price: 750,
-    durationMin: 45,
+    duration: '45 – 60 хв',
+    durationMin: 50,
+    description:
+      'Оздоровча процедура з озонованою водою для очищення шкіри, зменшення подразнень і покращення стану шерсті.',
+    price: 650,
+    priceFormatted: 'від 650 ₴',
+  },
+  {
+    id: 'hygiene-care',
+    name: 'Гігієнічний догляд',
+    duration: '30 – 45 хв',
+    durationMin: 35,
+    description:
+      'Догляд за лапами, очима, вухами, інтимною зоною та кігтями для підтримання чистоти й комфорту.',
+    price: 450,
+    priceFormatted: 'від 450 ₴',
+  },
+  {
+    id: 'combing',
+    name: 'Вичісування',
+    duration: '45 – 90 хв',
+    durationMin: 60,
+    description:
+      'Делікатне видалення відмерлого підшерстка, ковтунів і зайвої шерсті для здорового та охайного вигляду.',
+    price: 550,
+    priceFormatted: 'від 550 ₴',
+  },
+  {
+    id: 'breed-haircut',
+    name: 'Породна стрижка',
+    duration: '90 – 150 хв',
+    durationMin: 120,
+    description:
+      'Професійна стрижка за стандартом породи для підтримання доглянутого вигляду та підкреслення природної краси шерсті.',
+    price: 1100,
+    priceFormatted: 'від 1100 ₴',
   },
   {
     id: 'nail-trimming',
     name: 'Підстригання кігтів',
-    price: 150,
+    duration: '15 – 20 хв',
     durationMin: 20,
+    description:
+      "Безпечне підстригання кігтів із дбайливою обробкою країв для комфорту та здоров'я лап.",
+    price: 250,
+    priceFormatted: 'від 250 ₴',
   },
 ];
 
-export const DEMO_MASTERS: MasterProfile[] = [
-  {
-    id: 'm-maria-shevchenko',
-    name: 'Марія Шевченко',
-    role: 'Старший грумер',
-    avatarUrl: '/assets/images/master_maria_shevchenko.png',
-    specialties: ['Відновлення шерсті', 'Озонотерапія', 'Креативний грумінг'],
-    reviewsCount: 121,
-    reviews: [
-      {
-        id: 'rev-1',
-        authorName: 'Марія К.',
-        rating: 5,
-        text: 'Дуже задоволена роботою майстра. Собака поводилася спокійно, а результат перевершив очікування. Обов’язково повернемося ще.',
-        date: '12 серпня 2026',
-      },
-      {
-        id: 'rev-2',
-        authorName: 'Ірина Л.',
-        rating: 5,
-        text: 'Дуже хороший сервіс, привітний персонал та комфортна атмосфера.',
-        date: '3 серпня 2026',
-      },
-    ],
-  },
-  {
-    id: 'm-olena-kovalchuk',
-    name: 'Олена Ковальчук',
-    role: 'Топ-стиліст',
-    avatarUrl: '/assets/images/master_olena_kovalchuk.png',
-    specialties: ['Породні стрижки', 'СПА-догляд', 'Експрес-грумінг'],
-    reviewsCount: 94,
-    reviews: [
-      {
-        id: 'rev-3',
-        authorName: 'Оксана П.',
-        rating: 5,
-        text: 'Прекрасний майстер! Наш шпіц виглядає бездоганно, дуже дбайливе ставлення.',
-        date: '20 липня 2026',
-      },
-    ],
-  },
-  {
-    id: 'm-anna-koval',
-    name: 'Анна Коваль',
-    role: 'Грумер-експерт',
-    avatarUrl: '/assets/images/master_maria_shevchenko.png',
-    specialties: ['Гігієнічний догляд', 'Стрижка котів', 'Озонотерапія'],
-    reviewsCount: 78,
-    reviews: [
-      {
-        id: 'rev-4',
-        authorName: 'Сергій Т.',
-        rating: 5,
-        text: 'Швидко, якісно і без стресу для тваринки. Рекомендую!',
-        date: '15 липня 2026',
-      },
-    ],
-  },
-];
+export const DEMO_MASTERS: MasterProfile[] = [];
 
 export const DEMO_PETS: PetOption[] = [
   {

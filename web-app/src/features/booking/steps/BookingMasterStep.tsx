@@ -1,7 +1,7 @@
 import { useState, type FC } from 'react';
 import Icon from '@/components/ui/Icon';
 import BookingProgressBar from '../components/BookingProgressBar';
-import { DEMO_MASTERS, type MasterProfile } from '../booking_types';
+import type { MasterProfile } from '../booking_types';
 
 export interface BookingMasterStepProps {
   masters?: MasterProfile[];
@@ -12,13 +12,13 @@ export interface BookingMasterStepProps {
 }
 
 export const BookingMasterStep: FC<BookingMasterStepProps> = ({
-  masters = DEMO_MASTERS,
+  masters = [],
   selectedMasterId,
   onSelectMaster,
   onWriteReviewClick,
   onNext,
 }) => {
-  const masterList = masters && masters.length > 0 ? masters : DEMO_MASTERS;
+  const masterList = masters || [];
   const [currentMasterIndex, setCurrentMasterIndex] = useState(() => {
     const idx = masterList.findIndex((m) => m.id === selectedMasterId);
     return idx >= 0 ? idx : 0;
@@ -28,7 +28,7 @@ export const BookingMasterStep: FC<BookingMasterStepProps> = ({
     'newest' | 'highest' | 'lowest'
   >('newest');
 
-  const currentMaster = masterList[currentMasterIndex] || masterList[0];
+  const currentMaster = masterList[currentMasterIndex];
 
   const handlePrevMaster = () => {
     setCurrentMasterIndex((prev) =>
@@ -43,8 +43,10 @@ export const BookingMasterStep: FC<BookingMasterStepProps> = ({
   };
 
   const handleChooseSpecific = () => {
-    onSelectMaster(currentMaster);
-    onNext?.();
+    if (currentMaster) {
+      onSelectMaster(currentMaster);
+      onNext?.();
+    }
   };
 
   const handleChooseAny = () => {
@@ -54,6 +56,29 @@ export const BookingMasterStep: FC<BookingMasterStepProps> = ({
     });
     onNext?.();
   };
+
+  if (masterList.length === 0 || !currentMaster) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center bg-white rounded-3xl border border-visit-gray/60 p-8 shadow-xs">
+        <div className="w-20 h-20 rounded-full bg-visit-gray flex items-center justify-center text-content-dark/40 mb-4">
+          <Icon name="fi-rr-user" size={32} />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-bold font-accented text-content-dark mb-2">
+          Вибір майстра
+        </h2>
+        <p className="text-sm font-primary text-content-dark/60 max-w-md mb-6 leading-relaxed">
+          Наразі список конкретних майстрів оновлюється. Ви можете обрати будь-якого вільного майстра на зручний для вас час.
+        </p>
+        <button
+          type="button"
+          onClick={handleChooseAny}
+          className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-terracotta text-white font-accented font-bold text-base hover:bg-terracotta/90 transition-colors shadow-xs cursor-pointer border-0 outline-none"
+        >
+          Будь-який вільний майстер
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col">

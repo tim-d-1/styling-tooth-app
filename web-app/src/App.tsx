@@ -193,12 +193,14 @@ export function AppRoutes() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const getReturnPath = (fallback = '/main') => {
+  const getReturnPath = (fallback = '/main', role?: UserRole) => {
     const searchParams = new URLSearchParams(location.search);
     const returnTo = searchParams.get('from') || searchParams.get('returnTo');
     if (returnTo) return returnTo;
     const state = location.state as { from?: string } | null;
-    return state?.from || fallback;
+    if (state?.from) return state.from;
+    if (role === 'admin' || role === 'receptionist') return '/admin/requests';
+    return fallback;
   };
 
   useEffect(() => {
@@ -231,22 +233,38 @@ export function AppRoutes() {
           return;
         }
 
-        setIsLoggedIn(true);
-        setIsAuthLoading(false);
+        const metaRole = (userData.user.user_metadata?.role ||
+          userData.user.app_metadata?.role ||
+          localStorage.getItem('user_role')) as UserRole | undefined;
 
-        supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', userData.user.id)
-          .maybeSingle()
-          .then(
-            ({ data: profile }) => {
-              if (isMounted && profile?.role) {
-                setUserRole(profile.role as UserRole);
+        if (isMounted) {
+          if (metaRole && ['admin', 'receptionist', 'master', 'client'].includes(metaRole)) {
+            setUserRole(metaRole);
+          }
+          setIsLoggedIn(true);
+          setIsAuthLoading(false);
+        }
+
+        void (async () => {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', userData.user.id)
+              .maybeSingle();
+
+            if (isMounted && profile?.role) {
+              setUserRole(profile.role as UserRole);
+              try {
+                localStorage.setItem('user_role', profile.role);
+              } catch {
+                // ignore storage error
               }
-            },
-            () => {}
-          );
+            }
+          } catch {
+            // ignore network / mock error
+          }
+        })();
       } catch {
         if (isMounted) {
           setIsLoggedIn(false);
@@ -269,27 +287,47 @@ export function AppRoutes() {
           setIsLoggedIn(false);
           setUserRole('client');
           setIsAuthLoading(false);
+          try {
+            localStorage.removeItem('user_role');
+          } catch {
+            // ignore storage error
+          }
         }
         return;
       }
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        const metaRole = (session.user.user_metadata?.role ||
+          session.user.app_metadata?.role ||
+          localStorage.getItem('user_role')) as UserRole | undefined;
+
         if (isMounted) {
+          if (metaRole && ['admin', 'receptionist', 'master', 'client'].includes(metaRole)) {
+            setUserRole(metaRole);
+          }
           setIsLoggedIn(true);
           setIsAuthLoading(false);
-          supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .maybeSingle()
-            .then(
-              ({ data: profile }) => {
-                if (isMounted && profile?.role) {
-                  setUserRole(profile.role as UserRole);
-                }
-              },
-              () => {}
-            );
         }
+
+        void (async () => {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .maybeSingle();
+
+            if (isMounted && profile?.role) {
+              setUserRole(profile.role as UserRole);
+              try {
+                localStorage.setItem('user_role', profile.role);
+              } catch {
+                // ignore storage error
+              }
+            }
+          } catch {
+            // ignore network / mock error
+          }
+        })();
       }
     });
 
@@ -498,6 +536,8 @@ export function AppRoutes() {
             <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
               <MainPage
                 isLoggedIn={isLoggedIn}
+                userRole={userRole}
+                onDashboardClick={() => navigate('/admin/requests')}
                 onLoginClick={() => navigate('/login')}
                 onRegisterClick={() => navigate('/register')}
                 onProfileClick={() => navigate('/profile')}
@@ -516,13 +556,31 @@ export function AppRoutes() {
           path="/login"
           element={
             isLoggedIn ? (
-              <Navigate to={getReturnPath('/main')} replace />
+              <Navigate to={getReturnPath('/main', userRole)} replace />
             ) : (
               <LoginPage
                 onBack={() => navigate('/')}
-                onSuccess={() => {
+                onSuccess={async () => {
+                  let role: UserRole = 'client';
+                  try {
+                    const { data } = await supabase.auth.getUser();
+                    if (data?.user) {
+                      const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('role')
+                        .eq('id', data.user.id)
+                        .maybeSingle();
+                      if (profile?.role) {
+                        role = profile.role as UserRole;
+                        setUserRole(role);
+                      }
+                    }
+                  } catch {}
                   setIsLoggedIn(true);
-                  const target = getReturnPath('/main');
+                  const searchParams = new URLSearchParams(location.search);
+                  const returnTo = searchParams.get('from') || searchParams.get('returnTo');
+                  const state = location.state as { from?: string } | null;
+                  const target = returnTo || state?.from || (role === 'admin' || role === 'receptionist' ? '/admin/requests' : '/main');
                   navigate(target, { replace: true });
                   showToast('Успішний вхід у систему');
                 }}
@@ -1105,11 +1163,13 @@ export function AppRoutes() {
         <Route
           path="/dashboard"
           element={
-            userRole === 'admin' || userRole === 'receptionist' ? (
-              <Navigate to="/admin/requests" replace />
-            ) : (
-              <Navigate to="/main" replace />
-            )
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              {userRole === 'admin' || userRole === 'receptionist' ? (
+                <Navigate to="/admin/requests" replace />
+              ) : (
+                <Navigate to="/main" replace />
+              )}
+            </ProtectedRoute>
           }
         />
 

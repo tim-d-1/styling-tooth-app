@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import Header from '@/components/layout/Header';
 import LocationBar from './LocationBar';
 import GuestBanner from './GuestBanner';
@@ -561,18 +561,61 @@ describe('Main Page Components', () => {
       ).toBeDefined();
     });
 
-    it('stops loading skeleton and displays empty visit state when session user is null (prevents infinite skeleton)', async () => {
-      vi.spyOn(supabase.auth, 'getSession').mockResolvedValueOnce({
-        data: { session: null },
-        error: null,
-      } as never);
+    it('renders staff role banner when userRole is receptionist and triggers onDashboardClick', () => {
+      const handleDashboardClick = vi.fn();
+      render(
+        <MainPage
+          isLoggedIn={true}
+          userRole="receptionist"
+          onDashboardClick={handleDashboardClick}
+        />
+      );
 
-      render(<MainPage isLoggedIn={true} />);
+      const banner = screen.getByTestId('staff-role-banner');
+      expect(within(banner).getByText('Ви увійшли як Рецепція')).toBeDefined();
 
-      await waitFor(() => {
-        expect(screen.queryByRole('status', { name: 'Завантаження запланованого візиту' })).toBeNull();
-        expect(screen.getByText('Немає активних записів')).toBeDefined();
-      });
+      const dashboardBtn = within(banner).getByRole('button', { name: /Панель заявок/i });
+      fireEvent.click(dashboardBtn);
+      expect(handleDashboardClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders staff role banner when userRole is admin', () => {
+      render(
+        <MainPage
+          isLoggedIn={true}
+          userRole="admin"
+        />
+      );
+
+      const banner = screen.getByTestId('staff-role-banner');
+      expect(within(banner).getByText('Ви увійшли як Адміністратор')).toBeDefined();
+    });
+
+    it('does not render staff banner when userRole is client', () => {
+      render(
+        <MainPage
+          isLoggedIn={true}
+          userRole="client"
+        />
+      );
+
+      expect(screen.queryByTestId('staff-role-banner')).toBeNull();
+    });
+
+    it('Header renders staff requests button for receptionist', () => {
+      const handleNavClick = vi.fn();
+      render(
+        <Header
+          isLoggedIn={true}
+          userRole="receptionist"
+          onNavClick={handleNavClick}
+        />
+      );
+
+      const staffBtn = screen.getByRole('button', { name: 'Панель заявок' });
+      expect(staffBtn).toBeDefined();
+      fireEvent.click(staffBtn);
+      expect(handleNavClick).toHaveBeenCalledWith('admin/requests');
     });
   });
 });

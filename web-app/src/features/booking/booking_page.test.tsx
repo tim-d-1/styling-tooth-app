@@ -4,17 +4,46 @@ import { MemoryRouter } from 'react-router-dom';
 import BookingPage from './BookingPage';
 import BookingPetStep from './steps/BookingPetStep';
 import { supabase } from '@/lib/supabase';
-import { PROCEDURES_CATALOG, DEMO_MASTERS } from './booking_types';
+import { PROCEDURES_CATALOG, type MasterProfile } from './booking_types';
+
+const mockTestMasters: MasterProfile[] = [
+  {
+    id: 'test-m-1',
+    name: 'Марія Тест',
+    role: 'Старший грумер',
+    avatarUrl: '/assets/images/default-avatar.svg',
+    specialties: ['Відновлення шерсті', 'Озонотерапія'],
+    reviewsCount: 12,
+    reviews: [
+      {
+        id: 'rev-1',
+        authorName: 'Олена',
+        rating: 5,
+        text: 'Чудово!',
+        date: '12 серпня 2026',
+      },
+    ],
+  },
+  {
+    id: 'test-m-2',
+    name: 'Олена Тест',
+    role: 'Топ-стиліст',
+    avatarUrl: '/assets/images/default-avatar.svg',
+    specialties: ['Породні стрижки'],
+    reviewsCount: 8,
+    reviews: [],
+  },
+];
 
 describe('BookingPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
-  const renderBooking = (props = {}) => {
+  const renderBooking = (props: Record<string, any> = {}) => {
     return render(
       <MemoryRouter>
-        <BookingPage {...props} />
+        <BookingPage initialMasters={mockTestMasters} {...props} />
       </MemoryRouter>
     );
   };
@@ -74,26 +103,45 @@ describe('BookingPage', () => {
     fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[1].name }));
     fireEvent.click(screen.getByRole('button', { name: 'Далі' }));
 
-    expect(screen.getByRole('heading', { level: 2, name: DEMO_MASTERS[0].name })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: mockTestMasters[0].name })).toBeDefined();
     expect(screen.getByRole('progressbar', { name: 'Крок 3 з 5' })).toBeDefined();
+  });
+
+  it('reveals procedure details matching Figma frame 1060:4180 when selecting options', () => {
+    renderBooking({ initialStage: 'procedure' });
+
+    for (const proc of PROCEDURES_CATALOG) {
+      fireEvent.click(screen.getByRole('radio', { name: proc.name }));
+      expect(screen.getByRole('heading', { level: 2, name: proc.name })).toBeDefined();
+      expect(screen.getByText(proc.duration)).toBeDefined();
+      expect(screen.getByText(proc.description)).toBeDefined();
+      expect(screen.getByText(proc.priceFormatted)).toBeDefined();
+    }
   });
 
   it('renders stage 3 master selection and handles carousel navigation', () => {
     renderBooking({ initialStage: 'master' });
 
-    expect(screen.getByRole('heading', { level: 2, name: DEMO_MASTERS[0].name })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: mockTestMasters[0].name })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Обрати майстра' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Будь-який вільний майстер' })).toBeDefined();
 
     const nextMasterBtn = screen.getByRole('button', { name: 'Наступний майстер' });
     fireEvent.click(nextMasterBtn);
 
-    expect(screen.getByRole('heading', { level: 2, name: DEMO_MASTERS[1].name })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: mockTestMasters[1].name })).toBeDefined();
 
     const prevMasterBtn = screen.getByRole('button', { name: 'Попередній майстер' });
     fireEvent.click(prevMasterBtn);
 
-    expect(screen.getByRole('heading', { level: 2, name: DEMO_MASTERS[0].name })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: mockTestMasters[0].name })).toBeDefined();
+  });
+
+  it('renders stage 3 empty masters state when initialMasters is empty', () => {
+    renderBooking({ initialStage: 'master', initialMasters: [] });
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Вибір майстра' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Будь-який вільний майстер' })).toBeDefined();
   });
 
   it('advances from stage 3 to stage 4 when choosing specific master', () => {
@@ -259,7 +307,7 @@ describe('BookingPage', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Коли вам зручно?' })).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Назад' }));
-    expect(screen.getByRole('heading', { level: 2, name: DEMO_MASTERS[0].name })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: mockTestMasters[0].name })).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Назад' }));
     expect(screen.getByRole('heading', { level: 1, name: 'Обери процедуру' })).toBeDefined();
