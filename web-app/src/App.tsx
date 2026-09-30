@@ -27,6 +27,9 @@ import BookingPage from '@/features/booking/BookingPage';
 import ArticleDetailPage from '@/features/articles/ArticleDetailPage';
 import PromoDetailPage from '@/features/promotions/PromoDetailPage';
 import CitySelectionPage from '@/features/location/CitySelectionPage';
+import CreateTicketPage from '@/features/support/CreateTicketPage';
+import SupportChatPage from '@/features/support/SupportChatPage';
+import SupportCallPage from '@/features/support/SupportCallPage';
 import { CITY_STORAGE_KEY } from '@/features/location/city_types';
 import ScrollToTop from '@/components/layout/ScrollToTop';
 import { supabase } from '@/lib/supabase';
@@ -846,6 +849,58 @@ export function AppRoutes() {
               />
             </ProtectedRoute>
           }
+        />
+
+        <Route
+          path="/support/new-ticket"
+          element={
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <CreateTicketPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onSuccess={(ticketId) => navigate(`/support/chat?ticketId=${ticketId}`)}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/support/chat"
+          element={
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <SupportChatPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onCallClick={(ticketId) =>
+                  navigate(ticketId ? `/support/call?ticketId=${ticketId}` : '/support/call')
+                }
+                onCreateTicketClick={() => navigate('/support/new-ticket')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/support/call"
+          element={
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <SupportCallPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onBackToChat={(ticketId) =>
+                  navigate(ticketId ? `/support/chat?ticketId=${ticketId}` : '/support/chat')
+                }
+                onToast={showToast}
+              />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/support"
+          element={<Navigate to="/support/chat" replace />}
         />
 
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -1228,5 +1228,88 @@ describe('App Root and Auth Gating', () => {
 
       expect(await screen.findByRole('heading', { level: 1, name: 'Оберіть улюбленця' })).toBeDefined();
     });
+
+    it('renders create ticket page via pathname /support/new-ticket', async () => {
+      window.history.pushState(null, '', '/support/new-ticket');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'user-support-1', email: 'support@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-support-1',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Створити нове звернення' })).toBeDefined();
+    });
+
+    it('renders support chat page via pathname /support/chat', async () => {
+      window.history.pushState(null, '', '/support/chat');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'user-support-2', email: 'support2@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-support-2',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByText('Служба підтримки')).toBeDefined();
+    });
+
+    it('renders support call page via pathname /support/call', async () => {
+      window.history.pushState(null, '', '/support/call');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'user-support-3', email: 'support3@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-support-3',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByText('Адміністратор Сергій')).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Завершити дзвінок' })).toBeDefined();
+    });
   });
 });
+
