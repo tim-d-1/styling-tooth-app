@@ -22,6 +22,9 @@ export interface ProfilePageProps {
   onPaymentMethodsClick?: () => void;
   onViewAllUpcomingClick?: () => void;
   onLoyaltyProgramClick?: () => void;
+  onNotificationsClick?: () => void;
+  onSupportClick?: () => void;
+  onFaqClick?: () => void;
   onToast?: (message: string) => void;
   initialUser?: ProfileUser;
   initialVisit?: UpcomingVisitData | null;
@@ -39,6 +42,9 @@ export const ProfilePage: FC<ProfilePageProps> = ({
   onPaymentMethodsClick,
   onViewAllUpcomingClick,
   onLoyaltyProgramClick,
+  onNotificationsClick,
+  onSupportClick,
+  onFaqClick,
   onToast,
   initialUser,
   initialVisit,
@@ -434,6 +440,18 @@ export const ProfilePage: FC<ProfilePageProps> = ({
               }
               if (settingId === 'payment_methods' && onPaymentMethodsClick) {
                 onPaymentMethodsClick();
+                return;
+              }
+              if (settingId === 'notifications' && onNotificationsClick) {
+                onNotificationsClick();
+                return;
+              }
+              if (settingId === 'support' && onSupportClick) {
+                onSupportClick();
+                return;
+              }
+              if (settingId === 'faq' && onFaqClick) {
+                onFaqClick();
                 return;
               }
               showToast(`Налаштування: ${settingId}`);

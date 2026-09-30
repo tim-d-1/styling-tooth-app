@@ -372,6 +372,33 @@ describe('Profile Feature Components', () => {
       expect(handlePaymentMethodsClick).toHaveBeenCalledTimes(1);
     });
 
+    it('calls onNotificationsClick when notifications setting card is clicked', async () => {
+      const handleNotificationsClick = vi.fn();
+      await act(async () => {
+        render(<ProfilePage onNotificationsClick={handleNotificationsClick} />);
+      });
+      fireEvent.click(screen.getByText('Налаштування сповіщень'));
+      expect(handleNotificationsClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls onSupportClick when support setting card is clicked', async () => {
+      const handleSupportClick = vi.fn();
+      await act(async () => {
+        render(<ProfilePage onSupportClick={handleSupportClick} />);
+      });
+      fireEvent.click(screen.getByText('Підтримка'));
+      expect(handleSupportClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls onFaqClick when faq setting card is clicked', async () => {
+      const handleFaqClick = vi.fn();
+      await act(async () => {
+        render(<ProfilePage onFaqClick={handleFaqClick} />);
+      });
+      fireEvent.click(screen.getByText('Часті запитання (FAQ)'));
+      expect(handleFaqClick).toHaveBeenCalledTimes(1);
+    });
+
     it('calls onLoyaltyProgramClick when loyalty card button is clicked', async () => {
       const handleLoyaltyProgramClick = vi.fn();
       await act(async () => {

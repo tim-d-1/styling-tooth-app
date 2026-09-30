@@ -30,6 +30,10 @@ import CitySelectionPage from '@/features/location/CitySelectionPage';
 import CreateTicketPage from '@/features/support/CreateTicketPage';
 import SupportChatPage from '@/features/support/SupportChatPage';
 import SupportCallPage from '@/features/support/SupportCallPage';
+import NotificationSettingsPage from '@/features/profile/NotificationSettingsPage';
+import FaqPage from '@/features/faq/FaqPage';
+import PrivacyPolicyPage from '@/features/legal/PrivacyPolicyPage';
+import TermsOfUsePage from '@/features/legal/TermsOfUsePage';
 import { CITY_STORAGE_KEY } from '@/features/location/city_types';
 import ScrollToTop from '@/components/layout/ScrollToTop';
 import { supabase } from '@/lib/supabase';
@@ -504,6 +508,9 @@ export function AppRoutes() {
                 onPaymentMethodsClick={() => navigate('/profile/payment-methods')}
                 onViewAllUpcomingClick={() => navigate('/profile/upcoming-visits')}
                 onLoyaltyProgramClick={() => navigate('/profile/loyalty')}
+                onNotificationsClick={() => navigate('/profile/notifications')}
+                onSupportClick={() => navigate('/support/chat')}
+                onFaqClick={() => navigate('/faq')}
                 onToast={showToast}
               />
             </ProtectedRoute>
@@ -899,8 +906,75 @@ export function AppRoutes() {
         />
 
         <Route
+          path="/profile/notifications"
+          element={
+            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
+              <NotificationSettingsPage
+                onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+                onProfileClick={() => navigate('/profile')}
+                onToast={showToast}
+              />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/faq"
+          element={
+            <FaqPage
+              isLoggedIn={isLoggedIn}
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onLoginClick={() => navigate('/login')}
+              onRegisterClick={() => navigate('/register')}
+              onProfileClick={() => navigate('/profile')}
+              onContactSupport={() =>
+                navigate(isLoggedIn ? '/support/new-ticket' : '/login?from=/support/new-ticket')
+              }
+            />
+          }
+        />
+
+        <Route
+          path="/privacy-policy"
+          element={
+            <PrivacyPolicyPage
+              isLoggedIn={isLoggedIn}
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onLoginClick={() => navigate('/login')}
+              onRegisterClick={() => navigate('/register')}
+              onProfileClick={() => navigate('/profile')}
+            />
+          }
+        />
+        <Route
+          path="/privacy"
+          element={<Navigate to="/privacy-policy" replace />}
+        />
+
+        <Route
+          path="/terms"
+          element={
+            <TermsOfUsePage
+              isLoggedIn={isLoggedIn}
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/')}
+              onLoginClick={() => navigate('/login')}
+              onRegisterClick={() => navigate('/register')}
+              onProfileClick={() => navigate('/profile')}
+            />
+          }
+        />
+        <Route
+          path="/terms-of-service"
+          element={<Navigate to="/terms" replace />}
+        />
+
+        <Route
           path="/support"
           element={<Navigate to="/support/chat" replace />}
+        />
+        <Route
+          path="/support/create"
+          element={<Navigate to="/support/new-ticket" replace />}
         />
 
         <Route path="*" element={<Navigate to="/" replace />} />

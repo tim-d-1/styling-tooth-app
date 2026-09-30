@@ -1310,6 +1310,198 @@ describe('App Root and Auth Gating', () => {
       expect(screen.getByText('Адміністратор Сергій')).toBeDefined();
       expect(screen.getByRole('button', { name: 'Завершити дзвінок' })).toBeDefined();
     });
+
+    it('renders privacy policy page via pathname /privacy-policy', async () => {
+      window.history.pushState(null, '', '/privacy-policy');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-privacy',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Політика конфіденційності' })).toBeDefined();
+      expect(screen.getByText('Коротко про головне 🛡')).toBeDefined();
+    });
+
+    it('redirects /privacy alias to /privacy-policy', async () => {
+      window.history.pushState(null, '', '/privacy');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-privacy-alias',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Політика конфіденційності' })).toBeDefined();
+    });
+
+    it('renders terms of use page via pathname /terms', async () => {
+      window.history.pushState(null, '', '/terms');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-terms',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Умови використання' })).toBeDefined();
+      expect(screen.getByText('Головні правила сервісу 📜')).toBeDefined();
+    });
+
+    it('redirects /terms-of-service alias to /terms', async () => {
+      window.history.pushState(null, '', '/terms-of-service');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-terms-alias',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Умови використання' })).toBeDefined();
+    });
+
+    it('renders faq page via pathname /faq', async () => {
+      window.history.pushState(null, '', '/faq');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-faq',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Часті запитання (FAQ)' })).toBeDefined();
+      expect(screen.getByPlaceholderText('Пошук запитання або послуги...')).toBeDefined();
+      expect(screen.getByText('✂️ Грумінг')).toBeDefined();
+    });
+
+    it('redirects unauthenticated users from /profile/notifications to /login', async () => {
+      window.history.pushState(null, '', '/profile/notifications');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-notif-anon',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(window.location.pathname).toBe('/login');
+    });
+
+    it('renders notification settings page via /profile/notifications when authenticated', async () => {
+      window.history.pushState(null, '', '/profile/notifications');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'user-notif-1', email: 'notif@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-notif-auth',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Налаштування сповіщень' })).toBeDefined();
+      expect(screen.getByText("Канали зв'язку")).toBeDefined();
+      expect(screen.getByText('Типи сповіщень')).toBeDefined();
+    });
+
+    it('redirects /support/create to /support/new-ticket', async () => {
+      window.history.pushState(null, '', '/support/create');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'user-support-alias', email: 'alias@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-support-alias',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Створити нове звернення' })).toBeDefined();
+    });
   });
 });
 

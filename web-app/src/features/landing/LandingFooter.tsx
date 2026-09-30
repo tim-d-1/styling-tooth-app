@@ -119,13 +119,13 @@ export const LandingFooter: FC = () => {
               Юридична інформація
             </h4>
             <a
-              href="#privacy"
+              href="/privacy-policy"
               className="font-primary text-sm text-white/90 hover:text-terracotta transition-colors"
             >
               Політика конфіденційності
             </a>
             <a
-              href="#terms"
+              href="/terms"
               className="font-primary text-sm text-white/90 hover:text-terracotta transition-colors"
             >
               Умови використання
