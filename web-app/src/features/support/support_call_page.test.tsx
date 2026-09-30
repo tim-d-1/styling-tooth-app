@@ -16,6 +16,7 @@ describe('SupportCallPage', () => {
   const mockTicket: SupportTicket = {
     id: 'ticket-call-1',
     ticketNumber: 4831,
+    clientId: 'user-1',
     subject: 'Консультація щодо вакцинації',
     category: 'services',
     status: 'in_progress',
@@ -25,6 +26,7 @@ describe('SupportCallPage', () => {
     petBreed: 'Пудель',
     description: 'Потрібна консультація майстра',
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     messages: [],
   };
 

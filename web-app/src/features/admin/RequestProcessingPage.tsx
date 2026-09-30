@@ -209,7 +209,11 @@ export const RequestProcessingPage: FC<RequestProcessingPageProps> = ({
         onRegisterClick={onRegisterClick}
         onProfileClick={onProfileClick}
         onNavClick={onNavClick}
-        activeNav="dashboard"
+        activeNav="admin/requests"
+        customNavItems={[
+          { id: 'admin/requests', label: 'Заявки' },
+          { id: 'admin/support', label: 'Служба підтримки' },
+        ]}
       />
 
       <main className="flex-1 w-full max-w-[75rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 flex flex-col gap-8">

@@ -16,6 +16,7 @@ export interface HeaderProps {
   userAvatarUrl?: string;
   userName?: string;
   className?: string;
+  customNavItems?: { id: string; label: string }[];
 }
 
 export const Header: FC<HeaderProps> = ({
@@ -31,6 +32,7 @@ export const Header: FC<HeaderProps> = ({
   userAvatarUrl = '/assets/images/default-avatar.svg',
   userName = 'Користувач',
   className,
+  customNavItems,
 }) => {
   const [avatarSrc, setAvatarSrc] = useState(
     userAvatarUrl || '/assets/images/default-avatar.svg'
@@ -42,7 +44,7 @@ export const Header: FC<HeaderProps> = ({
 
   const currentNav = activeNav?.trim() || 'home';
 
-  const navItems = [
+  const navItems = customNavItems || [
     { id: 'services', label: 'Послуги' },
     { id: 'about', label: 'Про нас' },
     { id: 'contacts', label: 'Контакти' },

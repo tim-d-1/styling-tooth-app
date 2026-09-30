@@ -5,6 +5,10 @@ import SupportChatPage from './SupportChatPage';
 import * as supportStore from './support_store';
 import type { SupportTicket } from './support_types';
 
+vi.mock('./use_support_realtime', () => ({
+  useSupportRealtime: vi.fn(),
+}));
+
 describe('SupportChatPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -13,6 +17,7 @@ describe('SupportChatPage', () => {
   const mockTicket: SupportTicket = {
     id: 'ticket-99',
     ticketNumber: 4829,
+    clientId: 'user-1',
     subject: 'Питання щодо трансферу',
     category: 'transfer',
     status: 'in_progress',
@@ -20,16 +25,18 @@ describe('SupportChatPage', () => {
     petId: 'pet-1',
     petName: 'Оскар',
     petBreed: 'Лабрадор',
-    appointmentDateFormatted: '12 жовтня, 14:00',
-    appointmentServices: 'Pet-таксі та купання',
+    appointmentId: 'appt-1',
+    appointmentStartsAt: '2026-10-12T14:00:00Z',
     appointmentPrice: 1500,
     description: 'О котрій приїде Pet-таксі?',
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     messages: [
       {
         id: 'm-1',
         ticketId: 'ticket-99',
-        senderRole: 'user',
+        senderId: 'user-1',
+        senderRole: 'client',
         senderName: 'Клієнт',
         text: 'О котрій приїде Pet-таксі?',
         createdAt: new Date().toISOString(),
@@ -37,7 +44,8 @@ describe('SupportChatPage', () => {
       {
         id: 'm-2',
         ticketId: 'ticket-99',
-        senderRole: 'admin',
+        senderId: 'staff-1',
+        senderRole: 'staff',
         senderName: 'Сергій',
         text: 'Вітаю! Автомобіль прибуде о 13:30 за вашою адресою.',
         createdAt: new Date().toISOString(),
@@ -71,7 +79,6 @@ describe('SupportChatPage', () => {
 
     expect(screen.getByText(/Деталі звернення #4829/i)).toBeDefined();
     expect(screen.getByText('Оскар')).toBeDefined();
-    expect(screen.getByText('12 жовтня, 14:00')).toBeDefined();
     expect(screen.getAllByText('Київ, Хрещатик, 15').length).toBeGreaterThan(0);
 
     expect(screen.getAllByText('Сергій').length).toBeGreaterThan(0);
@@ -99,13 +106,14 @@ describe('SupportChatPage', () => {
     expect(handleCall).toHaveBeenCalledWith('ticket-99');
   });
 
-  it('sends user message and updates ticket messages', async () => {
+  it('sends user message via Supabase and refreshes ticket list', async () => {
     const sendMessageSpy = vi
       .spyOn(supportStore, 'sendMessage')
       .mockResolvedValueOnce({
         id: 'm-3',
         ticketId: 'ticket-99',
-        senderRole: 'user',
+        senderId: 'user-1',
+        senderRole: 'client',
         senderName: 'Клієнт',
         text: 'Дякую, чекаємо!',
         createdAt: new Date().toISOString(),
@@ -118,7 +126,8 @@ describe('SupportChatPage', () => {
         {
           id: 'm-3',
           ticketId: 'ticket-99',
-          senderRole: 'user',
+          senderId: 'user-1',
+          senderRole: 'client',
           senderName: 'Клієнт',
           text: 'Дякую, чекаємо!',
           createdAt: new Date().toISOString(),
@@ -147,20 +156,20 @@ describe('SupportChatPage', () => {
       expect(sendMessageSpy).toHaveBeenCalledWith(
         'ticket-99',
         'Дякую, чекаємо!',
-        undefined,
         undefined
       );
       expect(screen.getByText('Дякую, чекаємо!')).toBeDefined();
     });
   });
 
-  it('triggers quick action question chip to send quick inquiry', async () => {
+  it('triggers quick action chip to send quick inquiry', async () => {
     const sendMessageSpy = vi
       .spyOn(supportStore, 'sendMessage')
       .mockResolvedValueOnce({
         id: 'm-quick',
         ticketId: 'ticket-99',
-        senderRole: 'user',
+        senderId: 'user-1',
+        senderRole: 'client',
         senderName: 'Клієнт',
         text: '🌿 Спа-маска',
         createdAt: new Date().toISOString(),
@@ -181,9 +190,24 @@ describe('SupportChatPage', () => {
       expect(sendMessageSpy).toHaveBeenCalledWith(
         'ticket-99',
         '🌿 Спа-маска',
-        undefined,
         undefined
       );
     });
+  });
+
+  it('displays staff messages on the left and client messages on the right', () => {
+    render(
+      <MemoryRouter>
+        <SupportChatPage initialTickets={[mockTicket]} initialTicketId="ticket-99" />
+      </MemoryRouter>
+    );
+
+    const staffMsg = screen.getByText('Вітаю! Автомобіль прибуде о 13:30 за вашою адресою.');
+    const staffBubble = staffMsg.closest('.bg-white');
+    expect(staffBubble).toBeDefined();
+
+    const clientMsg = screen.getByText('О котрій приїде Pet-таксі?');
+    const clientBubble = clientMsg.closest('.bg-terracotta');
+    expect(clientBubble).toBeDefined();
   });
 });

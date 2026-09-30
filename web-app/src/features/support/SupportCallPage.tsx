@@ -86,7 +86,7 @@ export const SupportCallPage: FC<SupportCallPageProps> = ({
         }
 
         if (initialTicket === undefined) {
-          const tickets = await getTickets(sessionUser?.id);
+          const tickets = await getTickets();
           if (isMounted) {
             if (tickets.length > 0) {
               const matched = queryTicketId

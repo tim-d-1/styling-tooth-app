@@ -1632,6 +1632,123 @@ describe('App Root and Auth Gating', () => {
         screen.getByRole('heading', { level: 1, name: 'Обробка заявок' })
       ).toBeDefined();
     });
+
+    it('redirects unauthenticated user accessing /admin/support to /login', async () => {
+      window.history.pushState(null, '', '/admin/support');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: { session: null },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-admin-support-noauth',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Вхід' })).toBeDefined();
+    });
+
+    it('redirects client user accessing /admin/support to /main', async () => {
+      window.history.pushState(null, '', '/admin/support');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'client-user-sup', email: 'client@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
+        data: { user: { id: 'client-user-sup', email: 'client@example.com' } },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-client-support-role',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(screen.getByText('Запланований візит')).toBeDefined();
+    });
+
+    it('renders AdminSupportPage when user has receptionist role', async () => {
+      window.history.pushState(null, '', '/admin/support');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'receptionist-user-sup', email: 'receptionist@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
+        data: { user: { id: 'receptionist-user-sup', email: 'receptionist@example.com' } },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-receptionist-support-role',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: { role: 'receptionist' },
+                  error: null,
+                }),
+              }),
+            }),
+          } as never;
+        }
+        if (table === 'support_tickets') {
+          return {
+            select: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [],
+                error: null,
+              }),
+            }),
+          } as never;
+        }
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        } as never;
+      }) as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(
+        screen.getByRole('heading', { level: 1, name: 'Служба підтримки' })
+      ).toBeDefined();
+    });
   });
 });
 

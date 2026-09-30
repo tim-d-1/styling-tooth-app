@@ -35,6 +35,7 @@ import FaqPage from '@/features/faq/FaqPage';
 import PrivacyPolicyPage from '@/features/legal/PrivacyPolicyPage';
 import TermsOfUsePage from '@/features/legal/TermsOfUsePage';
 import RequestProcessingPage from '@/features/admin/RequestProcessingPage';
+import AdminSupportPage from '@/features/admin/AdminSupportPage';
 import type { UserRole } from '@/features/auth/auth_types';
 import { CITY_STORAGE_KEY } from '@/features/location/city_types';
 import ScrollToTop from '@/components/layout/ScrollToTop';
@@ -1062,6 +1063,29 @@ export function AppRoutes() {
               allowedRoles={['admin', 'receptionist']}
             >
               <RequestProcessingPage
+                isLoggedIn={isLoggedIn}
+                onLoginClick={() => navigate('/login')}
+                onRegisterClick={() => navigate('/register')}
+                onProfileClick={() => navigate('/profile')}
+                onNavClick={(nav) => {
+                  if (nav === 'home') navigate(isLoggedIn ? '/main' : '/');
+                  else navigate(`/${nav}`);
+                }}
+                onToast={showToast}
+              />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/admin/support"
+          element={
+            <RoleRoute
+              isLoggedIn={isLoggedIn}
+              isAuthLoading={isAuthLoading}
+              userRole={userRole}
+              allowedRoles={['admin', 'receptionist']}
+            >
+              <AdminSupportPage
                 isLoggedIn={isLoggedIn}
                 onLoginClick={() => navigate('/login')}
                 onRegisterClick={() => navigate('/register')}

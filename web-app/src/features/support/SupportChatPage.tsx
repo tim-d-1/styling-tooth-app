@@ -8,6 +8,7 @@ import TicketSidebarContext from './components/TicketSidebarContext';
 import * as supportStore from './support_store';
 import type { SupportTicket } from './support_types';
 import { supabase } from '@/lib/supabase';
+import { useSupportRealtime } from './use_support_realtime';
 
 export interface SupportChatPageProps {
   onHomeClick?: () => void;
@@ -57,6 +58,14 @@ export const SupportChatPage: FC<SupportChatPageProps> = ({
   const [messageInput, setMessageInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
+
+  useSupportRealtime(currentTicket?.id, (msg) => {
+    setCurrentTicket((prev) => {
+      if (!prev) return prev;
+      if (prev.messages.some((m) => m.id === msg.id)) return prev;
+      return { ...prev, messages: [...prev.messages, msg] };
+    });
+  });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -110,7 +119,7 @@ export const SupportChatPage: FC<SupportChatPageProps> = ({
         }
 
         if (!initialTickets) {
-          const loadedTickets = await supportStore.getTickets(sessionUser?.id);
+          const loadedTickets = await supportStore.getTickets();
           if (isMounted) {
             setTickets(loadedTickets);
             if (loadedTickets.length > 0) {
@@ -191,14 +200,12 @@ export const SupportChatPage: FC<SupportChatPageProps> = ({
     if (!currentTicket) return;
 
     setIsSending(true);
-    const attachmentUrl = attachedFile ? URL.createObjectURL(attachedFile) : undefined;
 
     try {
-      const sentMessage = await supportStore.sendMessage(
+      await supportStore.sendMessage(
         currentTicket.id,
         text,
-        undefined,
-        attachmentUrl
+        attachedFile || undefined
       );
       setMessageInput('');
       setAttachedFile(null);
@@ -210,15 +217,6 @@ export const SupportChatPage: FC<SupportChatPageProps> = ({
         if (updated) {
           setCurrentTicket(updated);
         }
-      } else {
-        setCurrentTicket((prev) =>
-          prev
-            ? {
-                ...prev,
-                messages: [...prev.messages, sentMessage],
-              }
-            : null
-        );
       }
     } catch {
       showToast('Не вдалося надіслати повідомлення');
@@ -390,7 +388,7 @@ export const SupportChatPage: FC<SupportChatPageProps> = ({
                 </div>
 
                 {currentTicket?.messages.map((message) => {
-                  const isAdmin = message.senderRole === 'admin';
+                  const isAdmin = message.senderRole === 'staff';
                   return (
                     <div
                       key={message.id}

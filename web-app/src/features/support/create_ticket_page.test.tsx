@@ -77,13 +77,14 @@ describe('CreateTicketPage', () => {
     expect(apptSelect.options.length).toBeGreaterThan(1);
   });
 
-  it('submits valid form data, calls createTicket, and triggers callbacks', async () => {
+  it('submits valid form data with simplified input shape to createTicket', async () => {
     const handleSuccess = vi.fn();
     const handleToast = vi.fn();
 
     const createSpy = vi.spyOn(supportStore, 'createTicket').mockResolvedValueOnce({
       id: 'ticket-1234',
       ticketNumber: 4830,
+      clientId: 'user-1',
       subject: 'Затримка візиту',
       category: 'booking',
       status: 'in_progress',
@@ -93,6 +94,7 @@ describe('CreateTicketPage', () => {
       petBreed: 'Вівчарка',
       description: 'Чи можливо перенести візит на 30 хвилин пізніше?',
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       messages: [],
     });
 
@@ -131,12 +133,67 @@ describe('CreateTicketPage', () => {
           subject: 'Затримка візиту',
           urgency: 'urgent',
           petId: 'pet-1',
-          petName: 'Рекс',
           description: 'Чи можливо перенести візит на 30 хвилин пізніше?',
         })
       );
       expect(handleToast).toHaveBeenCalledWith('Звернення успішно створено');
       expect(handleSuccess).toHaveBeenCalledWith('ticket-1234');
+    });
+  });
+
+  it('passes attachment File object directly to createTicket', async () => {
+    const handleSuccess = vi.fn();
+    const handleToast = vi.fn();
+
+    const createSpy = vi.spyOn(supportStore, 'createTicket').mockResolvedValueOnce({
+      id: 'ticket-file',
+      ticketNumber: 4831,
+      clientId: 'user-1',
+      subject: 'Фото чеку',
+      category: 'payment',
+      status: 'in_progress',
+      urgency: 'normal',
+      description: 'Додаю фото чеку.',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      messages: [],
+    });
+
+    render(
+      <MemoryRouter>
+        <CreateTicketPage
+          onSuccess={handleSuccess}
+          onToast={handleToast}
+        />
+      </MemoryRouter>
+    );
+
+    const subjectInput = screen.getByLabelText(/Тема звернення/i);
+    fireEvent.change(subjectInput, { target: { value: 'Фото чеку' } });
+
+    const descInput = screen.getByLabelText(/Опис проблеми/i);
+    fireEvent.change(descInput, { target: { value: 'Додаю фото чеку.' } });
+
+    const categorySelect = screen.getByLabelText('Категорія');
+    fireEvent.change(categorySelect, { target: { value: 'payment' } });
+
+    const fileInput = document.getElementById('ticket-file-input') as HTMLInputElement;
+    const file = new File(['content'], 'receipt.pdf', { type: 'application/pdf' });
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
+    expect(screen.getByText('receipt.pdf')).toBeDefined();
+
+    const submitBtn = screen.getByRole('button', { name: 'Створити звернення' });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(createSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: 'Фото чеку',
+          category: 'payment',
+          attachment: file,
+        })
+      );
     });
   });
 

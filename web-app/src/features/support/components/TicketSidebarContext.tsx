@@ -68,19 +68,11 @@ export const TicketSidebarContext: FC<TicketSidebarContextProps> = ({
         {ticket?.petName ? (
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-visit-gray bg-surface-cream flex items-center justify-center">
-              {ticket.petAvatarUrl ? (
-                <img
-                  src={ticket.petAvatarUrl}
-                  alt={ticket.petName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Icon
-                  name="fi-rr-paw"
-                  size={22}
-                  color="var(--color-terracotta)"
-                />
-              )}
+              <Icon
+                name="fi-rr-paw"
+                size={22}
+                color="var(--color-terracotta)"
+              />
             </div>
             <div className="flex flex-col">
               <span className="font-accented font-bold text-base text-content-dark">
@@ -112,9 +104,9 @@ export const TicketSidebarContext: FC<TicketSidebarContextProps> = ({
         <h3 className="text-xs uppercase tracking-wider font-semibold text-content-dark/60">
           Контекст запису
         </h3>
-        {ticket?.appointmentDateFormatted || ticket?.appointmentServices ? (
+        {ticket?.appointmentStartsAt || ticket?.appointmentPrice ? (
           <div className="flex flex-col gap-2 font-primary text-sm">
-            {ticket.appointmentDateFormatted && (
+            {ticket.appointmentStartsAt && (
               <div className="flex items-center gap-2 text-content-dark">
                 <Icon
                   name="fi-rr-calendar"
@@ -122,18 +114,8 @@ export const TicketSidebarContext: FC<TicketSidebarContextProps> = ({
                   className="text-terracotta shrink-0"
                 />
                 <span className="font-medium">
-                  {ticket.appointmentDateFormatted}
+                  {new Date(ticket.appointmentStartsAt).toLocaleString('uk-UA', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
                 </span>
-              </div>
-            )}
-            {ticket.appointmentServices && (
-              <div className="flex items-center gap-2 text-content-dark/80">
-                <Icon
-                  name="fi-rr-scissors"
-                  size={16}
-                  className="text-terracotta shrink-0"
-                />
-                <span>{ticket.appointmentServices}</span>
               </div>
             )}
             <div className="flex items-center gap-2 text-content-dark font-semibold pt-1">

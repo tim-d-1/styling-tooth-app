@@ -231,46 +231,14 @@ export const CreateTicketPage: FC<CreateTicketPageProps> = ({
     setIsSubmitting(true);
 
     try {
-      const selectedPet = pets.find((p) => p.id === selectedPetId);
-      const selectedAppt = appointments.find(
-        (a) => a.id === selectedAppointmentId
-      );
-
-      let apptDateFormatted: string | null = null;
-      let apptServices: string | null = null;
-      let apptPrice: number | null = null;
-
-      if (selectedAppt) {
-        try {
-          const date = new Date(selectedAppt.starts_at);
-          apptDateFormatted = date.toLocaleString('uk-UA', {
-            day: 'numeric',
-            month: 'long',
-            hour: '2-digit',
-            minute: '2-digit',
-          });
-        } catch {
-          apptDateFormatted = selectedAppt.starts_at;
-        }
-
-        apptServices = selectedAppt.service?.name || null;
-        apptPrice = selectedAppt.price ?? null;
-      }
-
       const ticket = await createTicket({
         subject: subject.trim(),
         category,
         urgency,
         description: description.trim(),
-        petId: selectedPet?.id || null,
-        petName: selectedPet?.name || null,
-        petBreed: selectedPet?.breed || null,
-        appointmentId: selectedAppt?.id || null,
-        appointmentDateFormatted: apptDateFormatted,
-        appointmentServices: apptServices,
-        appointmentPrice: apptPrice,
-        attachmentName: attachedFile?.name || null,
-        attachmentUrl: attachmentPreview || undefined,
+        petId: selectedPetId || null,
+        appointmentId: selectedAppointmentId || null,
+        attachment: attachedFile,
       });
 
       showToast('Звернення успішно створено');
