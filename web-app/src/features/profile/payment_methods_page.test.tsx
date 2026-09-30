@@ -158,20 +158,25 @@ describe('PaymentMethodsPage', () => {
     expect(handleToast).toHaveBeenCalledWith('Введіть коректний 16-значний номер картки');
 
     const cardInput = screen.getByLabelText('Номер картки') as HTMLInputElement;
+    const expiryInput = screen.getByLabelText('Термін (MM/YY)') as HTMLInputElement;
+    const cvvInput = screen.getByLabelText('CVV / CVC') as HTMLInputElement;
+
+    expect(cardInput.placeholder).toBe('');
+    expect(expiryInput.placeholder).toBe('');
+    expect(cvvInput.placeholder).toBe('');
+
     fireEvent.change(cardInput, { target: { value: '4149499912345678' } });
     expect(cardInput.value).toBe('4149 4999 1234 5678');
 
     fireEvent.click(submitBtn);
     expect(handleToast).toHaveBeenCalledWith('Введіть термін дії у форматі MM/YY');
 
-    const expiryInput = screen.getByLabelText('Термін (MM/YY)') as HTMLInputElement;
     fireEvent.change(expiryInput, { target: { value: '0928' } });
     expect(expiryInput.value).toBe('09/28');
 
     fireEvent.click(submitBtn);
     expect(handleToast).toHaveBeenCalledWith('Введіть 3 цифри CVV/CVC');
 
-    const cvvInput = screen.getByLabelText('CVV / CVC') as HTMLInputElement;
     fireEvent.change(cvvInput, { target: { value: '789' } });
     expect(cvvInput.value).toBe('789');
 

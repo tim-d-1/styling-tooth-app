@@ -499,7 +499,6 @@ export const PaymentMethodsPage: FC<PaymentMethodsPageProps> = ({
                         type="text"
                         value={cardNumber}
                         onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                        placeholder="0000 0000 0000 0000"
                         maxLength={19}
                         className="w-full border border-black/15 rounded-2xl pl-4 pr-12 py-3.5 text-base text-content-dark font-accented font-medium outline-none focus:border-terracotta transition-colors bg-[#fbfbfb]"
                       />
@@ -520,7 +519,6 @@ export const PaymentMethodsPage: FC<PaymentMethodsPageProps> = ({
                           type="text"
                           value={expiry}
                           onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                          placeholder="12/27"
                           maxLength={5}
                           className="w-full border border-black/15 rounded-2xl pl-4 pr-12 py-3.5 text-base text-content-dark font-accented font-medium outline-none focus:border-terracotta transition-colors bg-[#fbfbfb]"
                         />
@@ -540,7 +538,6 @@ export const PaymentMethodsPage: FC<PaymentMethodsPageProps> = ({
                           type="password"
                           value={cvv}
                           onChange={(e) => setCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                          placeholder="•••"
                           maxLength={4}
                           className="w-full border border-black/15 rounded-2xl pl-4 pr-12 py-3.5 text-base text-content-dark font-accented font-medium outline-none focus:border-terracotta transition-colors bg-[#fbfbfb]"
                         />

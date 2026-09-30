@@ -1,5 +1,6 @@
-import { useState, type FC, type FormEvent } from 'react';
+import { useState, useEffect, type FC, type FormEvent } from 'react';
 import Icon from '@/components/ui/Icon';
+import { supabase } from '@/lib/supabase';
 
 export interface BookingPaymentStepProps {
   totalAmount: number;
@@ -13,17 +14,51 @@ export interface BookingPaymentStepProps {
     };
   }) => void;
   isProcessing?: boolean;
+  initialSavedCards?: Array<{ id: string; last4: string; expiry: string }>;
 }
 
 export const BookingPaymentStep: FC<BookingPaymentStepProps> = ({
   totalAmount,
   onPay,
   isProcessing = false,
+  initialSavedCards,
 }) => {
   const [selectedMethod, setSelectedMethod] = useState<'apple_pay' | 'saved_card' | 'new_card'>('apple_pay');
-  const [savedCards, setSavedCards] = useState([
-    { id: 'card-1', last4: '4821', expiry: '08/28' },
-  ]);
+  const [savedCards, setSavedCards] = useState<Array<{ id: string; last4: string; expiry: string }>>(
+    () => initialSavedCards || []
+  );
+
+  useEffect(() => {
+    if (initialSavedCards !== undefined) {
+      setSavedCards(initialSavedCards);
+      return;
+    }
+
+    let isMounted = true;
+    async function loadUserCards() {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const userMeta = data?.session?.user?.user_metadata;
+        if (isMounted && Array.isArray(userMeta?.payment_methods)) {
+          const cards = userMeta.payment_methods
+            .filter((m: any) => m.type === 'card' && m.last4)
+            .map((m: any) => ({
+              id: m.id,
+              last4: m.last4,
+              expiry: m.expiry || '',
+            }));
+          setSavedCards(cards);
+        }
+      } catch (err) {
+        console.error('Failed to load user cards for booking:', err);
+      }
+    }
+
+    loadUserCards();
+    return () => {
+      isMounted = false;
+    };
+  }, [initialSavedCards]);
 
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
@@ -41,11 +76,24 @@ export const BookingPaymentStep: FC<BookingPaymentStepProps> = ({
     return `${raw.slice(0, 2)}/${raw.slice(2)}`;
   };
 
-  const handleDeleteSavedCard = (id: string, e: React.MouseEvent) => {
+  const handleDeleteSavedCard = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setSavedCards((prev) => prev.filter((c) => c.id !== id));
-    if (selectedMethod === 'saved_card') {
+    const updatedCards = savedCards.filter((c) => c.id !== id);
+    setSavedCards(updatedCards);
+    if (selectedMethod === 'saved_card' && updatedCards.length === 0) {
       setSelectedMethod('apple_pay');
+    }
+    try {
+      const { data } = await supabase.auth.getSession();
+      const userMeta = data?.session?.user?.user_metadata;
+      if (Array.isArray(userMeta?.payment_methods)) {
+        const updatedMethods = userMeta.payment_methods.filter((m: any) => m.id !== id);
+        await supabase.auth.updateUser({
+          data: { payment_methods: updatedMethods },
+        });
+      }
+    } catch (err) {
+      console.error('Failed to delete card from metadata:', err);
     }
   };
 
@@ -192,9 +240,8 @@ export const BookingPaymentStep: FC<BookingPaymentStepProps> = ({
                   type="text"
                   value={cardNumber}
                   onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                  placeholder="0000 0000 0000 0000"
                   maxLength={19}
-                  className="w-full h-12 px-4 pr-10 rounded-xl bg-visit-gray/50 border border-transparent focus:border-terracotta focus:bg-white text-sm font-primary text-content-dark placeholder:text-text-muted outline-none transition-all"
+                  className="w-full h-12 px-4 pr-10 rounded-xl bg-visit-gray/50 border border-transparent focus:border-terracotta focus:bg-white text-sm font-primary text-content-dark outline-none transition-all"
                 />
                 <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
                   <Icon name="fi-rr-credit-card" size={16} />
@@ -215,9 +262,8 @@ export const BookingPaymentStep: FC<BookingPaymentStepProps> = ({
                   type="text"
                   value={expiry}
                   onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                  placeholder="12/27"
                   maxLength={5}
-                  className="w-full h-12 px-4 pr-10 rounded-xl bg-visit-gray/50 border border-transparent focus:border-terracotta focus:bg-white text-sm font-primary text-content-dark placeholder:text-text-muted outline-none transition-all"
+                  className="w-full h-12 px-4 pr-10 rounded-xl bg-visit-gray/50 border border-transparent focus:border-terracotta focus:bg-white text-sm font-primary text-content-dark outline-none transition-all"
                 />
                 <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
                   <Icon name="fi-rr-calendar" size={16} />
@@ -238,9 +284,8 @@ export const BookingPaymentStep: FC<BookingPaymentStepProps> = ({
                   type="password"
                   value={cvv}
                   onChange={(e) => setCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                  placeholder="•••"
                   maxLength={4}
-                  className="w-full h-12 px-4 pr-10 rounded-xl bg-visit-gray/50 border border-transparent focus:border-terracotta focus:bg-white text-sm font-primary text-content-dark placeholder:text-text-muted outline-none transition-all"
+                  className="w-full h-12 px-4 pr-10 rounded-xl bg-visit-gray/50 border border-transparent focus:border-terracotta focus:bg-white text-sm font-primary text-content-dark outline-none transition-all"
                 />
                 <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
                   <Icon name="fi-rr-lock" size={16} />

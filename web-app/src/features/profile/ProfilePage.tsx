@@ -68,6 +68,7 @@ export const ProfilePage: FC<ProfilePageProps> = ({
   const [isCancelling, setIsCancelling] = useState(false);
   const [pets, setPets] = useState<ProfilePet[]>(initialPets || []);
   const [isLoadingPets, setIsLoadingPets] = useState(initialPets === undefined);
+  const [paymentSubtitle, setPaymentSubtitle] = useState('Apple Pay');
 
   useEffect(() => {
     let isMounted = true;
@@ -123,6 +124,16 @@ export const ProfilePage: FC<ProfilePageProps> = ({
 
         discountPct = profileData?.discount_pct ? Number(profileData.discount_pct) : 0;
         const resolvedTier = discountPct > 0 ? `${discountPct}% Знижка` : 'Базовий рівень';
+
+        const userMethods = sessionUser?.user_metadata?.payment_methods;
+        if (Array.isArray(userMethods) && userMethods.length > 0) {
+          const labels = userMethods.map((m: any) =>
+            m.type === 'apple_pay' ? 'Apple Pay' : `*${m.last4 || 'картка'}`
+          );
+          setPaymentSubtitle(labels.join(', '));
+        } else {
+          setPaymentSubtitle('Apple Pay');
+        }
 
         setUser((prev) => ({
           ...prev,
@@ -375,6 +386,43 @@ export const ProfilePage: FC<ProfilePageProps> = ({
           />
 
           <ProfileSettingsSection
+            settings={[
+              {
+                id: 'personal_info',
+                title: 'Особисті дані',
+                subtitle: "Ім'я, телефон, email",
+                iconName: 'fi-rr-comment-user',
+              },
+              {
+                id: 'addresses',
+                title: 'Мої адреси',
+                subtitle: 'Дім, Офіс',
+                iconName: 'fi-rr-map-marker',
+              },
+              {
+                id: 'payment_methods',
+                title: 'Способи оплати',
+                subtitle: paymentSubtitle,
+                iconName: 'fi-rr-credit-card',
+              },
+              {
+                id: 'notifications',
+                title: 'Налаштування сповіщень',
+                iconName: 'fi-rr-bell-ring',
+              },
+              {
+                id: 'support',
+                title: 'Підтримка',
+                subtitle: 'Online',
+                iconName: 'fi-rr-comments',
+                isOnline: true,
+              },
+              {
+                id: 'faq',
+                title: 'Часті запитання (FAQ)',
+                iconName: 'fi-rr-interrogation',
+              },
+            ]}
             onSelectSetting={(settingId) => {
               if (settingId === 'personal_info' && onPersonalInfoClick) {
                 onPersonalInfoClick();

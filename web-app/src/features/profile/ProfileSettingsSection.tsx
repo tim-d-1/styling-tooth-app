@@ -18,7 +18,7 @@ const DEFAULT_SETTINGS: SettingCardItem[] = [
   {
     id: 'payment_methods',
     title: 'Способи оплати',
-    subtitle: 'Apple Pay, *4821',
+    subtitle: 'Apple Pay',
     iconName: 'fi-rr-credit-card',
   },
   {

@@ -230,6 +230,19 @@ describe('BookingPage', () => {
     expect(mockInsert).toHaveBeenCalledTimes(1);
   });
 
+  it('renders payment stage without placeholder 4821 card and without input placeholders', () => {
+    renderBooking({ initialStage: 'payment' });
+
+    expect(screen.queryByText(/4821/)).toBeNull();
+    const cardNumberInput = screen.getByLabelText('Номер картки') as HTMLInputElement;
+    const expiryInput = screen.getByLabelText('Термін (MM/YY)') as HTMLInputElement;
+    const cvvInput = screen.getByLabelText('CVV / CVC') as HTMLInputElement;
+
+    expect(cardNumberInput.placeholder).toBe('');
+    expect(expiryInput.placeholder).toBe('');
+    expect(cvvInput.placeholder).toBe('');
+  });
+
   it('handles step back navigation through all stages', () => {
     const handleBackClick = vi.fn();
     renderBooking({ initialStage: 'payment', onBackClick: handleBackClick });
