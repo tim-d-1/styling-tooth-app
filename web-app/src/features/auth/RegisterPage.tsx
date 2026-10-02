@@ -6,6 +6,7 @@ import {
   isEmailIdentifier,
   normalizePhoneNumber,
   fileToDataUrl,
+  phoneToAuthEmail,
 } from './register_utils';
 
 export interface RegisterPageProps {
@@ -158,6 +159,26 @@ export const RegisterPage: FC<RegisterPageProps> = ({
             data: metadata,
           },
         });
+
+        if (
+          signUpResult.error &&
+          (signUpResult.error.message.toLowerCase().includes('disabled') ||
+            signUpResult.error.message.toLowerCase().includes('provider') ||
+            signUpResult.error.message.toLowerCase().includes('phone signups') ||
+            signUpResult.error.message.toLowerCase().includes('otp'))
+        ) {
+          const authEmail = phoneToAuthEmail(normalizedPhone);
+          signUpResult = await supabase.auth.signUp({
+            email: authEmail,
+            password,
+            options: {
+              data: {
+                ...metadata,
+                phone: normalizedPhone,
+              },
+            },
+          });
+        }
       } else {
         setErrorMessage('Введіть коректний Email або номер телефону');
         return;

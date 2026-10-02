@@ -1,4 +1,11 @@
-import { isEmailIdentifier, isPhoneIdentifier, normalizePhoneNumber } from './login_utils';
+import {
+  isEmailIdentifier,
+  isPhoneIdentifier,
+  normalizePhoneNumber,
+  phoneToAuthEmail,
+} from './login_utils';
+
+export { phoneToAuthEmail };
 
 export interface RegisterFormData {
   firstName: string;

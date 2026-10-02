@@ -24,6 +24,11 @@ export function normalizePhoneNumber(identifier: string): string | null {
   return null;
 }
 
+export function phoneToAuthEmail(normalizedPhone: string): string {
+  const digits = normalizedPhone.replace(/\D/g, '');
+  return `${digits}@phone.stylingtooth.app`;
+}
+
 export function validateLoginForm(
   identifier: string,
   password: string

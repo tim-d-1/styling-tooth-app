@@ -115,17 +115,6 @@ export const NotificationSettingsPage: FC<NotificationSettingsPageProps> = ({
           null
         );
 
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('telegram_chat_id, telegram_username')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (isMounted && profile?.telegram_chat_id) {
-          setTelegramChatId(profile.telegram_chat_id);
-          setTelegramUsername(profile.telegram_username);
-        }
-
         if (!initialPreferences) {
           const saved = user.user_metadata?.notification_preferences;
           if (saved && typeof saved === 'object') {
@@ -140,6 +129,20 @@ export const NotificationSettingsPage: FC<NotificationSettingsPageProps> = ({
               },
             });
           }
+        }
+
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('telegram_chat_id, telegram_username')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (isMounted && profile?.telegram_chat_id) {
+            setTelegramChatId(profile.telegram_chat_id);
+            setTelegramUsername(profile.telegram_username);
+          }
+        } catch {
         }
       } catch (err) {
         console.error('Failed to load notification preferences:', err);

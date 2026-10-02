@@ -104,7 +104,8 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
 
       const userMeta = sessionData?.session?.user?.user_metadata;
       const resolvedName = profile?.full_name || userMeta?.full_name || '';
-      const resolvedEmail = profile?.email || sessionData?.session?.user?.email || '';
+      const rawEmail = profile?.email || sessionData?.session?.user?.email || '';
+      const resolvedEmail = rawEmail.endsWith('@phone.stylingtooth.app') ? '' : rawEmail;
       const resolvedPhone = profile?.phone || userMeta?.phone || '';
       const rawAvatar =
         profile?.avatar_url ||

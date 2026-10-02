@@ -4,6 +4,7 @@ import {
   validateLoginForm,
   isEmailIdentifier,
   normalizePhoneNumber,
+  phoneToAuthEmail,
 } from './login_utils';
 
 export interface LoginPageProps {
@@ -102,10 +103,28 @@ export const LoginPage: FC<LoginPageProps> = ({
         }
         signedInUser = data?.user ?? null;
       } else if (normalizedPhone) {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        let { data, error } = await supabase.auth.signInWithPassword({
           phone: normalizedPhone,
           password,
         });
+
+        if (
+          error &&
+          (error.message.toLowerCase().includes('disabled') ||
+            error.message.toLowerCase().includes('provider') ||
+            error.message.toLowerCase().includes('unsupported') ||
+            error.message.toLowerCase().includes('not allowed'))
+        ) {
+          const authEmail = phoneToAuthEmail(normalizedPhone);
+          const fallbackRes = await supabase.auth.signInWithPassword({
+            email: authEmail,
+            password,
+          });
+          if (fallbackRes?.data?.user && !fallbackRes.error) {
+            data = fallbackRes.data;
+            error = null;
+          }
+        }
 
         if (error) {
           if (
