@@ -13,7 +13,8 @@ export interface ConfirmationStatus {
   telegramUsername: string | null;
 }
 
-export const TELEGRAM_BOT_USERNAME = 'StylingToothBot';
+export const TELEGRAM_BOT_USERNAME =
+  (import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string) || 'StylingToothBot';
 
 export async function getConfirmationStatus(): Promise<ConfirmationStatus> {
   const { data: { user } } = await supabase.auth.getUser();
