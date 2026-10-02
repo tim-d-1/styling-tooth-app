@@ -1,10 +1,52 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { resolveStorageUrl, fetchPetsAvatarMap, fetchPetAvatarUrl } from './pet_media_utils';
+import {
+  resolveStorageUrl,
+  fetchPetsAvatarMap,
+  fetchPetAvatarUrl,
+  getNormalizedImageContentType,
+} from './pet_media_utils';
 import { supabase } from '@/lib/supabase';
 
 describe('pet_media_utils', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+  });
+
+  describe('getNormalizedImageContentType', () => {
+    it('normalizes image/jpg and image/pjpeg to image/jpeg', () => {
+      const jpgFile = new File(['x'], 'photo.jpg', { type: 'image/jpg' });
+      expect(getNormalizedImageContentType(jpgFile)).toBe('image/jpeg');
+
+      const pjpegFile = new File(['x'], 'photo.jpg', { type: 'image/pjpeg' });
+      expect(getNormalizedImageContentType(pjpegFile)).toBe('image/jpeg');
+    });
+
+    it('infers image/jpeg for files without mime type but ending in .jpg or .jpeg', () => {
+      const noTypeJpg = new File(['x'], 'dog_portrait.jpg', { type: '' });
+      expect(getNormalizedImageContentType(noTypeJpg)).toBe('image/jpeg');
+
+      const noTypeJpeg = new File(['x'], 'cat.JPEG', { type: '' });
+      expect(getNormalizedImageContentType(noTypeJpeg)).toBe('image/jpeg');
+    });
+
+    it('preserves valid standard image mime types', () => {
+      const png = new File(['x'], 'badge.png', { type: 'image/png' });
+      expect(getNormalizedImageContentType(png)).toBe('image/png');
+
+      const webp = new File(['x'], 'pic.webp', { type: 'image/webp' });
+      expect(getNormalizedImageContentType(webp)).toBe('image/webp');
+
+      const heic = new File(['x'], 'pic.heic', { type: 'image/heic' });
+      expect(getNormalizedImageContentType(heic)).toBe('image/heic');
+    });
+
+    it('infers proper mime type from extension when type is empty', () => {
+      expect(getNormalizedImageContentType(new File(['x'], 'f.png', { type: '' }))).toBe('image/png');
+      expect(getNormalizedImageContentType(new File(['x'], 'f.webp', { type: '' }))).toBe('image/webp');
+      expect(getNormalizedImageContentType(new File(['x'], 'f.heic', { type: '' }))).toBe('image/heic');
+      expect(getNormalizedImageContentType(new File(['x'], 'f.avif', { type: '' }))).toBe('image/avif');
+      expect(getNormalizedImageContentType(new File(['x'], 'f.gif', { type: '' }))).toBe('image/gif');
+    });
   });
 
   describe('resolveStorageUrl', () => {

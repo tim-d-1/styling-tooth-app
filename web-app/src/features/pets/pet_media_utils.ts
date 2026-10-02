@@ -1,5 +1,35 @@
 import { supabase } from '@/lib/supabase';
 
+export function getNormalizedImageContentType(file: File): string {
+  const type = (file.type || '').toLowerCase();
+  if (type === 'image/jpg' || type === 'image/pjpeg') {
+    return 'image/jpeg';
+  }
+  if (type) {
+    return type;
+  }
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'heic':
+      return 'image/heic';
+    case 'heif':
+      return 'image/heif';
+    case 'avif':
+      return 'image/avif';
+    case 'gif':
+      return 'image/gif';
+    default:
+      return 'image/jpeg';
+  }
+}
+
 export async function resolveStorageUrl(storagePath?: string | null): Promise<string | null> {
   if (!storagePath || !storagePath.trim()) return null;
   const path = storagePath.trim();

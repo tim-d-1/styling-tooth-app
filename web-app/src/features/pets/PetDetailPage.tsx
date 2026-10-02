@@ -17,7 +17,7 @@ import { getSpeciesEmoji, formatDateToUkrainian } from './pet_utils';
 import { formatPetAge } from '@/features/profile/profile_utils';
 import { mapRowToCareScheduleItem } from '@/config/care_schedule';
 import { supabase } from '@/lib/supabase';
-import { resolveStorageUrl } from './pet_media_utils';
+import { resolveStorageUrl, getNormalizedImageContentType } from './pet_media_utils';
 
 export interface PetDetailPageProps {
   onHomeClick?: () => void;
@@ -368,9 +368,13 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
     try {
       const fileExt = file.name.split('.').pop() || 'jpg';
       const storagePath = `${petDetail.id}/${Date.now()}.${fileExt}`;
+      const contentType = getNormalizedImageContentType(file);
       const { error: uploadError } = await supabase.storage
         .from('pet-media')
-        .upload(storagePath, file);
+        .upload(storagePath, file, {
+          contentType,
+          upsert: false,
+        });
       if (uploadError) {
         showToast(`Помилка завантаження фото: ${uploadError.message}`);
         return;
