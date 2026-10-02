@@ -52,10 +52,23 @@ export const StaffLoginPage: FC<StaffLoginPageProps> = ({
         loginError = res.error;
       } else {
         const cleanPhone = trimmed.replace(/[\s()-]/g, '');
-        const res = await supabase.auth.signInWithPassword({
+        let res = await supabase.auth.signInWithPassword({
           phone: cleanPhone,
           password,
         });
+        if (
+          res.error &&
+          (res.error.message.toLowerCase().includes('disabled') ||
+            res.error.message.toLowerCase().includes('provider') ||
+            res.error.message.toLowerCase().includes('unsupported') ||
+            res.error.message.toLowerCase().includes('not allowed'))
+        ) {
+          const digits = cleanPhone.replace(/\D/g, '');
+          res = await supabase.auth.signInWithPassword({
+            email: `${digits}@phone.stylingtooth.app`,
+            password,
+          });
+        }
         loginData = res.data;
         loginError = res.error;
       }
