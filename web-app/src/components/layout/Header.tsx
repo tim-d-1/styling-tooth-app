@@ -32,7 +32,6 @@ export const Header: FC<HeaderProps> = ({
   hasNotification = false,
   userAvatarUrl = '/assets/images/default-avatar.svg',
   userName = 'Користувач',
-  userRole,
   className,
   customNavItems,
 }) => {
@@ -46,11 +45,7 @@ export const Header: FC<HeaderProps> = ({
 
   const currentNav = activeNav?.trim() || 'home';
 
-  const isStaff =
-    userRole === 'admin' || userRole === 'receptionist' || userRole === 'master';
-
   const navItems = customNavItems || [
-    ...(isStaff ? [{ id: 'admin/requests', label: 'Панель заявок' }] : []),
     { id: 'services', label: 'Послуги' },
     { id: 'about', label: 'Про нас' },
     { id: 'contacts', label: 'Контакти' },
@@ -118,18 +113,6 @@ export const Header: FC<HeaderProps> = ({
                 {hasNotification && (
                   <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-terracotta" aria-hidden="true" />
                 )}
-              </button>
-            )}
-
-            {isStaff && (
-              <button
-                type="button"
-                onClick={() => onNavClick?.('admin/requests')}
-                aria-label="Заявки"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-soft-blue text-white hover:bg-soft-blue/90 transition-all text-xs font-accented font-semibold cursor-pointer border-0 outline-none shadow-xs"
-              >
-                <Icon name="fi-rr-apps" size={14} />
-                <span>Заявки</span>
               </button>
             )}
 

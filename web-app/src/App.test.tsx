@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import App from './App';
 import { supabase } from './lib/supabase';
+import * as staffRedirect from './lib/staff_redirect';
 
 describe('App Root and Auth Gating', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
     window.scrollTo = vi.fn();
+    vi.spyOn(staffRedirect, 'redirectToStaffApp').mockReturnValue(true);
     window.history.pushState(null, '', '/');
     vi.spyOn(supabase, 'channel').mockReturnValue({
       on: () => ({ subscribe: () => ({}) }),
@@ -1508,62 +1510,35 @@ describe('App Root and Auth Gating', () => {
       expect(screen.getByRole('heading', { level: 1, name: 'Створити нове звернення' })).toBeDefined();
     });
 
-    it('redirects unauthenticated user accessing /admin/requests to /login', async () => {
+    it('redirects user accessing /admin/requests to staff app portal', async () => {
       window.history.pushState(null, '', '/admin/requests');
-      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
-        data: { session: null },
-        error: null,
-      } as never);
-      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
-        data: {
-          subscription: {
-            id: 'sub-admin-noauth',
-            callback: vi.fn(),
-            unsubscribe: vi.fn(),
-          },
-        },
-      } as never);
-
       await act(async () => {
         render(<App />);
       });
 
-      expect(screen.getByRole('heading', { level: 1, name: 'Вхід' })).toBeDefined();
+      expect(staffRedirect.redirectToStaffApp).toHaveBeenCalledWith('admin');
     });
 
-    it('redirects client user accessing /admin/requests to /main', async () => {
+    it('redirects receptionist accessing /admin/requests to staff app portal', async () => {
       window.history.pushState(null, '', '/admin/requests');
-      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
-        data: {
-          session: {
-            user: { id: 'client-user', email: 'client@example.com' },
-          },
-        },
-        error: null,
-      } as never);
-      vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
-        data: { user: { id: 'client-user', email: 'client@example.com' } },
-        error: null,
-      } as never);
-      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
-        data: {
-          subscription: {
-            id: 'sub-client-role',
-            callback: vi.fn(),
-            unsubscribe: vi.fn(),
-          },
-        },
-      } as never);
-
       await act(async () => {
         render(<App />);
       });
 
-      expect(screen.getByText('Запланований візит')).toBeDefined();
+      expect(staffRedirect.redirectToStaffApp).toHaveBeenCalledWith('admin');
     });
 
-    it('renders RequestProcessingPage when user has receptionist role', async () => {
-      window.history.pushState(null, '', '/admin/requests');
+    it('redirects accessing /admin/support to staff app portal', async () => {
+      window.history.pushState(null, '', '/admin/support');
+      await act(async () => {
+        render(<App />);
+      });
+
+      expect(staffRedirect.redirectToStaffApp).toHaveBeenCalledWith('admin');
+    });
+
+    it('redirects authenticated staff user (receptionist) to staff app portal on initAuth', async () => {
+      window.history.pushState(null, '', '/main');
       vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
         data: {
           session: {
@@ -1573,190 +1548,21 @@ describe('App Root and Auth Gating', () => {
         error: null,
       } as never);
       vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
-        data: { user: { id: 'receptionist-user', email: 'receptionist@example.com' } },
-        error: null,
-      } as never);
-      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
         data: {
-          subscription: {
-            id: 'sub-receptionist-role',
-            callback: vi.fn(),
-            unsubscribe: vi.fn(),
+          user: {
+            id: 'receptionist-user',
+            email: 'receptionist@example.com',
+            user_metadata: { role: 'receptionist' },
           },
         },
-      } as never);
-
-      vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
-        if (table === 'profiles') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                maybeSingle: vi.fn().mockResolvedValue({
-                  data: { role: 'receptionist' },
-                  error: null,
-                }),
-              }),
-            }),
-          } as never;
-        }
-        if (table === 'appointments') {
-          return {
-            select: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({
-                data: [],
-                error: null,
-              }),
-            }),
-          } as never;
-        }
-        if (table === 'masters') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                order: vi.fn().mockResolvedValue({
-                  data: [],
-                  error: null,
-                }),
-              }),
-            }),
-          } as never;
-        }
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-        } as never;
-      }) as never);
-
-      await act(async () => {
-        render(<App />);
-      });
-
-      expect(
-        screen.getByRole('heading', { level: 1, name: 'Обробка заявок' })
-      ).toBeDefined();
-    });
-
-    it('redirects unauthenticated user accessing /admin/support to /login', async () => {
-      window.history.pushState(null, '', '/admin/support');
-      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
-        data: { session: null },
         error: null,
-      } as never);
-      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
-        data: {
-          subscription: {
-            id: 'sub-admin-support-noauth',
-            callback: vi.fn(),
-            unsubscribe: vi.fn(),
-          },
-        },
       } as never);
 
       await act(async () => {
         render(<App />);
       });
 
-      expect(screen.getByRole('heading', { level: 1, name: 'Вхід' })).toBeDefined();
-    });
-
-    it('redirects client user accessing /admin/support to /main', async () => {
-      window.history.pushState(null, '', '/admin/support');
-      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
-        data: {
-          session: {
-            user: { id: 'client-user-sup', email: 'client@example.com' },
-          },
-        },
-        error: null,
-      } as never);
-      vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
-        data: { user: { id: 'client-user-sup', email: 'client@example.com' } },
-        error: null,
-      } as never);
-      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
-        data: {
-          subscription: {
-            id: 'sub-client-support-role',
-            callback: vi.fn(),
-            unsubscribe: vi.fn(),
-          },
-        },
-      } as never);
-
-      await act(async () => {
-        render(<App />);
-      });
-
-      expect(screen.getByText('Запланований візит')).toBeDefined();
-    });
-
-    it('renders AdminSupportPage when user has receptionist role', async () => {
-      window.history.pushState(null, '', '/admin/support');
-      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
-        data: {
-          session: {
-            user: { id: 'receptionist-user-sup', email: 'receptionist@example.com' },
-          },
-        },
-        error: null,
-      } as never);
-      vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
-        data: { user: { id: 'receptionist-user-sup', email: 'receptionist@example.com' } },
-        error: null,
-      } as never);
-      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
-        data: {
-          subscription: {
-            id: 'sub-receptionist-support-role',
-            callback: vi.fn(),
-            unsubscribe: vi.fn(),
-          },
-        },
-      } as never);
-
-      vi.spyOn(supabase, 'channel').mockReturnValue({
-        on: () => ({ subscribe: () => ({}) }),
-      } as never);
-      vi.spyOn(supabase, 'removeChannel').mockReturnValue(Promise.resolve('ok') as never);
-
-      vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
-        if (table === 'profiles') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                maybeSingle: vi.fn().mockResolvedValue({
-                  data: { role: 'receptionist' },
-                  error: null,
-                }),
-              }),
-            }),
-          } as never;
-        }
-        if (table === 'support_tickets') {
-          return {
-            select: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({
-                data: [],
-                error: null,
-              }),
-            }),
-          } as never;
-        }
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-        } as never;
-      }) as never);
-
-      await act(async () => {
-        render(<App />);
-      });
-
-      expect(
-        screen.getByRole('heading', { level: 1, name: 'Служба підтримки' })
-      ).toBeDefined();
+      expect(staffRedirect.redirectToStaffApp).toHaveBeenCalledWith('receptionist');
     });
 
     it('redirects unauthenticated user accessing /dashboard to /login', async () => {
@@ -1780,77 +1586,6 @@ describe('App Root and Auth Gating', () => {
       });
 
       expect(screen.getByRole('heading', { level: 1, name: 'Вхід' })).toBeDefined();
-    });
-
-    it('redirects receptionist accessing /dashboard to /admin/requests', async () => {
-      window.history.pushState(null, '', '/dashboard');
-      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
-        data: {
-          session: {
-            user: {
-              id: 'receptionist-user-dash',
-              email: 'receptionist@example.com',
-              user_metadata: { role: 'receptionist' },
-            },
-          },
-        },
-        error: null,
-      } as never);
-      vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
-        data: {
-          user: {
-            id: 'receptionist-user-dash',
-            email: 'receptionist@example.com',
-            user_metadata: { role: 'receptionist' },
-          },
-        },
-        error: null,
-      } as never);
-      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
-        data: {
-          subscription: {
-            id: 'sub-receptionist-dash',
-            callback: vi.fn(),
-            unsubscribe: vi.fn(),
-          },
-        },
-      } as never);
-
-      vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
-        if (table === 'profiles') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                maybeSingle: vi.fn().mockResolvedValue({
-                  data: { role: 'receptionist' },
-                  error: null,
-                }),
-              }),
-            }),
-          } as never;
-        }
-        if (table === 'appointments' || table === 'masters') {
-          return {
-            select: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({ data: [], error: null }),
-              eq: vi.fn().mockReturnValue({
-                order: vi.fn().mockResolvedValue({ data: [], error: null }),
-              }),
-            }),
-          } as never;
-        }
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-        } as never;
-      }) as never);
-
-      await act(async () => {
-        render(<App />);
-      });
-
-      expect(screen.getByRole('heading', { level: 1, name: 'Обробка заявок' })).toBeDefined();
     });
 
     it('redirects client accessing /dashboard to /main', async () => {
@@ -1894,7 +1629,7 @@ describe('App Root and Auth Gating', () => {
       expect(screen.getByText('Запланований візит')).toBeDefined();
     });
 
-    it('redirects master accessing /dashboard to /admin/requests', async () => {
+    it('redirects master accessing /dashboard to staff app portal', async () => {
       window.history.pushState(null, '', '/dashboard');
       vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
         data: {
@@ -1941,16 +1676,6 @@ describe('App Root and Auth Gating', () => {
             }),
           } as never;
         }
-        if (table === 'appointments' || table === 'masters') {
-          return {
-            select: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({ data: [], error: null }),
-              eq: vi.fn().mockReturnValue({
-                order: vi.fn().mockResolvedValue({ data: [], error: null }),
-              }),
-            }),
-          } as never;
-        }
         return {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
@@ -1962,10 +1687,10 @@ describe('App Root and Auth Gating', () => {
         render(<App />);
       });
 
-      expect(screen.getByRole('heading', { level: 1, name: 'Обробка заявок' })).toBeDefined();
+      expect(staffRedirect.redirectToStaffApp).toHaveBeenCalledWith('master');
     });
 
-    it('renders RequestProcessingPage when user has master role', async () => {
+    it('redirects master accessing /admin/requests to staff app portal', async () => {
       window.history.pushState(null, '', '/admin/requests');
       vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
         data: {
@@ -2002,16 +1727,6 @@ describe('App Root and Auth Gating', () => {
             }),
           } as never;
         }
-        if (table === 'appointments' || table === 'masters') {
-          return {
-            select: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({ data: [], error: null }),
-              eq: vi.fn().mockReturnValue({
-                order: vi.fn().mockResolvedValue({ data: [], error: null }),
-              }),
-            }),
-          } as never;
-        }
         return {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
@@ -2023,7 +1738,7 @@ describe('App Root and Auth Gating', () => {
         render(<App />);
       });
 
-      expect(screen.getByRole('heading', { level: 1, name: 'Обробка заявок' })).toBeDefined();
+      expect(staffRedirect.redirectToStaffApp).toHaveBeenCalled();
     });
   });
 });

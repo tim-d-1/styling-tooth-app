@@ -1,6 +1,5 @@
 import { useState, useEffect, type FC } from 'react';
 import Header from '@/components/layout/Header';
-import Icon from '@/components/ui/Icon';
 import LocationBar from './LocationBar';
 import VisitSection, { type VisitData } from './VisitSection';
 import PromoBannersGrid from './PromoBannersGrid';
@@ -280,44 +279,6 @@ export const MainPage: FC<MainPageProps> = ({
           onLocationClick={onLocationClick}
           onNotificationClick={() => showToast('')}
         />
-
-        {(userRole === 'admin' || userRole === 'receptionist' || userRole === 'master') && (
-          <div className="max-w-[75rem] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-            <div
-              data-testid="staff-role-banner"
-              className="w-full bg-[#96B3E2]/15 border border-[#96B3E2]/40 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-soft-blue text-white flex items-center justify-center shrink-0">
-                  <Icon name="fi-rr-user-gear" size={20} />
-                </div>
-                <div>
-                  <p className="font-accented font-bold text-base text-content-dark m-0">
-                    Ви увійшли як{' '}
-                    {userRole === 'admin'
-                      ? 'Адміністратор'
-                      : userRole === 'master'
-                      ? 'Майстер'
-                      : 'Рецепція'}
-                  </p>
-                  <p className="font-primary text-xs sm:text-sm text-content-dark/70 m-0">
-                    {userRole === 'master'
-                      ? 'Перегляд призначених візитів, заявок та робочого графіка'
-                      : 'Керування заявками на візити та зверненнями клієнтів'}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={onDashboardClick}
-                className="px-4 py-2 bg-terracotta hover:bg-terracotta-hover text-white text-sm font-semibold rounded-xl transition-all cursor-pointer border-0 outline-none flex items-center justify-center gap-2 shrink-0 shadow-xs"
-              >
-                <span>Панель заявок</span>
-                <Icon name="fi-rr-arrow-right" size={14} />
-              </button>
-            </div>
-          </div>
-        )}
 
         <VisitSection
           visit={visit}

@@ -12,6 +12,7 @@
 
 node_modules/
 web-app/dist/
+staff-app/dist/
 
 .env
 .env.*

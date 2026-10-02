@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, type FC } from 'react';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import StaffHeader from '@/components/layout/StaffHeader';
+import StaffFooter from '@/components/layout/StaffFooter';
 import Icon from '@/components/ui/Icon';
 import AdminMetricsBar from './components/AdminMetricsBar';
 import RequestCard from './components/RequestCard';
@@ -26,6 +26,8 @@ export interface RequestProcessingPageProps {
   onRegisterClick?: () => void;
   onProfileClick?: () => void;
   onNavClick?: (nav: string) => void;
+  onNavigateTab?: (tab: 'requests' | 'support') => void;
+  onLogout?: () => void;
   onToast?: (message: string) => void;
   initialRequests?: AppointmentRequest[];
   initialMasters?: MasterRosterItem[];
@@ -40,11 +42,9 @@ const FILTER_ITEMS: { id: RequestFilter; label: string }[] = [
 ];
 
 export const RequestProcessingPage: FC<RequestProcessingPageProps> = ({
-  isLoggedIn = true,
-  onLoginClick,
-  onRegisterClick,
-  onProfileClick,
   onNavClick,
+  onNavigateTab,
+  onLogout,
   onToast,
   initialRequests,
   initialMasters,
@@ -203,18 +203,10 @@ export const RequestProcessingPage: FC<RequestProcessingPageProps> = ({
 
   return (
     <div className="min-h-screen bg-surface-cream flex flex-col font-primary text-content-dark selection:bg-brand-coral/20">
-      <Header
-        isLoggedIn={isLoggedIn}
-        onLoginClick={onLoginClick}
-        onRegisterClick={onRegisterClick}
-        onProfileClick={onProfileClick}
-        onNavClick={onNavClick}
-        activeNav="admin/requests"
-        customNavItems={[
-          { id: 'admin/requests', label: 'Заявки' },
-          { id: 'admin/support', label: 'Служба підтримки' },
-          { id: 'home', label: 'Головна' },
-        ]}
+      <StaffHeader
+        activeTab="requests"
+        onNavigateTab={(tab) => onNavigateTab ? onNavigateTab(tab) : onNavClick?.(tab === 'requests' ? 'admin/requests' : 'admin/support')}
+        onLogout={onLogout || (() => {})}
       />
 
       <main className="flex-1 w-full max-w-[75rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 flex flex-col gap-8">
@@ -316,7 +308,7 @@ export const RequestProcessingPage: FC<RequestProcessingPageProps> = ({
         </div>
       </main>
 
-      <Footer />
+      <StaffFooter />
     </div>
   );
 };

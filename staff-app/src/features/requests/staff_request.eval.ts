@@ -45,7 +45,7 @@ function isValidStatusTransition(
   }
 }
 
-describe('Admin and Role System Eval Suite', () => {
+describe('Staff Portal Request & Role System Eval Suite', () => {
   it('correctly calculates metrics for empty requests list', () => {
     const metrics = calculateMetrics([]);
     expect(metrics).toEqual({
@@ -143,7 +143,7 @@ describe('Admin and Role System Eval Suite', () => {
     expect(admin.canManageAppointments).toBe(true);
   });
 
-  it('enforces status machine transitions per database migration 0014', () => {
+  it('enforces status machine transitions per database rules', () => {
     expect(isValidStatusTransition('new', 'confirmed', true)).toBe(true);
     expect(isValidStatusTransition('new', 'cancelled', true)).toBe(true);
     expect(isValidStatusTransition('confirmed', 'in_progress', true)).toBe(true);

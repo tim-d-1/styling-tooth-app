@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, act, within } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import Header from '@/components/layout/Header';
 import LocationBar from './LocationBar';
 import GuestBanner from './GuestBanner';
@@ -561,63 +561,22 @@ describe('Main Page Components', () => {
       ).toBeDefined();
     });
 
-    it('renders staff role banner when userRole is receptionist and triggers onDashboardClick', () => {
-      const handleDashboardClick = vi.fn();
-      render(
-        <MainPage
-          isLoggedIn={true}
-          userRole="receptionist"
-          onDashboardClick={handleDashboardClick}
-        />
-      );
-
-      const banner = screen.getByTestId('staff-role-banner');
-      expect(within(banner).getByText('Ви увійшли як Рецепція')).toBeDefined();
-
-      const dashboardBtn = within(banner).getByRole('button', { name: /Панель заявок/i });
-      fireEvent.click(dashboardBtn);
-      expect(handleDashboardClick).toHaveBeenCalledTimes(1);
+    it('does not render staff banner for any role in customer web app', () => {
+      const roles = ['client', 'receptionist', 'admin', 'master'];
+      for (const role of roles) {
+        const { unmount } = render(
+          <MainPage
+            isLoggedIn={true}
+            userRole={role}
+          />
+        );
+        expect(screen.queryByTestId('staff-role-banner')).toBeNull();
+        expect(screen.queryByText(/Ви увійшли як/i)).toBeNull();
+        unmount();
+      }
     });
 
-    it('renders staff role banner when userRole is admin', () => {
-      render(
-        <MainPage
-          isLoggedIn={true}
-          userRole="admin"
-        />
-      );
-
-      const banner = screen.getByTestId('staff-role-banner');
-      expect(within(banner).getByText('Ви увійшли як Адміністратор')).toBeDefined();
-    });
-
-    it('renders staff role banner when userRole is master', () => {
-      render(
-        <MainPage
-          isLoggedIn={true}
-          userRole="master"
-        />
-      );
-
-      const banner = screen.getByTestId('staff-role-banner');
-      expect(within(banner).getByText('Ви увійшли як Майстер')).toBeDefined();
-      expect(
-        within(banner).getByText('Перегляд призначених візитів, заявок та робочого графіка')
-      ).toBeDefined();
-    });
-
-    it('does not render staff banner when userRole is client', () => {
-      render(
-        <MainPage
-          isLoggedIn={true}
-          userRole="client"
-        />
-      );
-
-      expect(screen.queryByTestId('staff-role-banner')).toBeNull();
-    });
-
-    it('Header renders staff requests button for receptionist', () => {
+    it('Header does not render staff requests button or admin nav item in customer app', () => {
       const handleNavClick = vi.fn();
       render(
         <Header
@@ -627,29 +586,11 @@ describe('Main Page Components', () => {
         />
       );
 
-      const staffBtn = screen.getByRole('button', { name: 'Заявки' });
-      expect(staffBtn).toBeDefined();
-      fireEvent.click(staffBtn);
-      expect(handleNavClick).toHaveBeenCalledWith('admin/requests');
-    });
-
-    it('Header renders staff navigation item and button for master', () => {
-      const handleNavClick = vi.fn();
-      render(
-        <Header
-          isLoggedIn={true}
-          userRole="master"
-          onNavClick={handleNavClick}
-        />
-      );
-
-      const navBtn = screen.getByRole('button', { name: 'Панель заявок' });
-      expect(navBtn).toBeDefined();
-      fireEvent.click(navBtn);
-      expect(handleNavClick).toHaveBeenCalledWith('admin/requests');
-
-      const actionBtn = screen.getByRole('button', { name: 'Заявки' });
-      expect(actionBtn).toBeDefined();
+      expect(screen.queryByRole('button', { name: 'Заявки' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Панель заявок' })).toBeNull();
+      expect(screen.getByRole('button', { name: 'Послуги' })).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Про нас' })).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Контакти' })).toBeDefined();
     });
   });
 });

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, type FC } from 'react';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import StaffHeader from '@/components/layout/StaffHeader';
+import StaffFooter from '@/components/layout/StaffFooter';
 import TicketQueueTable from './components/TicketQueueTable';
 import StaffChatWorkspace from './components/StaffChatWorkspace';
 import CustomerContextCard from './components/CustomerContextCard';
@@ -14,6 +14,8 @@ export interface AdminSupportPageProps {
   onRegisterClick?: () => void;
   onProfileClick?: () => void;
   onNavClick?: (nav: string) => void;
+  onNavigateTab?: (tab: 'requests' | 'support') => void;
+  onLogout?: () => void;
   onToast?: (message: string) => void;
 }
 
@@ -35,11 +37,9 @@ const CATEGORY_OPTIONS: { value: SupportCategory; label: string }[] = [
 ];
 
 export const AdminSupportPage: FC<AdminSupportPageProps> = ({
-  isLoggedIn = true,
-  onLoginClick,
-  onRegisterClick,
-  onProfileClick,
   onNavClick,
+  onNavigateTab,
+  onLogout,
   onToast,
 }) => {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -139,18 +139,10 @@ export const AdminSupportPage: FC<AdminSupportPageProps> = ({
 
   return (
     <div className="min-h-screen bg-surface-cream flex flex-col font-primary text-content-dark selection:bg-brand-coral/20">
-      <Header
-        isLoggedIn={isLoggedIn}
-        onLoginClick={onLoginClick}
-        onRegisterClick={onRegisterClick}
-        onProfileClick={onProfileClick}
-        onNavClick={onNavClick}
-        activeNav="admin/support"
-        customNavItems={[
-          { id: 'admin/requests', label: 'Заявки' },
-          { id: 'admin/support', label: 'Служба підтримки' },
-          { id: 'home', label: 'Головна' },
-        ]}
+      <StaffHeader
+        activeTab="support"
+        onNavigateTab={(tab) => onNavigateTab ? onNavigateTab(tab) : onNavClick?.(tab === 'requests' ? 'admin/requests' : 'admin/support')}
+        onLogout={onLogout || (() => {})}
       />
 
       <main className="flex-1 w-full max-w-[75rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 flex flex-col gap-8">
@@ -231,7 +223,7 @@ export const AdminSupportPage: FC<AdminSupportPageProps> = ({
         </div>
       </main>
 
-      <Footer />
+      <StaffFooter />
     </div>
   );
 };

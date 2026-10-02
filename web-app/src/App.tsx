@@ -34,8 +34,7 @@ import NotificationSettingsPage from '@/features/profile/NotificationSettingsPag
 import FaqPage from '@/features/faq/FaqPage';
 import PrivacyPolicyPage from '@/features/legal/PrivacyPolicyPage';
 import TermsOfUsePage from '@/features/legal/TermsOfUsePage';
-import RequestProcessingPage from '@/features/admin/RequestProcessingPage';
-import AdminSupportPage from '@/features/admin/AdminSupportPage';
+import { redirectToStaffApp, isStaffRole } from '@/lib/staff_redirect';
 import type { UserRole } from '@/features/auth/auth_types';
 import { CITY_STORAGE_KEY } from '@/features/location/city_types';
 import ScrollToTop from '@/components/layout/ScrollToTop';
@@ -72,43 +71,12 @@ export function ProtectedRoute({
   return <>{children}</>;
 }
 
-export interface RoleRouteProps {
-  isLoggedIn: boolean;
-  isAuthLoading: boolean;
-  userRole?: UserRole;
-  allowedRoles: UserRole[];
-  children: ReactNode;
-}
+export function StaffRedirectRoute() {
+  useEffect(() => {
+    redirectToStaffApp('admin');
+  }, []);
 
-export function RoleRoute({
-  isLoggedIn,
-  isAuthLoading,
-  userRole = 'client',
-  allowedRoles,
-  children,
-}: RoleRouteProps) {
-  const location = useLocation();
-
-  if (isAuthLoading) {
-    return <div className="min-h-screen bg-surface-cream" />;
-  }
-
-  if (!isLoggedIn) {
-    const returnTo = location.pathname + location.search;
-    return (
-      <Navigate
-        to={`/login?from=${encodeURIComponent(returnTo)}`}
-        state={{ from: returnTo }}
-        replace
-      />
-    );
-  }
-
-  if (!allowedRoles.includes(userRole)) {
-    return <Navigate to="/main" replace />;
-  }
-
-  return <>{children}</>;
+  return <div className="min-h-screen bg-surface-cream" />;
 }
 
 function ArticleRouteWrapper({
@@ -200,8 +168,9 @@ export function AppRoutes() {
     const state = location.state as { from?: string } | null;
     if (state?.from) return state.from;
     const activeRole = role ?? userRole;
-    if (activeRole === 'admin' || activeRole === 'receptionist' || activeRole === 'master') {
-      return '/admin/requests';
+    if (isStaffRole(activeRole)) {
+      redirectToStaffApp(activeRole);
+      return '/main';
     }
     return fallback;
   };
@@ -240,8 +209,13 @@ export function AppRoutes() {
           userData.user.app_metadata?.role ||
           localStorage.getItem('user_role')) as UserRole | undefined;
 
+        if (isStaffRole(metaRole)) {
+          redirectToStaffApp(metaRole);
+          return;
+        }
+
         if (isMounted) {
-          if (metaRole && ['admin', 'receptionist', 'master', 'client'].includes(metaRole)) {
+          if (metaRole && ['client'].includes(metaRole)) {
             setUserRole(metaRole);
           }
           setIsLoggedIn(true);
@@ -255,6 +229,11 @@ export function AppRoutes() {
               .select('role')
               .eq('id', userData.user.id)
               .maybeSingle();
+
+            if (profile?.role && isStaffRole(profile.role)) {
+              redirectToStaffApp(profile.role);
+              return;
+            }
 
             if (isMounted && profile?.role) {
               setUserRole(profile.role as UserRole);
@@ -303,8 +282,13 @@ export function AppRoutes() {
           session.user.app_metadata?.role ||
           localStorage.getItem('user_role')) as UserRole | undefined;
 
+        if (isStaffRole(metaRole)) {
+          redirectToStaffApp(metaRole);
+          return;
+        }
+
         if (isMounted) {
-          if (metaRole && ['admin', 'receptionist', 'master', 'client'].includes(metaRole)) {
+          if (metaRole && ['client'].includes(metaRole)) {
             setUserRole(metaRole);
           }
           setIsLoggedIn(true);
@@ -318,6 +302,11 @@ export function AppRoutes() {
               .select('role')
               .eq('id', session.user.id)
               .maybeSingle();
+
+            if (profile?.role && isStaffRole(profile.role)) {
+              redirectToStaffApp(profile.role);
+              return;
+            }
 
             if (isMounted && profile?.role) {
               setUserRole(profile.role as UserRole);
@@ -539,8 +528,6 @@ export function AppRoutes() {
             <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
               <MainPage
                 isLoggedIn={isLoggedIn}
-                userRole={userRole}
-                onDashboardClick={() => navigate('/admin/requests')}
                 onLoginClick={() => navigate('/login')}
                 onRegisterClick={() => navigate('/register')}
                 onProfileClick={() => navigate('/profile')}
@@ -594,14 +581,17 @@ export function AppRoutes() {
                       }
                     }
                   } catch {}
+
+                  if (isStaffRole(role)) {
+                    redirectToStaffApp(role);
+                    return;
+                  }
+
                   setIsLoggedIn(true);
                   const searchParams = new URLSearchParams(location.search);
                   const returnTo = searchParams.get('from') || searchParams.get('returnTo');
                   const state = location.state as { from?: string } | null;
-                  const isStaff =
-                    role === 'admin' || role === 'receptionist' || role === 'master';
-                  const target =
-                    returnTo || state?.from || (isStaff ? '/admin/requests' : '/main');
+                  const target = returnTo || state?.from || '/main';
                   navigate(target, { replace: true });
                   showToast('Успішний вхід у систему');
                 }}
@@ -664,8 +654,6 @@ export function AppRoutes() {
                 onNotificationsClick={() => navigate('/profile/notifications')}
                 onSupportClick={() => navigate('/support/chat')}
                 onFaqClick={() => navigate('/faq')}
-                onDashboardClick={() => navigate('/admin/requests')}
-                userRole={userRole}
                 onToast={showToast}
               />
             </ProtectedRoute>
@@ -1132,70 +1120,15 @@ export function AppRoutes() {
           element={<Navigate to="/support/new-ticket" replace />}
         />
 
-        <Route
-          path="/admin/requests"
-          element={
-            <RoleRoute
-              isLoggedIn={isLoggedIn}
-              isAuthLoading={isAuthLoading}
-              userRole={userRole}
-              allowedRoles={['admin', 'receptionist', 'master']}
-            >
-              <RequestProcessingPage
-                isLoggedIn={isLoggedIn}
-                onLoginClick={() => navigate('/login')}
-                onRegisterClick={() => navigate('/register')}
-                onProfileClick={() => navigate('/profile')}
-                onNavClick={(nav) => {
-                  if (nav === 'home') navigate(isLoggedIn ? '/main' : '/');
-                  else navigate(`/${nav}`);
-                }}
-                onToast={showToast}
-              />
-            </RoleRoute>
-          }
-        />
-        <Route
-          path="/admin/support"
-          element={
-            <RoleRoute
-              isLoggedIn={isLoggedIn}
-              isAuthLoading={isAuthLoading}
-              userRole={userRole}
-              allowedRoles={['admin', 'receptionist', 'master']}
-            >
-              <AdminSupportPage
-                isLoggedIn={isLoggedIn}
-                onLoginClick={() => navigate('/login')}
-                onRegisterClick={() => navigate('/register')}
-                onProfileClick={() => navigate('/profile')}
-                onNavClick={(nav) => {
-                  if (nav === 'home') navigate(isLoggedIn ? '/main' : '/');
-                  else navigate(`/${nav}`);
-                }}
-                onToast={showToast}
-              />
-            </RoleRoute>
-          }
-        />
-        <Route path="/admin" element={<Navigate to="/admin/requests" replace />} />
-        <Route path="/receptionist" element={<Navigate to="/admin/requests" replace />} />
-        <Route path="/master" element={<Navigate to="/admin/requests" replace />} />
-        <Route path="/staff" element={<Navigate to="/admin/requests" replace />} />
-        <Route path="/requests" element={<Navigate to="/admin/requests" replace />} />
-        <Route path="/dashboard/requests" element={<Navigate to="/admin/requests" replace />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
-              {userRole === 'admin' || userRole === 'receptionist' || userRole === 'master' ? (
-                <Navigate to="/admin/requests" replace />
-              ) : (
-                <Navigate to="/main" replace />
-              )}
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/admin/*" element={<StaffRedirectRoute />} />
+        <Route path="/admin" element={<StaffRedirectRoute />} />
+        <Route path="/staff/*" element={<StaffRedirectRoute />} />
+        <Route path="/staff" element={<StaffRedirectRoute />} />
+        <Route path="/receptionist" element={<StaffRedirectRoute />} />
+        <Route path="/master" element={<StaffRedirectRoute />} />
+        <Route path="/requests" element={<StaffRedirectRoute />} />
+        <Route path="/dashboard/requests" element={<StaffRedirectRoute />} />
+        <Route path="/dashboard" element={<Navigate to="/main" replace />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

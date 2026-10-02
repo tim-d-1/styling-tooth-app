@@ -7,9 +7,12 @@
     "dev:web": "npm --prefix web-app run dev",
     "build:web": "npm --prefix web-app run build",
     "test:web": "npm --prefix web-app run test",
+    "dev:staff": "npm --prefix staff-app run dev",
+    "build:staff": "npm --prefix staff-app run build",
+    "test:staff": "npm --prefix staff-app run test",
     "test:backend": "node supabase/tests/backend.test.mjs",
     "test:seed": "node supabase/tests/seed.test.mjs",
-    "test": "npm run test:backend && npm run test:seed && npm run test:web"
+    "test": "npm run test:backend && npm run test:seed && npm run test:web && npm run test:staff"
   },
 
   "devDependencies": {
