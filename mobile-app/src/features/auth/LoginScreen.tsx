@@ -24,7 +24,6 @@ import {
   EyeIcon,
   EyeOffIcon,
   GoogleIcon,
-  AppleIcon,
   GlobeIcon,
 } from '../../components/icons/AuthIcons';
 
@@ -41,7 +40,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   defaultIdentifier = '',
 }) => {
   const insets = useSafeAreaInsets();
-  const [username, setUsername] = useState('');
   const [identifier, setIdentifier] = useState(defaultIdentifier);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -53,7 +51,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     setLanguage((prev) => (prev === 'UA' ? 'EN' : 'UA'));
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'apple') => {
+  const handleSocialLogin = async (provider: 'google') => {
     try {
       setIsLoading(true);
       setErrorMessage(null);
@@ -77,7 +75,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const handleSubmit = async () => {
     setErrorMessage(null);
 
-    const targetIdentifier = identifier.trim() || username.trim();
+    const targetIdentifier = identifier.trim();
     const validation = validateLoginForm(targetIdentifier, password);
     if (!validation.isValid) {
       setErrorMessage(validation.error);
@@ -217,22 +215,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
           {/* Form Fields */}
           <View style={styles.formContainer}>
-            {/* Username Field */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>ІМ’Я КОРИСТУВАЧА</Text>
-              <TextInput
-                style={styles.input}
-                value={username}
-                onChangeText={setUsername}
-                placeholder="Marichka_bkk"
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="none"
-                testID="username-input"
-                accessibilityLabel="ім’я користувача"
-              />
-              <View style={styles.inputLine} />
-            </View>
-
             {/* Email / Phone Field */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>EMAIL/НОМЕР ТЕЛЕФОНУ</Text>
@@ -240,8 +222,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 style={styles.input}
                 value={identifier}
                 onChangeText={setIdentifier}
-                placeholder="bulakhmaria@gmail.com"
-                placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 testID="identifier-input"
@@ -258,8 +238,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   style={[styles.input, styles.passwordInput]}
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="••••••••••••••"
-                  placeholderTextColor={colors.textMuted}
                   secureTextEntry={!showPassword}
                   testID="password-input"
                   accessibilityLabel="Пароль"
@@ -294,17 +272,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               accessibilityLabel="Вхід через Google"
               testID="google-login-button"
             >
-              <GoogleIcon size={22} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.socialButton}
-              onPress={() => handleSocialLogin('apple')}
-              accessibilityRole="button"
-              accessibilityLabel="Вхід через Apple"
-              testID="apple-login-button"
-            >
-              <AppleIcon size={22} />
+              <GoogleIcon size={24} />
             </TouchableOpacity>
           </View>
 

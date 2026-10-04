@@ -17,13 +17,16 @@ describe('LoginScreen', () => {
     expect(screen.getByText('Стильний зубець')).toBeInTheDocument();
     expect(screen.getByText('Вхід')).toBeInTheDocument();
 
-    expect(screen.getByTestId('username-input')).toBeInTheDocument();
+    expect(screen.queryByTestId('username-input')).toBeNull();
     expect(screen.getByTestId('identifier-input')).toBeInTheDocument();
     expect(screen.getByTestId('password-input')).toBeInTheDocument();
 
     expect(screen.getByTestId('google-login-button')).toBeInTheDocument();
-    expect(screen.getByTestId('apple-login-button')).toBeInTheDocument();
+    expect(screen.queryByTestId('apple-login-button')).toBeNull();
     expect(screen.getByTestId('submit-login-button')).toBeInTheDocument();
+
+    expect(screen.getByTestId('identifier-input')).not.toHaveAttribute('placeholder');
+    expect(screen.getByTestId('password-input')).not.toHaveAttribute('placeholder');
   });
 
   it('navigates back when back button is pressed', () => {

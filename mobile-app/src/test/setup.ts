@@ -13,6 +13,20 @@ vi.mock('react-native-safe-area-context', () => {
   };
 });
 
+vi.mock('react-native-svg', () => {
+  const React = require('react');
+  const SvgMock = ({ children, ...props }: any) => React.createElement('svg', props, children);
+  const PathMock = (props: any) => React.createElement('path', props);
+  const GMock = ({ children, ...props }: any) => React.createElement('g', props, children);
+  return {
+    __esModule: true,
+    default: SvgMock,
+    Svg: SvgMock,
+    Path: PathMock,
+    G: GMock,
+  };
+});
+
 vi.mock('expo-secure-store', () => ({
   getItemAsync: vi.fn().mockResolvedValue(null),
   setItemAsync: vi.fn().mockResolvedValue(undefined),
