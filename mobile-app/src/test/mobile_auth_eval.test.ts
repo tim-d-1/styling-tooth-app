@@ -5,6 +5,7 @@ import {
   normalizePhoneNumber,
   phoneToAuthEmail,
   validateLoginForm,
+  parseOAuthRedirectUrl,
 } from '../features/auth/login_utils';
 import { colors, radii } from '../theme/tokens';
 
@@ -71,6 +72,53 @@ describe('Mobile Auth Eval Suite: Generalization, Edge Cases, and Contracts', ()
       expect(colors.surfaceCream.toLowerCase()).toBe('#fffbf6');
       expect(colors.contentDark.toLowerCase()).toBe('#242f35');
       expect(radii.md).toBe(12);
+    });
+  });
+
+  describe('Eval: OAuth Redirect Parameter Extraction Matrix', () => {
+    const oauthCases = [
+      {
+        url: 'stylingtooth://auth/callback?code=pkce-auth-code-12345',
+        expectedCode: 'pkce-auth-code-12345',
+        expectedError: null,
+      },
+      {
+        url: 'exp://192.168.1.5:8081/--/auth/callback?code=expo-go-code-67890',
+        expectedCode: 'expo-go-code-67890',
+        expectedError: null,
+      },
+      {
+        url: 'stylingtooth://auth/callback#access_token=jwt-access&refresh_token=jwt-refresh',
+        expectedAccessToken: 'jwt-access',
+        expectedRefreshToken: 'jwt-refresh',
+        expectedError: null,
+      },
+      {
+        url: 'stylingtooth://auth/callback?error=access_denied&error_description=User+denied+access',
+        expectedCode: null,
+        expectedError: 'User denied access',
+      },
+      {
+        url: 'stylingtooth://auth/callback',
+        expectedCode: null,
+        expectedError: null,
+      },
+    ];
+
+    oauthCases.forEach(({ url, expectedCode, expectedAccessToken, expectedRefreshToken, expectedError }, idx) => {
+      it(`evaluates OAuth redirect parse case ${idx + 1}`, () => {
+        const parsed = parseOAuthRedirectUrl(url);
+        if (expectedCode !== undefined) {
+          expect(parsed.code).toBe(expectedCode);
+        }
+        if (expectedAccessToken !== undefined) {
+          expect(parsed.accessToken).toBe(expectedAccessToken);
+        }
+        if (expectedRefreshToken !== undefined) {
+          expect(parsed.refreshToken).toBe(expectedRefreshToken);
+        }
+        expect(parsed.error).toBe(expectedError);
+      });
     });
   });
 });

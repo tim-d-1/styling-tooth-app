@@ -27,6 +27,18 @@ vi.mock('react-native-svg', () => {
   };
 });
 
+vi.mock('expo-web-browser', () => ({
+  maybeCompleteAuthSession: vi.fn(),
+  openAuthSessionAsync: vi.fn().mockResolvedValue({
+    type: 'success',
+    url: 'stylingtooth://auth/callback?code=mock-oauth-code',
+  }),
+}));
+
+vi.mock('expo-auth-session', () => ({
+  makeRedirectUri: vi.fn().mockReturnValue('stylingtooth://auth/callback'),
+}));
+
 vi.mock('expo-secure-store', () => ({
   getItemAsync: vi.fn().mockResolvedValue(null),
   setItemAsync: vi.fn().mockResolvedValue(undefined),
@@ -60,6 +72,14 @@ vi.mock('../lib/supabase', () => {
         }),
         signInWithOAuth: vi.fn().mockResolvedValue({
           data: { url: 'https://oauth.example.com' },
+          error: null,
+        }),
+        exchangeCodeForSession: vi.fn().mockResolvedValue({
+          data: { session: { user: { id: 'mock-user-id', email: 'google-user@example.com' } } },
+          error: null,
+        }),
+        setSession: vi.fn().mockResolvedValue({
+          data: { session: { user: { id: 'mock-user-id', email: 'google-user@example.com' } } },
           error: null,
         }),
         signOut: vi.fn().mockResolvedValue({ error: null }),

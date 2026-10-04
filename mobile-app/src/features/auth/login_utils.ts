@@ -54,3 +54,50 @@ export function validateLoginForm(
   }
   return { isValid: true, error: null };
 }
+
+export interface OAuthRedirectParams {
+  code: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
+  error: string | null;
+}
+
+export function parseOAuthRedirectUrl(url: string): OAuthRedirectParams {
+  const result: OAuthRedirectParams = {
+    code: null,
+    accessToken: null,
+    refreshToken: null,
+    error: null,
+  };
+
+  try {
+    const queryIndex = url.indexOf('?');
+    const hashIndex = url.indexOf('#');
+
+    if (queryIndex !== -1) {
+      const queryString =
+        hashIndex !== -1 && hashIndex > queryIndex
+          ? url.substring(queryIndex + 1, hashIndex)
+          : url.substring(queryIndex + 1);
+      const searchParams = new URLSearchParams(queryString);
+      result.code = searchParams.get('code');
+      result.error =
+        searchParams.get('error_description') || searchParams.get('error');
+    }
+
+    if (hashIndex !== -1) {
+      const hashString = url.substring(hashIndex + 1);
+      const hashParams = new URLSearchParams(hashString);
+      result.accessToken = hashParams.get('access_token');
+      result.refreshToken = hashParams.get('refresh_token');
+      if (!result.error) {
+        result.error =
+          hashParams.get('error_description') || hashParams.get('error');
+      }
+    }
+  } catch {
+    return result;
+  }
+
+  return result;
+}

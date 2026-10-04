@@ -5,6 +5,7 @@ import {
   normalizePhoneNumber,
   phoneToAuthEmail,
   validateLoginForm,
+  parseOAuthRedirectUrl,
 } from './login_utils';
 
 describe('login_utils', () => {
@@ -52,5 +53,29 @@ describe('login_utils', () => {
       isValid: true,
       error: null,
     });
+  });
+
+  it('correctly parses OAuth redirect url query codes, hash tokens and errors', () => {
+    const codeResult = parseOAuthRedirectUrl(
+      'stylingtooth://auth/callback?code=mock-auth-code-123'
+    );
+    expect(codeResult.code).toBe('mock-auth-code-123');
+    expect(codeResult.error).toBeNull();
+
+    const hashResult = parseOAuthRedirectUrl(
+      'stylingtooth://auth/callback#access_token=mock-acc&refresh_token=mock-ref'
+    );
+    expect(hashResult.accessToken).toBe('mock-acc');
+    expect(hashResult.refreshToken).toBe('mock-ref');
+    expect(hashResult.error).toBeNull();
+
+    const errorResult = parseOAuthRedirectUrl(
+      'stylingtooth://auth/callback?error=access_denied&error_description=User+cancelled'
+    );
+    expect(errorResult.error).toBe('User cancelled');
+
+    const malformedResult = parseOAuthRedirectUrl('not-a-valid-url');
+    expect(malformedResult.code).toBeNull();
+    expect(malformedResult.error).toBeNull();
   });
 });

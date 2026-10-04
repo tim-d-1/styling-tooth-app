@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { LoginScreen } from './LoginScreen';
 import { supabase } from '../../lib/supabase';
+import * as WebBrowser from 'expo-web-browser';
 
 describe('LoginScreen', () => {
   beforeEach(() => {
@@ -110,5 +111,73 @@ describe('LoginScreen', () => {
 
     fireEvent.click(toggleButton);
     expect(passwordInput).toHaveAttribute('type', 'password');
+  });
+
+  it('renders register button and calls onNavigateRegister when clicked', () => {
+    const onNavigateRegister = vi.fn();
+    render(<LoginScreen onNavigateRegister={onNavigateRegister} />);
+
+    const registerButton = screen.getByTestId('navigate-register-button');
+    expect(registerButton).toBeInTheDocument();
+    expect(screen.getByText('Ще не маєте акаунту?')).toBeInTheDocument();
+    expect(screen.getByText('Зареєструватися →')).toBeInTheDocument();
+
+    fireEvent.click(registerButton);
+    expect(onNavigateRegister).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers Google OAuth flow via WebBrowser and completes on valid auth', async () => {
+    const onSuccess = vi.fn();
+    (WebBrowser.openAuthSessionAsync as any).mockResolvedValueOnce({
+      type: 'success',
+      url: 'stylingtooth://auth/callback?code=mock-oauth-code',
+    });
+    (supabase.auth.signInWithOAuth as any).mockResolvedValueOnce({
+      data: { url: 'https://accounts.google.com/o/oauth2/v2/auth' },
+      error: null,
+    });
+    (supabase.auth.exchangeCodeForSession as any).mockResolvedValueOnce({
+      data: {
+        session: { user: { id: 'usr-google', email: 'test@gmail.com' } },
+      },
+      error: null,
+    });
+
+    render(<LoginScreen onSuccess={onSuccess} />);
+
+    fireEvent.click(screen.getByTestId('google-login-button'));
+
+    await waitFor(() => {
+      expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
+        provider: 'google',
+        options: {
+          redirectTo: 'stylingtooth://auth/callback',
+          skipBrowserRedirect: true,
+        },
+      });
+      expect(WebBrowser.openAuthSessionAsync).toHaveBeenCalledWith(
+        'https://accounts.google.com/o/oauth2/v2/auth',
+        'stylingtooth://auth/callback'
+      );
+      expect(supabase.auth.exchangeCodeForSession).toHaveBeenCalledWith(
+        'mock-oauth-code'
+      );
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('displays error when Google OAuth fails', async () => {
+    (supabase.auth.signInWithOAuth as any).mockResolvedValueOnce({
+      data: null,
+      error: new Error('OAuth provider not configured'),
+    });
+
+    render(<LoginScreen />);
+
+    fireEvent.click(screen.getByTestId('google-login-button'));
+
+    expect(
+      await screen.findByText('OAuth provider not configured')
+    ).toBeInTheDocument();
   });
 });

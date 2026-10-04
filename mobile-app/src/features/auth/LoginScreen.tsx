@@ -11,6 +11,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
 import { supabase } from '../../lib/supabase';
 import { colors, radii } from '../../theme/tokens';
 import {
@@ -18,6 +20,7 @@ import {
   isEmailIdentifier,
   normalizePhoneNumber,
   phoneToAuthEmail,
+  parseOAuthRedirectUrl,
 } from './login_utils';
 import {
   ArrowLeftIcon,
@@ -26,6 +29,8 @@ import {
   GoogleIcon,
   GlobeIcon,
 } from '../../components/icons/AuthIcons';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export interface LoginScreenProps {
   onBack?: () => void;
@@ -37,6 +42,7 @@ export interface LoginScreenProps {
 export const LoginScreen: React.FC<LoginScreenProps> = ({
   onBack,
   onSuccess,
+  onNavigateRegister,
   defaultIdentifier = '',
 }) => {
   const insets = useSafeAreaInsets();
@@ -55,11 +61,68 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     try {
       setIsLoading(true);
       setErrorMessage(null);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
+
+      const redirectUrl = makeRedirectUri({
+        scheme: 'stylingtooth',
+        path: 'auth/callback',
       });
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: true,
+        },
+      });
+
       if (error) {
         setErrorMessage(error.message);
+        return;
+      }
+
+      if (data?.url) {
+        const result = await WebBrowser.openAuthSessionAsync(
+          data.url,
+          redirectUrl
+        );
+
+        if (result.type === 'success' && result.url) {
+          const params = parseOAuthRedirectUrl(result.url);
+
+          if (params.error) {
+            setErrorMessage(params.error);
+            return;
+          }
+
+          if (params.code) {
+            const { data: sessionData, error: exchangeError } =
+              await supabase.auth.exchangeCodeForSession(params.code);
+
+            if (exchangeError) {
+              setErrorMessage(exchangeError.message);
+              return;
+            }
+
+            if (sessionData?.session) {
+              onSuccess?.();
+            }
+          } else if (params.accessToken && params.refreshToken) {
+            const { data: sessionData, error: setSessionError } =
+              await supabase.auth.setSession({
+                access_token: params.accessToken,
+                refresh_token: params.refreshToken,
+              });
+
+            if (setSessionError) {
+              setErrorMessage(setSessionError.message);
+              return;
+            }
+
+            if (sessionData?.session) {
+              onSuccess?.();
+            }
+          }
+        }
       }
     } catch (err: unknown) {
       const message =
@@ -292,6 +355,30 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <Text style={styles.submitButtonText}>Далі</Text>
             )}
           </TouchableOpacity>
+
+          {onNavigateRegister ? (
+            <TouchableOpacity
+              style={styles.registerLinkButton}
+              onPress={onNavigateRegister}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={
+                language === 'UA'
+                  ? 'Ще не маєте акаунту? Зареєструватися'
+                  : "Don't have an account? Register"
+              }
+              testID="navigate-register-button"
+            >
+              <Text style={styles.registerLinkText}>
+                {language === 'UA'
+                  ? 'Ще не маєте акаунту? '
+                  : "Don't have an account? "}
+                <Text style={styles.registerLinkHighlight}>
+                  {language === 'UA' ? 'Зареєструватися →' : 'Register →'}
+                </Text>
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -432,6 +519,21 @@ const styles = StyleSheet.create({
     color: colors.surfaceCream,
     fontSize: 16,
     fontWeight: '600',
+  },
+  registerLinkButton: {
+    marginTop: 18,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  registerLinkText: {
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  registerLinkHighlight: {
+    color: colors.terracotta,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });
 
