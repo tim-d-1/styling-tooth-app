@@ -4,6 +4,7 @@ import React from 'react';
 import { LoginScreen } from './LoginScreen';
 import { supabase } from '../../lib/supabase';
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 
 describe('LoginScreen', () => {
   beforeEach(() => {
@@ -151,13 +152,13 @@ describe('LoginScreen', () => {
       expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
         provider: 'google',
         options: {
-          redirectTo: 'stylingtooth://auth/callback',
+          redirectTo: 'stylingtooth://',
           skipBrowserRedirect: true,
         },
       });
       expect(WebBrowser.openAuthSessionAsync).toHaveBeenCalledWith(
         'https://accounts.google.com/o/oauth2/v2/auth',
-        'stylingtooth://auth/callback'
+        'stylingtooth://'
       );
       expect(supabase.auth.exchangeCodeForSession).toHaveBeenCalledWith(
         'mock-oauth-code'
@@ -179,5 +180,28 @@ describe('LoginScreen', () => {
     expect(
       await screen.findByText('OAuth provider not configured')
     ).toBeInTheDocument();
+  });
+
+  it('handles incoming deep link and sets session successfully', async () => {
+    const onSuccess = vi.fn();
+    let linkCallback: ((event: { url: string }) => void) | null = null;
+    (Linking.addEventListener as any).mockImplementation((_type: string, cb: any) => {
+      linkCallback = cb;
+      return { remove: vi.fn() };
+    });
+
+    render(<LoginScreen onSuccess={onSuccess} />);
+
+    expect(linkCallback).not.toBeNull();
+
+    await linkCallback!({
+      url: 'stylingtooth://#access_token=token-from-link&refresh_token=refresh-from-link',
+    });
+
+    expect(supabase.auth.setSession).toHaveBeenCalledWith({
+      access_token: 'token-from-link',
+      refresh_token: 'refresh-from-link',
+    });
+    expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 });

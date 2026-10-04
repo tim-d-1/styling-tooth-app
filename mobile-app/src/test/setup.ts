@@ -31,12 +31,18 @@ vi.mock('expo-web-browser', () => ({
   maybeCompleteAuthSession: vi.fn(),
   openAuthSessionAsync: vi.fn().mockResolvedValue({
     type: 'success',
-    url: 'stylingtooth://auth/callback?code=mock-oauth-code',
+    url: 'stylingtooth://?code=mock-oauth-code',
   }),
 }));
 
 vi.mock('expo-auth-session', () => ({
-  makeRedirectUri: vi.fn().mockReturnValue('stylingtooth://auth/callback'),
+  makeRedirectUri: vi.fn().mockReturnValue('stylingtooth://'),
+}));
+
+vi.mock('expo-linking', () => ({
+  addEventListener: vi.fn(() => ({ remove: vi.fn() })),
+  getInitialURL: vi.fn().mockResolvedValue(null),
+  createURL: vi.fn((path) => `stylingtooth://${path || ''}`),
 }));
 
 vi.mock('expo-secure-store', () => ({

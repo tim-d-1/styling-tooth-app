@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { makeRedirectUri } from 'expo-auth-session';
 import { supabase } from '../../lib/supabase';
 import { colors, radii } from '../../theme/tokens';
@@ -57,6 +58,60 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     setLanguage((prev) => (prev === 'UA' ? 'EN' : 'UA'));
   };
 
+  useEffect(() => {
+    const handleUrl = async (url: string) => {
+      const params = parseOAuthRedirectUrl(url);
+
+      if (params.error) {
+        setErrorMessage(params.error);
+        return;
+      }
+
+      if (params.code) {
+        const { data: sessionData, error: exchangeError } =
+          await supabase.auth.exchangeCodeForSession(params.code);
+
+        if (exchangeError) {
+          setErrorMessage(exchangeError.message);
+          return;
+        }
+
+        if (sessionData?.session) {
+          onSuccess?.();
+        }
+      } else if (params.accessToken && params.refreshToken) {
+        const { data: sessionData, error: setSessionError } =
+          await supabase.auth.setSession({
+            access_token: params.accessToken,
+            refresh_token: params.refreshToken,
+          });
+
+        if (setSessionError) {
+          setErrorMessage(setSessionError.message);
+          return;
+        }
+
+        if (sessionData?.session) {
+          onSuccess?.();
+        }
+      }
+    };
+
+    const sub = Linking.addEventListener('url', (event) => {
+      handleUrl(event.url);
+    });
+
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleUrl(url);
+      }
+    });
+
+    return () => {
+      sub.remove();
+    };
+  }, [onSuccess]);
+
   const handleSocialLogin = async (provider: 'google') => {
     try {
       setIsLoading(true);
@@ -64,7 +119,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
       const redirectUrl = makeRedirectUri({
         scheme: 'stylingtooth',
-        path: 'auth/callback',
       });
 
       console.log('[Auth] Google OAuth redirectUrl:', redirectUrl);
