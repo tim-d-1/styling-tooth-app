@@ -67,6 +67,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         path: 'auth/callback',
       });
 
+      console.log('[Auth] Google OAuth redirectUrl:', redirectUrl);
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
