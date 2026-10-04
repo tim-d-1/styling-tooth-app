@@ -113,6 +113,134 @@ describe('App Root and Auth Gating', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Хто ми' })).toBeDefined();
   });
 
+  it('clears stale session and signs out locally when oversized token refresh fails', async () => {
+    localStorage.setItem('user_role', 'client');
+    const signOutSpy = vi.spyOn(supabase.auth, 'signOut').mockResolvedValue({ error: null } as never);
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'A'.repeat(3500),
+          refresh_token: 'revoked-token',
+          user: { id: 'u-bloated', email: 'bloated@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'refreshSession').mockResolvedValue({
+      data: { user: null, session: null },
+      error: { status: 400, message: 'Invalid Refresh Token: Already Used', code: 'refresh_token_already_used' } as never,
+    });
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-1',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(signOutSpy).toHaveBeenCalledWith({ scope: 'local' });
+    expect(localStorage.getItem('user_role')).toBeNull();
+    expect(screen.getByRole('heading', { level: 2, name: 'Хто ми' })).toBeDefined();
+  });
+
+  it('catches exception during oversized token refresh and signs out locally', async () => {
+    localStorage.setItem('user_role', 'client');
+    const signOutSpy = vi.spyOn(supabase.auth, 'signOut').mockResolvedValue({ error: null } as never);
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'B'.repeat(3500),
+          refresh_token: 'broken-token',
+          user: { id: 'u-broken', email: 'broken@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'refreshSession').mockRejectedValue(new Error('Network error on refresh'));
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-1',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(signOutSpy).toHaveBeenCalledWith({ scope: 'local' });
+    expect(localStorage.getItem('user_role')).toBeNull();
+    expect(screen.getByRole('heading', { level: 2, name: 'Хто ми' })).toBeDefined();
+  });
+
+  it('keeps user authenticated when oversized token is successfully refreshed', async () => {
+    const createChain = () => {
+      const chain: Record<string, unknown> = {};
+      chain.select = vi.fn(() => chain);
+      chain.eq = vi.fn(() => chain);
+      chain.neq = vi.fn(() => chain);
+      chain.gte = vi.fn(() => chain);
+      chain.order = vi.fn(() => chain);
+      chain.limit = vi.fn(() => chain);
+      chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+      chain.single = vi.fn().mockResolvedValue({ data: null, error: null });
+      return chain;
+    };
+    vi.spyOn(supabase, 'from').mockImplementation(() => createChain() as never);
+
+    const signOutSpy = vi.spyOn(supabase.auth, 'signOut');
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'C'.repeat(3500),
+          refresh_token: 'valid-refresh-token',
+          user: { id: 'user-refreshed', email: 'refreshed@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'refreshSession').mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'short-clean-token',
+          refresh_token: 'next-refresh-token',
+          user: { id: 'user-refreshed', email: 'refreshed@example.com' },
+        },
+        user: { id: 'user-refreshed', email: 'refreshed@example.com' },
+      },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
+      data: { user: { id: 'user-refreshed', email: 'refreshed@example.com' } },
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+      data: {
+        subscription: {
+          id: 'sub-1',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        },
+      },
+    } as never);
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(signOutSpy).not.toHaveBeenCalled();
+    expect(screen.queryByRole('heading', { level: 2, name: 'Хто ми' })).toBeNull();
+  });
+
   it('renders main page with no appointment state when user is authenticated', async () => {
     const createChain = () => {
       const chain: Record<string, unknown> = {};

@@ -194,12 +194,36 @@ export function AppRoutes() {
 
         if (session?.access_token && session.access_token.length > 3000) {
           try {
-            const { data: refreshed } = await supabase.auth.refreshSession();
-            if (refreshed?.session) {
+            const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshed?.session && !refreshError) {
               session = refreshed.session;
+            } else {
+              await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+              if (isMounted) {
+                setIsLoggedIn(false);
+                setUserRole('client');
+                setIsAuthLoading(false);
+                try {
+                  localStorage.removeItem('user_role');
+                } catch {
+                  void 0;
+                }
+              }
+              return;
             }
           } catch {
-            void 0;
+            await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+            if (isMounted) {
+              setIsLoggedIn(false);
+              setUserRole('client');
+              setIsAuthLoading(false);
+              try {
+                localStorage.removeItem('user_role');
+              } catch {
+                void 0;
+              }
+            }
+            return;
           }
         }
 
@@ -267,8 +291,6 @@ export function AppRoutes() {
       }
     }
 
-    initAuth();
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -288,6 +310,7 @@ export function AppRoutes() {
         }
         return;
       }
+
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
         const metaRole = (session.user.user_metadata?.role ||
           session.user.app_metadata?.role ||
@@ -333,6 +356,8 @@ export function AppRoutes() {
         })();
       }
     });
+
+    initAuth();
 
     return () => {
       isMounted = false;
