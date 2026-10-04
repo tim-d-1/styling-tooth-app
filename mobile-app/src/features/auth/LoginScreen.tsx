@@ -5,12 +5,12 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { colors, radii } from '../../theme/tokens';
 import {
@@ -40,6 +40,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   onSuccess,
   defaultIdentifier = '',
 }) => {
+  const insets = useSafeAreaInsets();
   const [username, setUsername] = useState('');
   const [identifier, setIdentifier] = useState(defaultIdentifier);
   const [password, setPassword] = useState('');
@@ -162,13 +163,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} testID="login-screen">
+    <View style={styles.safeArea} testID="login-screen">
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: Math.max(insets.top, 16) + 8,
+              paddingBottom: Math.max(insets.bottom, 20) + 16,
+            },
+          ]}
           keyboardShouldPersistTaps="handled"
         >
           {/* Top Bar */}
@@ -319,7 +326,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -334,8 +341,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 24,
   },
   topBar: {
     flexDirection: 'row',
@@ -368,8 +373,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   headerContainer: {
-    marginTop: 24,
-    marginBottom: 28,
+    marginTop: 20,
+    marginBottom: 24,
   },
   pageTitle: {
     fontSize: 24,
@@ -426,14 +431,14 @@ const styles = StyleSheet.create({
   },
   spacer: {
     flex: 1,
-    minHeight: 48,
+    minHeight: 36,
   },
   socialRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 32,
-    marginBottom: 28,
+    marginBottom: 24,
   },
   socialButton: {
     width: 48,

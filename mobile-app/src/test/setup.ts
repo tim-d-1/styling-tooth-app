@@ -1,5 +1,23 @@
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
+import React from 'react';
+
+vi.mock('react-native-safe-area-context', () => {
+  return {
+    SafeAreaProvider: ({ children }: any) =>
+      React.createElement('div', { 'data-testid': 'safe-area-provider' }, children),
+    SafeAreaView: ({ children, style, testID, ...rest }: any) =>
+      React.createElement('div', { 'data-testid': testID, style, ...rest }, children),
+    useSafeAreaInsets: () => ({ top: 44, bottom: 34, left: 0, right: 0 }),
+    useSafeAreaFrame: () => ({ x: 0, y: 0, width: 393, height: 852 }),
+  };
+});
+
+vi.mock('expo-secure-store', () => ({
+  getItemAsync: vi.fn().mockResolvedValue(null),
+  setItemAsync: vi.fn().mockResolvedValue(undefined),
+  deleteItemAsync: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: {

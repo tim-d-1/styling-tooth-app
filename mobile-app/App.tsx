@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from './src/lib/supabase';
 import { LoadingScreen } from './src/features/loading/LoadingScreen';
 import { LandingScreen } from './src/features/landing/LandingScreen';
@@ -85,46 +86,48 @@ export default function App({
   };
 
   return (
-    <View style={styles.container} testID="app-root">
-      <StatusBar style="auto" />
+    <SafeAreaProvider>
+      <View style={styles.container} testID="app-root">
+        <StatusBar style="light" />
 
-      {currentScreen === 'loading' && (
-        <LoadingScreen onFinish={() => setCurrentScreen('landing')} />
-      )}
+        {currentScreen === 'loading' && (
+          <LoadingScreen onFinish={() => setCurrentScreen('landing')} />
+        )}
 
-      {currentScreen === 'landing' && (
-        <LandingScreen
-          onRegisterClick={() => setCurrentScreen('login')}
-          onLoginClick={() => setCurrentScreen('login')}
-        />
-      )}
+        {currentScreen === 'landing' && (
+          <LandingScreen
+            onRegisterClick={() => setCurrentScreen('login')}
+            onLoginClick={() => setCurrentScreen('login')}
+          />
+        )}
 
-      {currentScreen === 'login' && (
-        <LoginScreen
-          onBack={() => setCurrentScreen('landing')}
-          onSuccess={() => setCurrentScreen('authenticated')}
-          onNavigateRegister={() => setCurrentScreen('login')}
-        />
-      )}
+        {currentScreen === 'login' && (
+          <LoginScreen
+            onBack={() => setCurrentScreen('landing')}
+            onSuccess={() => setCurrentScreen('authenticated')}
+            onNavigateRegister={() => setCurrentScreen('login')}
+          />
+        )}
 
-      {currentScreen === 'authenticated' && (
-        <SafeAreaView style={styles.authContainer} testID="authenticated-screen">
-          <View style={styles.authContent}>
-            <Text style={styles.authTitle}>Вхід успішний!</Text>
-            {userEmail ? (
-              <Text style={styles.authEmail}>{userEmail}</Text>
-            ) : null}
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={handleLogout}
-              testID="logout-button"
-            >
-              <Text style={styles.logoutText}>Вийти</Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      )}
-    </View>
+        {currentScreen === 'authenticated' && (
+          <SafeAreaView style={styles.authContainer} testID="authenticated-screen">
+            <View style={styles.authContent}>
+              <Text style={styles.authTitle}>Вхід успішний!</Text>
+              {userEmail ? (
+                <Text style={styles.authEmail}>{userEmail}</Text>
+              ) : null}
+              <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={handleLogout}
+                testID="logout-button"
+              >
+                <Text style={styles.logoutText}>Вийти</Text>
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+        )}
+      </View>
+    </SafeAreaProvider>
   );
 }
 

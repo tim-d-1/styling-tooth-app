@@ -5,9 +5,9 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, radii } from '../../theme/tokens';
 
@@ -22,6 +22,8 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
   onRegisterClick,
   onLoginClick,
 }) => {
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.container} testID="landing-screen">
       <Image
@@ -32,45 +34,53 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
       />
 
       <LinearGradient
-        colors={['transparent', 'rgba(8, 22, 33, 0.75)', colors.bannerDarkBlur]}
-        locations={[0, 0.45, 1]}
+        colors={['transparent', 'rgba(8, 22, 33, 0.7)', colors.bannerDarkBlur, colors.bannerDarkBlur]}
+        locations={[0, 0.35, 0.75, 1]}
         style={styles.bottomGradient}
       />
 
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.contentContainer}>
-          <View style={styles.textContainer}>
-            <Text style={styles.title}>
-              ПРЕМІУМ{'\n'}ГРУМІНГ
-            </Text>
-            <Text style={styles.subtitle}>
-              без черг і дзвінків
-            </Text>
-          </View>
+      <View
+        style={[
+          styles.contentContainer,
+          {
+            paddingBottom: Math.max(insets.bottom, 24) + 12,
+            paddingTop: insets.top + 16,
+          },
+        ]}
+      >
+        <View style={styles.spacer} />
 
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={[styles.button, styles.registerButton]}
-              onPress={onRegisterClick}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel="Реєстрація"
-            >
-              <Text style={styles.registerButtonText}>Реєстрація</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, styles.loginButton]}
-              onPress={onLoginClick}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel="Увійти"
-            >
-              <Text style={styles.loginButtonText}>Увійти</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>
+            ПРЕМІУМ{'\n'}ГРУМІНГ
+          </Text>
+          <Text style={styles.subtitle}>
+            без черг і дзвінків
+          </Text>
         </View>
-      </SafeAreaView>
+
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={[styles.button, styles.registerButton]}
+            onPress={onRegisterClick}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Реєстрація"
+          >
+            <Text style={styles.registerButtonText}>Реєстрація</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.loginButton]}
+            onPress={onLoginClick}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Увійти"
+          >
+            <Text style={styles.loginButtonText}>Увійти</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 };
@@ -86,29 +96,29 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     width: '100%',
-    height: SCREEN_HEIGHT * 0.75,
+    height: SCREEN_HEIGHT * 0.7,
   },
   bottomGradient: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    height: SCREEN_HEIGHT * 0.55,
-  },
-  safeArea: {
-    flex: 1,
-    justifyContent: 'flex-end',
+    height: SCREEN_HEIGHT * 0.6,
   },
   contentContainer: {
+    flex: 1,
     paddingHorizontal: 20,
-    paddingBottom: 28,
+    justifyContent: 'flex-end',
+  },
+  spacer: {
+    flex: 1,
   },
   textContainer: {
-    marginBottom: 28,
+    marginBottom: 24,
   },
   title: {
-    fontSize: 48,
-    lineHeight: 48,
+    fontSize: 44,
+    lineHeight: 46,
     fontWeight: '700',
     color: colors.creamLight,
     letterSpacing: -0.5,
@@ -116,7 +126,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: 8,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '400',
     color: colors.creamLight,
     letterSpacing: -0.2,
