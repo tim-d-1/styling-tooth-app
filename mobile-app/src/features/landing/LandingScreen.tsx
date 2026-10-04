@@ -16,7 +16,7 @@ export interface LandingScreenProps {
   onLoginClick?: () => void;
 }
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const LandingScreen: React.FC<LandingScreenProps> = ({
   onRegisterClick,
@@ -93,11 +93,11 @@ const styles = StyleSheet.create({
   heroImage: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
     bottom: 0,
-    width: '100%',
+    left: -60,
+    width: SCREEN_WIDTH + 120,
     height: '100%',
+    transform: [{ translateX: 50 }],
   },
   bottomGradient: {
     position: 'absolute',
