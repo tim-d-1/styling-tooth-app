@@ -2,6 +2,8 @@ import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 import React from 'react';
 
+(globalThis as any).__DEV__ = true;
+
 vi.mock('react-native-safe-area-context', () => {
   return {
     SafeAreaProvider: ({ children }: any) =>
@@ -60,6 +62,14 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
+vi.mock('expo-image-picker', () => ({
+  requestMediaLibraryPermissionsAsync: vi.fn().mockResolvedValue({ status: 'granted' }),
+  launchImageLibraryAsync: vi.fn().mockResolvedValue({
+    canceled: false,
+    assets: [{ uri: 'file://mock-avatar.jpg' }],
+  }),
+}));
+
 vi.mock('../lib/supabase', () => {
   return {
     supabase: {
@@ -71,6 +81,10 @@ vi.mock('../lib/supabase', () => {
               unsubscribe: vi.fn(),
             },
           },
+        }),
+        signUp: vi.fn().mockResolvedValue({
+          data: { user: { id: 'mock-new-user-id', email: 'newuser@example.com' } },
+          error: null,
         }),
         signInWithPassword: vi.fn().mockResolvedValue({
           data: { user: { id: 'mock-user-id', email: 'test@example.com' } },
@@ -90,9 +104,20 @@ vi.mock('../lib/supabase', () => {
         }),
         signOut: vi.fn().mockResolvedValue({ error: null }),
       },
+      storage: {
+        from: vi.fn().mockReturnValue({
+          upload: vi.fn().mockResolvedValue({ data: { path: 'mock-path' }, error: null }),
+          getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'https://example.com/mock.jpg' } }),
+        }),
+      },
       from: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnThis(),
+        insert: vi.fn().mockReturnThis(),
+        update: vi.fn().mockReturnThis(),
+        delete: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
+        in: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
         maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       }),

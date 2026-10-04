@@ -24,6 +24,14 @@ describe('App navigation and routing flow', () => {
     expect(screen.getByTestId('login-screen')).toBeInTheDocument();
   });
 
+  it('navigates from landing to register when "Реєстрація" is clicked', () => {
+    render(<App initialScreen="landing" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Реєстрація' }));
+
+    expect(screen.getByTestId('register-screen')).toBeInTheDocument();
+  });
+
   it('navigates from login back to landing when back arrow is pressed', () => {
     render(<App initialScreen="login" />);
 
@@ -32,6 +40,50 @@ describe('App navigation and routing flow', () => {
     fireEvent.click(screen.getByTestId('back-button'));
 
     expect(screen.getByTestId('landing-screen')).toBeInTheDocument();
+  });
+
+  it('navigates between login and register screens via navigation link buttons', () => {
+    render(<App initialScreen="login" />);
+
+    fireEvent.click(screen.getByTestId('navigate-register-button'));
+    expect(screen.getByTestId('register-screen')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('navigate-login-button'));
+    expect(screen.getByTestId('login-screen')).toBeInTheDocument();
+  });
+
+  it('transitions to pet onboarding on successful registration', async () => {
+    (supabase.auth.signUp as any).mockResolvedValueOnce({
+      data: {
+        user: {
+          id: 'user-new-1',
+          email: 'newuser@example.com',
+          identities: [{ id: 'id-1' }],
+        },
+      },
+      error: null,
+    });
+
+    render(<App initialScreen="register" />);
+
+    fireEvent.change(screen.getByTestId('first-name-input'), {
+      target: { value: 'Ольга' },
+    });
+    fireEvent.change(screen.getByTestId('last-name-input'), {
+      target: { value: 'Ткач' },
+    });
+    fireEvent.change(screen.getByTestId('identifier-input'), {
+      target: { value: 'olga@example.com' },
+    });
+    fireEvent.change(screen.getByTestId('password-input'), {
+      target: { value: 'secretpass' },
+    });
+
+    fireEvent.click(screen.getByTestId('submit-register-button'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('pet-onboarding-screen')).toBeInTheDocument();
+    });
   });
 
   it('transitions to authenticated state on successful login', async () => {
@@ -55,6 +107,14 @@ describe('App navigation and routing flow', () => {
       expect(screen.getByTestId('authenticated-screen')).toBeInTheDocument();
       expect(screen.getByText('Вхід успішний!')).toBeInTheDocument();
     });
+  });
+
+  it('navigates from pet onboarding to authenticated when skipped', () => {
+    render(<App initialScreen="pet_onboarding" />);
+
+    fireEvent.click(screen.getByTestId('skip-pet-button'));
+
+    expect(screen.getByTestId('authenticated-screen')).toBeInTheDocument();
   });
 
   it('logs out and transitions back to landing screen', async () => {

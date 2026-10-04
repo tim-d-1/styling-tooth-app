@@ -6,9 +6,17 @@ import { supabase } from './src/lib/supabase';
 import { LoadingScreen } from './src/features/loading/LoadingScreen';
 import { LandingScreen } from './src/features/landing/LandingScreen';
 import { LoginScreen } from './src/features/auth/LoginScreen';
+import { RegisterScreen } from './src/features/auth/RegisterScreen';
+import { PetOnboardingScreen } from './src/features/pets/PetOnboardingScreen';
 import { colors, radii } from './src/theme/tokens';
 
-export type ScreenState = 'loading' | 'landing' | 'login' | 'authenticated';
+export type ScreenState =
+  | 'loading'
+  | 'landing'
+  | 'login'
+  | 'register'
+  | 'pet_onboarding'
+  | 'authenticated';
 
 export interface AppProps {
   initialScreen?: ScreenState;
@@ -46,7 +54,6 @@ export default function App({
           setUserEmail(data.session.user.email ?? null);
           setCurrentScreen('authenticated');
         } else {
-          // Show loading screen briefly then transition to landing
           setTimeout(() => {
             if (isMounted) {
               setCurrentScreen('landing');
@@ -96,7 +103,7 @@ export default function App({
 
         {currentScreen === 'landing' && (
           <LandingScreen
-            onRegisterClick={() => setCurrentScreen('login')}
+            onRegisterClick={() => setCurrentScreen('register')}
             onLoginClick={() => setCurrentScreen('login')}
           />
         )}
@@ -105,12 +112,31 @@ export default function App({
           <LoginScreen
             onBack={() => setCurrentScreen('landing')}
             onSuccess={() => setCurrentScreen('authenticated')}
-            onNavigateRegister={() => setCurrentScreen('login')}
+            onNavigateRegister={() => setCurrentScreen('register')}
+          />
+        )}
+
+        {currentScreen === 'register' && (
+          <RegisterScreen
+            onBack={() => setCurrentScreen('landing')}
+            onSuccess={() => setCurrentScreen('pet_onboarding')}
+            onNavigateLogin={() => setCurrentScreen('login')}
+          />
+        )}
+
+        {currentScreen === 'pet_onboarding' && (
+          <PetOnboardingScreen
+            onBack={() => setCurrentScreen('authenticated')}
+            onSuccess={() => setCurrentScreen('authenticated')}
+            onSkip={() => setCurrentScreen('authenticated')}
           />
         )}
 
         {currentScreen === 'authenticated' && (
-          <SafeAreaView style={styles.authContainer} testID="authenticated-screen">
+          <SafeAreaView
+            style={styles.authContainer}
+            testID="authenticated-screen"
+          >
             <View style={styles.authContent}>
               <Text style={styles.authTitle}>Вхід успішний!</Text>
               {userEmail ? (

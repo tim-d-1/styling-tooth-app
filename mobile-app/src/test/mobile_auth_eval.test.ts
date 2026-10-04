@@ -7,9 +7,14 @@ import {
   validateLoginForm,
   parseOAuthRedirectUrl,
 } from '../features/auth/login_utils';
+import { validateRegisterForm } from '../features/auth/register_utils';
+import {
+  validatePetRegisterForm,
+  parsePetBirthDateInput,
+} from '../features/pets/pet_register_utils';
 import { colors, radii } from '../theme/tokens';
 
-describe('Mobile Auth Eval Suite: Generalization, Edge Cases, and Contracts', () => {
+describe('Mobile Auth & Onboarding Eval Suite: Generalization, Edge Cases, and Contracts', () => {
   describe('Eval: Phone normalization across diverse input variants', () => {
     const cases = [
       { input: '0501234567', expected: '+380501234567' },
@@ -40,7 +45,7 @@ describe('Mobile Auth Eval Suite: Generalization, Edge Cases, and Contracts', ()
     });
   });
 
-  describe('Eval: Form Validation Matrix', () => {
+  describe('Eval: Login Form Validation Matrix', () => {
     const testMatrix = [
       { id: '', pwd: '', expectedError: 'Введіть Email або номер телефону' },
       { id: '   ', pwd: 'pass123', expectedError: 'Введіть Email або номер телефону' },
@@ -63,6 +68,79 @@ describe('Mobile Auth Eval Suite: Generalization, Edge Cases, and Contracts', ()
           expect(result.error).toBeNull();
         }
       });
+    });
+  });
+
+  describe('Eval: Registration Form Validation Matrix (No Username)', () => {
+    const baseForm = {
+      firstName: 'Ольга',
+      lastName: 'Ткач',
+      identifier: 'olga@example.com',
+      password: 'password123',
+      city: 'м. Київ',
+    };
+
+    const registerMatrix = [
+      { patch: { firstName: '' }, expectedError: 'Введіть ім’я' },
+      { patch: { lastName: '' }, expectedError: 'Введіть прізвище' },
+      { patch: { identifier: '' }, expectedError: 'Введіть Email або номер телефону' },
+      { patch: { password: '123' }, expectedError: 'Пароль повинен містити не менше 6 символів' },
+      { patch: { city: '' }, expectedError: 'Вкажіть місто' },
+      { patch: {}, expectedError: null },
+    ];
+
+    registerMatrix.forEach(({ patch, expectedError }, idx) => {
+      it(`evaluates register matrix row ${idx + 1}`, () => {
+        const result = validateRegisterForm({ ...baseForm, ...patch });
+        if (expectedError) {
+          expect(result.isValid).toBe(false);
+          expect(result.error).toBe(expectedError);
+        } else {
+          expect(result.isValid).toBe(true);
+          expect(result.error).toBeNull();
+        }
+      });
+    });
+  });
+
+  describe('Eval: Pet Onboarding Date Parsing and Validation Matrix (No Чутливість)', () => {
+    const refDate = new Date(2026, 9, 1);
+
+    const dateMatrix = [
+      { input: '2022-05-15', expectedDate: '2022-05-15', expectedError: null },
+      { input: '16.03.2023', expectedDate: '2023-03-16', expectedError: null },
+      { input: '2030-01-01', expectedDate: null, expectedError: 'Дата народження не може бути в майбутньому' },
+      { input: 'invalid', expectedDate: null, expectedError: 'Вкажіть коректну дату народження або вік (наприклад, 16.03.2023)' },
+      { input: '', expectedDate: null, expectedError: null },
+    ];
+
+    dateMatrix.forEach(({ input, expectedDate, expectedError }, idx) => {
+      it(`evaluates pet birth date matrix row ${idx + 1} (${input})`, () => {
+        const res = parsePetBirthDateInput(input, refDate);
+        expect(res.dateString).toBe(expectedDate);
+        if (expectedError) {
+          expect(res.error).toBe(expectedError);
+        } else {
+          expect(res.error).toBeNull();
+        }
+      });
+    });
+
+    it('evaluates pet profile validation requiring name and species, omitting sensitivity', () => {
+      const validPet = {
+        name: 'Барон',
+        species: 'dog' as const,
+        birthDate: '16.03.2023',
+        medicalNotes: 'Алергія на курку',
+        behaviorNotes: 'Дружелюбний',
+      };
+      const validRes = validatePetRegisterForm(validPet, refDate);
+      expect(validRes.isValid).toBe(true);
+      expect(validRes.error).toBeNull();
+
+      const missingNameRes = validatePetRegisterForm({ ...validPet, name: '' }, refDate);
+      expect(missingNameRes.isValid).toBe(false);
+      expect(missingNameRes.error).toBe('Введіть кличку тваринки');
     });
   });
 
