@@ -86,7 +86,7 @@ describe('App navigation and routing flow', () => {
     });
   });
 
-  it('transitions to authenticated state on successful login', async () => {
+  it('transitions to main screen on successful login', async () => {
     (supabase.auth.signInWithPassword as any).mockResolvedValueOnce({
       data: { user: { id: 'user-1', email: 'maria@example.com' } },
       error: null,
@@ -104,24 +104,24 @@ describe('App navigation and routing flow', () => {
     fireEvent.click(screen.getByTestId('submit-login-button'));
 
     await waitFor(() => {
-      expect(screen.getByTestId('authenticated-screen')).toBeInTheDocument();
-      expect(screen.getByText('Вхід успішний!')).toBeInTheDocument();
+      expect(screen.getByTestId('main-screen')).toBeInTheDocument();
     });
   });
 
-  it('navigates from pet onboarding to authenticated when skipped', () => {
+  it('navigates from pet onboarding to main screen when skipped', () => {
     render(<App initialScreen="pet_onboarding" />);
 
     fireEvent.click(screen.getByTestId('skip-pet-button'));
 
-    expect(screen.getByTestId('authenticated-screen')).toBeInTheDocument();
+    expect(screen.getByTestId('main-screen')).toBeInTheDocument();
   });
 
-  it('logs out and transitions back to landing screen', async () => {
+  it('logs out from profile tab and transitions back to landing screen', async () => {
     render(<App initialScreen="authenticated" />);
 
-    expect(screen.getByTestId('authenticated-screen')).toBeInTheDocument();
+    expect(screen.getByTestId('main-screen')).toBeInTheDocument();
 
+    fireEvent.click(screen.getByTestId('tab-profile'));
     fireEvent.click(screen.getByTestId('logout-button'));
 
     await waitFor(() => {

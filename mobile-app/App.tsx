@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { supabase } from './src/lib/supabase';
 import { LoadingScreen } from './src/features/loading/LoadingScreen';
 import { LandingScreen } from './src/features/landing/LandingScreen';
 import { LoginScreen } from './src/features/auth/LoginScreen';
 import { RegisterScreen } from './src/features/auth/RegisterScreen';
 import { PetOnboardingScreen } from './src/features/pets/PetOnboardingScreen';
-import { colors, radii } from './src/theme/tokens';
+import { MainScreen } from './src/features/dashboard/MainScreen';
+import { colors } from './src/theme/tokens';
 
 export type ScreenState =
   | 'loading'
@@ -133,24 +134,11 @@ export default function App({
         )}
 
         {currentScreen === 'authenticated' && (
-          <SafeAreaView
-            style={styles.authContainer}
-            testID="authenticated-screen"
-          >
-            <View style={styles.authContent}>
-              <Text style={styles.authTitle}>Вхід успішний!</Text>
-              {userEmail ? (
-                <Text style={styles.authEmail}>{userEmail}</Text>
-              ) : null}
-              <TouchableOpacity
-                style={styles.logoutButton}
-                onPress={handleLogout}
-                testID="logout-button"
-              >
-                <Text style={styles.logoutText}>Вийти</Text>
-              </TouchableOpacity>
-            </View>
-          </SafeAreaView>
+          <MainScreen
+            userEmail={userEmail}
+            onLogout={handleLogout}
+            onNavigateAddPet={() => setCurrentScreen('pet_onboarding')}
+          />
         )}
       </View>
     </SafeAreaProvider>
@@ -161,37 +149,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surfaceCream,
-  },
-  authContainer: {
-    flex: 1,
-    backgroundColor: colors.surfaceCream,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  authContent: {
-    alignItems: 'center',
-    gap: 16,
-  },
-  authTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.contentPrimary,
-  },
-  authEmail: {
-    fontSize: 16,
-    color: colors.textMuted,
-  },
-  logoutButton: {
-    marginTop: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-    borderRadius: radii.md,
-    backgroundColor: colors.terracotta,
-  },
-  logoutText: {
-    color: colors.surfaceCream,
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
