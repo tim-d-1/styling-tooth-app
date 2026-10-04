@@ -181,7 +181,7 @@ export function AppRoutes() {
     async function initAuth() {
       try {
         const { data: sessionData } = await supabase.auth.getSession();
-        const session = sessionData?.session;
+        let session = sessionData?.session;
 
         if (!session?.user) {
           if (isMounted) {
@@ -190,6 +190,17 @@ export function AppRoutes() {
             setIsAuthLoading(false);
           }
           return;
+        }
+
+        if (session?.access_token && session.access_token.length > 3000) {
+          try {
+            const { data: refreshed } = await supabase.auth.refreshSession();
+            if (refreshed?.session) {
+              session = refreshed.session;
+            }
+          } catch {
+            void 0;
+          }
         }
 
         const { data: userData, error: userError } = await supabase.auth.getUser();

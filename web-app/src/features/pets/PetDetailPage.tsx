@@ -374,7 +374,7 @@ export const PetDetailPage: FC<PetDetailPageProps> = ({
         .from('pet-media')
         .upload(storagePath, preparedFile, {
           contentType,
-          upsert: false,
+          upsert: true,
         });
       if (uploadError) {
         showToast(`Помилка завантаження фото: ${uploadError.message}`);

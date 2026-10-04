@@ -139,10 +139,15 @@ export const PetRegisterPage: FC<PetRegisterPageProps> = ({
           .from('pet-media')
           .upload(storagePath, preparedFile, {
             contentType,
-            upsert: false,
+            upsert: true,
           });
 
         if (uploadError) {
+          try {
+            await supabase.from('pets').delete().eq('id', insertedPet.id);
+          } catch {
+            void 0;
+          }
           setErrorMessage(uploadError.message);
           return;
         }
