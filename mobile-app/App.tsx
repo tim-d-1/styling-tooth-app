@@ -1,0 +1,168 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { supabase } from './src/lib/supabase';
+import { LoadingScreen } from './src/features/loading/LoadingScreen';
+import { LandingScreen } from './src/features/landing/LandingScreen';
+import { LoginScreen } from './src/features/auth/LoginScreen';
+import { colors, radii } from './src/theme/tokens';
+
+export type ScreenState = 'loading' | 'landing' | 'login' | 'authenticated';
+
+export interface AppProps {
+  initialScreen?: ScreenState;
+  skipSessionCheck?: boolean;
+}
+
+export default function App({
+  initialScreen,
+  skipSessionCheck = false,
+}: AppProps) {
+  const [currentScreen, setCurrentScreen] = useState<ScreenState>(
+    initialScreen || 'loading'
+  );
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialScreen) {
+      setCurrentScreen(initialScreen);
+      return;
+    }
+
+    if (skipSessionCheck) {
+      setCurrentScreen('landing');
+      return;
+    }
+
+    let isMounted = true;
+
+    async function checkAuthSession() {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!isMounted) return;
+
+        if (data?.session?.user) {
+          setUserEmail(data.session.user.email ?? null);
+          setCurrentScreen('authenticated');
+        } else {
+          // Show loading screen briefly then transition to landing
+          setTimeout(() => {
+            if (isMounted) {
+              setCurrentScreen('landing');
+            }
+          }, 800);
+        }
+      } catch {
+        if (isMounted) {
+          setCurrentScreen('landing');
+        }
+      }
+    }
+
+    checkAuthSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
+      if (session?.user) {
+        setUserEmail(session.user.email ?? null);
+        setCurrentScreen('authenticated');
+      } else {
+        setUserEmail(null);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription?.unsubscribe();
+    };
+  }, [initialScreen, skipSessionCheck]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setCurrentScreen('landing');
+  };
+
+  return (
+    <View style={styles.container} testID="app-root">
+      <StatusBar style="auto" />
+
+      {currentScreen === 'loading' && (
+        <LoadingScreen onFinish={() => setCurrentScreen('landing')} />
+      )}
+
+      {currentScreen === 'landing' && (
+        <LandingScreen
+          onRegisterClick={() => setCurrentScreen('login')}
+          onLoginClick={() => setCurrentScreen('login')}
+        />
+      )}
+
+      {currentScreen === 'login' && (
+        <LoginScreen
+          onBack={() => setCurrentScreen('landing')}
+          onSuccess={() => setCurrentScreen('authenticated')}
+          onNavigateRegister={() => setCurrentScreen('login')}
+        />
+      )}
+
+      {currentScreen === 'authenticated' && (
+        <SafeAreaView style={styles.authContainer} testID="authenticated-screen">
+          <View style={styles.authContent}>
+            <Text style={styles.authTitle}>Вхід успішний!</Text>
+            {userEmail ? (
+              <Text style={styles.authEmail}>{userEmail}</Text>
+            ) : null}
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+              testID="logout-button"
+            >
+              <Text style={styles.logoutText}>Вийти</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.surfaceCream,
+  },
+  authContainer: {
+    flex: 1,
+    backgroundColor: colors.surfaceCream,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  authContent: {
+    alignItems: 'center',
+    gap: 16,
+  },
+  authTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.contentPrimary,
+  },
+  authEmail: {
+    fontSize: 16,
+    color: colors.textMuted,
+  },
+  logoutButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: radii.md,
+    backgroundColor: colors.terracotta,
+  },
+  logoutText: {
+    color: colors.surfaceCream,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
