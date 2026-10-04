@@ -93,11 +93,11 @@ const styles = StyleSheet.create({
   heroImage: {
     position: 'absolute',
     top: 0,
+    left: 0,
+    right: 0,
     bottom: 0,
-    left: -60,
-    width: SCREEN_WIDTH + 120,
+    width: '100%',
     height: '100%',
-    transform: [{ translateX: 50 }],
   },
   bottomGradient: {
     position: 'absolute',
