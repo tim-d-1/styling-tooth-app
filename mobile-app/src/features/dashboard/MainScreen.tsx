@@ -346,7 +346,12 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               <Text style={styles.sectionTitle}>Поради експертів</Text>
             </View>
 
-            <View style={styles.adviceContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.adviceScrollContent}
+              style={styles.adviceScrollView}
+            >
               <TouchableOpacity
                 style={[styles.adviceCard, { backgroundColor: '#E6F0F6' }]}
                 onPress={onNavigateBooking}
@@ -359,10 +364,11 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                   resizeMode="cover"
                 />
                 <LinearGradient
-                  colors={['#E6F0F6', 'rgba(230, 240, 246, 0.85)', 'transparent']}
-                  start={{ x: 0.45, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
+                  colors={['#E6F0F6', 'rgba(230, 240, 246, 0.85)', 'rgba(230, 240, 246, 0)']}
+                  start={{ x: 0.35, y: 0.5 }}
+                  end={{ x: 0.55, y: 0.5 }}
                   style={StyleSheet.absoluteFill}
+                  testID="advice-shampoo-gradient"
                 />
                 <View style={styles.adviceTextContainer}>
                   <Text style={styles.adviceCardTitleDark}>
@@ -378,22 +384,23 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                 testID="advice-card-paws"
               >
                 <Image
+                  source={require('../../../assets/images/expert_advice_paws_bg.png')}
+                  style={styles.adviceBgImage}
+                  resizeMode="cover"
+                />
+                <Image
                   source={require('../../../assets/images/dog_paw_close_up.png')}
                   style={styles.adviceImageRight}
                   resizeMode="cover"
                 />
-                <LinearGradient
-                  colors={['#D8E5F3', 'rgba(216, 229, 243, 0.85)', 'transparent']}
-                  start={{ x: 0.45, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                  style={StyleSheet.absoluteFill}
-                />
                 <View style={styles.adviceTextContainer}>
                   <Text style={styles.adviceCardTitleAccent}>5 ПОРАД</Text>
-                  <Text style={styles.adviceCardSubtitle}>для здорових лап</Text>
+                  <Text style={styles.adviceCardSubtitle} numberOfLines={1}>
+                    для здорових лап
+                  </Text>
                 </View>
               </TouchableOpacity>
-            </View>
+            </ScrollView>
           </>
         )}
 
@@ -829,47 +836,63 @@ const styles = StyleSheet.create({
     color: colors.contentPrimary,
     maxWidth: 140,
   },
-  adviceContainer: {
-    gap: 12,
-    marginBottom: 16,
+  adviceScrollView: {
+    marginBottom: 24,
+    marginHorizontal: -20,
+  },
+  adviceScrollContent: {
+    paddingHorizontal: 20,
+    gap: 14,
   },
   adviceCard: {
-    minHeight: 110,
-    borderRadius: 14,
+    width: 280,
+    height: 230,
+    borderRadius: 16,
     overflow: 'hidden',
     position: 'relative',
-    justifyContent: 'center',
-    padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.04)',
+  },
+  adviceBgImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
   adviceImageRight: {
     position: 'absolute',
     right: 0,
     top: 0,
     bottom: 0,
-    width: 140,
+    height: '100%',
+    width: 170,
   },
   adviceTextContainer: {
-    maxWidth: 180,
+    paddingLeft: 18,
+    paddingRight: 8,
+    paddingTop: 22,
+    maxWidth: 220,
     zIndex: 10,
   },
   adviceCardTitleDark: {
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '700',
     color: colors.contentPrimary,
-    lineHeight: 20,
+    lineHeight: 23,
   },
   adviceCardTitleAccent: {
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: '800',
     color: '#1E293B',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   adviceCardSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#FFFFFF',
   },
   tabContentContainer: {
     paddingVertical: 12,

@@ -152,4 +152,11 @@ describe('MainScreen (Головна)', () => {
 
     expect(onLogout).toHaveBeenCalledTimes(1);
   });
+
+  it('renders shampoo advice card with concentrated linear gradient overlay', () => {
+    render(<MainScreen initialVisit={null} userEmail="maria@example.com" />);
+
+    const gradient = screen.getByTestId('advice-shampoo-gradient');
+    expect(gradient).toBeInTheDocument();
+  });
 });

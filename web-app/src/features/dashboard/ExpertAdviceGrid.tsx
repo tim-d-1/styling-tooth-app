@@ -47,7 +47,7 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
                   type="button"
                   onClick={() => onArticleClick?.(articleId)}
                   aria-label={label}
-                  className="relative min-h-[13.25rem] h-auto rounded-xl overflow-hidden cursor-pointer shadow-md bg-soft-ice flex items-center p-6 hover:scale-[1.01] transition-transform duration-200 text-left outline-none border-0"
+                  className="relative min-h-[13.25rem] h-auto rounded-xl overflow-hidden cursor-pointer shadow-md bg-soft-ice flex flex-col justify-start p-6 pt-7 hover:scale-[1.01] transition-transform duration-200 text-left outline-none border-0"
                 >
                   {effectiveBgImage && (
                     <img
@@ -57,9 +57,15 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
                     />
                   )}
 
-                  <div className="absolute inset-0 bg-gradient-to-r from-soft-ice via-soft-ice/80 to-transparent z-20 pointer-events-none" />
+                  <div
+                    className="absolute inset-0 z-20 pointer-events-none"
+                    style={{
+                      background:
+                        'linear-gradient(to right, #e8effa 0%, #e8effa 46%, rgba(232, 239, 250, 0.85) 53%, rgba(232, 239, 250, 0) 65%)',
+                    }}
+                  />
 
-                  <div className="relative z-30 max-w-[200px]">
+                  <div className="relative z-30 max-w-[240px]">
                     <h3 className="m-0 text-xl font-bold text-content-dark leading-snug font-primary">
                       {article.title}
                     </h3>
@@ -106,8 +112,13 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
                 type="button"
                 onClick={() => onArticleClick?.(articleId)}
                 aria-label={label}
-                className="relative min-h-[13.25rem] h-auto rounded-xl overflow-hidden cursor-pointer shadow-md bg-soft-blue flex flex-col justify-center p-6 hover:scale-[1.01] transition-transform duration-200 text-left outline-none border-0"
+                className="relative min-h-[13.25rem] h-auto rounded-xl overflow-hidden cursor-pointer shadow-md bg-soft-blue flex flex-col justify-start p-6 pt-7 hover:scale-[1.01] transition-transform duration-200 text-left outline-none border-0"
               >
+                <img
+                  src="/assets/images/expert_advice_paws_bg.png"
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover object-center z-0 select-none pointer-events-none"
+                />
                 {effectiveBgImage && (
                   <img
                     src={effectiveBgImage}
@@ -115,12 +126,12 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
                     className="absolute right-0 bottom-0 max-h-[13.25rem] w-auto object-contain object-right-bottom z-10 select-none pointer-events-none"
                   />
                 )}
-                <div className="relative z-20 max-w-[200px]">
+                <div className="relative z-20 max-w-[240px]">
                   <div className="text-3xl font-extrabold text-navy-dark leading-none font-accented">
                     {article.title}
                   </div>
                   {article.subtitle && (
-                    <p className="mt-1 mb-0 text-lg font-medium text-navy-dark font-primary">
+                    <p className="mt-1 mb-0 text-lg font-medium text-white whitespace-nowrap font-primary">
                       {article.subtitle}
                     </p>
                   )}

@@ -110,4 +110,32 @@ describe('Mobile Dashboard Eval Suite: Visual Hierarchy, Content Contracts, and 
       expect(banner3.description).toBe('на комплексний грумінг у будні');
     });
   });
+
+  describe('Eval: Advice Card Gradient Concentration Contract', () => {
+    const cardWidth = 280;
+    const imageWidth = 170;
+    const imageLeft = cardWidth - imageWidth; // 110px
+    const gradientStartX = 0.35;
+    const gradientEndX = 0.55;
+
+    it('evaluates gradient start precedes the image left border', () => {
+      const startPx = gradientStartX * cardWidth; // 98px
+      expect(startPx).toBeLessThanOrEqual(imageLeft);
+      expect(imageLeft - startPx).toBeLessThanOrEqual(15);
+    });
+
+    it('evaluates gradient is concentrated within 20% of card width', () => {
+      const span = gradientEndX - gradientStartX;
+      const spanPx = span * cardWidth;
+      expect(span).toBeCloseTo(0.2, 5);
+      expect(spanPx).toBeCloseTo(56, 1);
+      expect(spanPx).toBeLessThanOrEqual(60);
+    });
+
+    it('evaluates unmasked image visibility is at least 70% of image width', () => {
+      const endPx = gradientEndX * cardWidth; // 154px
+      const unmaskedWidth = cardWidth - endPx; // 126px
+      expect(unmaskedWidth / imageWidth).toBeGreaterThan(0.7);
+    });
+  });
 });

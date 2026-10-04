@@ -217,6 +217,23 @@ describe('Main Page Components', () => {
       fireEvent.click(article3);
       expect(handleClick).toHaveBeenCalledWith('art3');
     });
+
+    it('renders shampoo card with concentrated linear gradient blending border', () => {
+      const mockArticles = [
+        {
+          id: 'shampoo-guide',
+          title: 'ЯК ОБРАТИ ПРАВИЛЬНИЙ ШАМПУНЬ?',
+          bgImage: '/assets/images/golden_retriever_bath.png',
+          type: 'shampoo' as const,
+        },
+      ];
+      const { container } = render(<ExpertAdviceGrid articles={mockArticles} />);
+      const overlay = container.querySelector('div[style*="linear-gradient"]') as HTMLElement;
+      expect(overlay).not.toBeNull();
+      expect(overlay.style.background).toContain('linear-gradient');
+      expect(overlay.style.background).toContain('46%');
+      expect(overlay.style.background).toContain('65%');
+    });
   });
 
   describe('dashboard_utils', () => {
