@@ -34,8 +34,8 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
       />
 
       <LinearGradient
-        colors={['transparent', 'rgba(8, 22, 33, 0.7)', colors.bannerDarkBlur, colors.bannerDarkBlur]}
-        locations={[0, 0.35, 0.75, 1]}
+        colors={['transparent', 'rgba(8, 22, 33, 0.45)', 'rgba(8, 22, 33, 0.85)', colors.bannerDarkBlur]}
+        locations={[0, 0.35, 0.7, 1]}
         style={styles.bottomGradient}
       />
 
@@ -95,15 +95,16 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
+    bottom: 0,
     width: '100%',
-    height: SCREEN_HEIGHT * 0.7,
+    height: '100%',
   },
   bottomGradient: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    height: SCREEN_HEIGHT * 0.6,
+    height: SCREEN_HEIGHT * 0.65,
   },
   contentContainer: {
     flex: 1,
