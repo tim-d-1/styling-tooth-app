@@ -36,7 +36,7 @@ vi.mock('expo-web-browser', () => ({
 }));
 
 vi.mock('expo-auth-session', () => ({
-  makeRedirectUri: vi.fn().mockReturnValue('stylingtooth://'),
+  makeRedirectUri: vi.fn().mockReturnValue('stylingtooth://auth/callback'),
 }));
 
 vi.mock('expo-linking', () => ({

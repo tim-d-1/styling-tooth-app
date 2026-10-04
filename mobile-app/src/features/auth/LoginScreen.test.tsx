@@ -152,13 +152,13 @@ describe('LoginScreen', () => {
       expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
         provider: 'google',
         options: {
-          redirectTo: 'stylingtooth://',
+          redirectTo: 'stylingtooth://auth/callback',
           skipBrowserRedirect: true,
         },
       });
       expect(WebBrowser.openAuthSessionAsync).toHaveBeenCalledWith(
         'https://accounts.google.com/o/oauth2/v2/auth',
-        'stylingtooth://'
+        'stylingtooth://auth/callback'
       );
       expect(supabase.auth.exchangeCodeForSession).toHaveBeenCalledWith(
         'mock-oauth-code'

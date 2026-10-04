@@ -119,7 +119,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
       const redirectUrl = makeRedirectUri({
         scheme: 'stylingtooth',
-        preferLocalhost: true,
+        path: 'auth/callback',
       });
 
       console.log('[Auth] Google OAuth redirectUrl:', redirectUrl);
