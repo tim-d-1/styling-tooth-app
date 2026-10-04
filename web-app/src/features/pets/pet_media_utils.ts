@@ -1,11 +1,21 @@
 import { supabase } from '@/lib/supabase';
 
+const VALID_IMAGE_MIMES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+  'image/avif',
+  'image/gif',
+]);
+
 export function getNormalizedImageContentType(file: File): string {
   const type = (file.type || '').toLowerCase();
   if (type === 'image/jpg' || type === 'image/pjpeg') {
     return 'image/jpeg';
   }
-  if (type) {
+  if (type && VALID_IMAGE_MIMES.has(type)) {
     return type;
   }
   const ext = file.name.split('.').pop()?.toLowerCase();
@@ -28,6 +38,26 @@ export function getNormalizedImageContentType(file: File): string {
     default:
       return 'image/jpeg';
   }
+}
+
+export function preparePetMediaUpload(
+  petId: string,
+  file: File
+): { preparedFile: File; storagePath: string; contentType: string } {
+  const contentType = getNormalizedImageContentType(file);
+  const extMatch = file.name.split('.').pop()?.toLowerCase();
+  let fileExt = extMatch && extMatch.length <= 5 ? extMatch : 'jpg';
+  if (fileExt === 'jpeg') fileExt = 'jpg';
+  const storagePath = `${petId}/${Date.now()}.${fileExt}`;
+
+  let preparedFile: File;
+  try {
+    preparedFile = new File([file], file.name, { type: contentType });
+  } catch {
+    preparedFile = file;
+  }
+
+  return { preparedFile, storagePath, contentType };
 }
 
 export async function resolveStorageUrl(storagePath?: string | null): Promise<string | null> {

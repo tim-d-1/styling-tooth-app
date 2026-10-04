@@ -4,6 +4,7 @@ import {
   fetchPetsAvatarMap,
   fetchPetAvatarUrl,
   getNormalizedImageContentType,
+  preparePetMediaUpload,
 } from './pet_media_utils';
 import { supabase } from '@/lib/supabase';
 
@@ -40,12 +41,26 @@ describe('pet_media_utils', () => {
       expect(getNormalizedImageContentType(heic)).toBe('image/heic');
     });
 
-    it('infers proper mime type from extension when type is empty', () => {
+    it('infers proper mime type from extension when type is empty or generic octet-stream', () => {
       expect(getNormalizedImageContentType(new File(['x'], 'f.png', { type: '' }))).toBe('image/png');
       expect(getNormalizedImageContentType(new File(['x'], 'f.webp', { type: '' }))).toBe('image/webp');
       expect(getNormalizedImageContentType(new File(['x'], 'f.heic', { type: '' }))).toBe('image/heic');
       expect(getNormalizedImageContentType(new File(['x'], 'f.avif', { type: '' }))).toBe('image/avif');
       expect(getNormalizedImageContentType(new File(['x'], 'f.gif', { type: '' }))).toBe('image/gif');
+      expect(getNormalizedImageContentType(new File(['x'], 'f.jpg', { type: 'application/octet-stream' }))).toBe('image/jpeg');
+      expect(getNormalizedImageContentType(new File(['x'], 'f.png', { type: 'application/octet-stream' }))).toBe('image/png');
+    });
+  });
+
+  describe('preparePetMediaUpload', () => {
+    it('creates prepared file with normalized mime type and valid storage path', () => {
+      const rawFile = new File(['image-bytes'], 'pet-photo.jpg', { type: 'application/octet-stream' });
+      const { preparedFile, storagePath, contentType } = preparePetMediaUpload('pet-uuid-123', rawFile);
+
+      expect(contentType).toBe('image/jpeg');
+      expect(preparedFile.type).toBe('image/jpeg');
+      expect(preparedFile.name).toBe('pet-photo.jpg');
+      expect(storagePath).toMatch(/^pet-uuid-123\/\d+\.jpg$/);
     });
   });
 

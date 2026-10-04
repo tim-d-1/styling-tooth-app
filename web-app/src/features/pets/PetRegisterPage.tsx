@@ -7,7 +7,7 @@ import {
   type PetSpecies,
   type PetSex,
 } from './pet_register_utils';
-import { getNormalizedImageContentType } from './pet_media_utils';
+import { preparePetMediaUpload } from './pet_media_utils';
 
 export interface PetRegisterPageProps {
   onBack?: () => void;
@@ -131,12 +131,13 @@ export const PetRegisterPage: FC<PetRegisterPageProps> = ({
       }
 
       if (petPhoto && insertedPet?.id) {
-        const fileExt = petPhoto.name.split('.').pop() || 'jpg';
-        const storagePath = `${insertedPet.id}/${Date.now()}.${fileExt}`;
-        const contentType = getNormalizedImageContentType(petPhoto);
+        const { preparedFile, storagePath, contentType } = preparePetMediaUpload(
+          insertedPet.id,
+          petPhoto
+        );
         const { error: uploadError } = await supabase.storage
           .from('pet-media')
-          .upload(storagePath, petPhoto, {
+          .upload(storagePath, preparedFile, {
             contentType,
             upsert: false,
           });
