@@ -26,6 +26,7 @@ import {
   BellIcon,
   MarkerIcon,
 } from '../../components/icons/AuthIcons';
+import { ProfileScreen } from '../profile/ProfileScreen';
 
 export type DashboardTab = 'home' | 'booking' | 'pets' | 'profile';
 
@@ -35,6 +36,7 @@ export interface MainScreenProps {
   onNavigateAddPet?: () => void;
   userEmail?: string | null;
   initialVisit?: MobileVisit | null;
+  initialTab?: DashboardTab;
 }
 
 export const MainScreen: React.FC<MainScreenProps> = ({
@@ -43,9 +45,10 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   onNavigateAddPet,
   userEmail,
   initialVisit,
+  initialTab,
 }) => {
   const insets = useSafeAreaInsets();
-  const [activeTab, setActiveTab] = useState<DashboardTab>('home');
+  const [activeTab, setActiveTab] = useState<DashboardTab>(initialTab || 'home');
   const [visit, setVisit] = useState<MobileVisit | null>(initialVisit ?? null);
   const [isLoadingVisit, setIsLoadingVisit] = useState(initialVisit === undefined);
   const [userName, setUserName] = useState('');
@@ -166,21 +169,23 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           },
         ]}
       >
-        <View style={styles.topHeader}>
-          <View style={styles.locationContainer} testID="location-indicator">
-            <MarkerIcon color={colors.terracotta} size={18} />
-            <Text style={styles.locationText}>м. Київ</Text>
-          </View>
+        {activeTab !== 'profile' && (
+          <View style={styles.topHeader}>
+            <View style={styles.locationContainer} testID="location-indicator">
+              <MarkerIcon color={colors.terracotta} size={18} />
+              <Text style={styles.locationText}>м. Київ</Text>
+            </View>
 
-          <TouchableOpacity
-            style={styles.bellButton}
-            accessibilityRole="button"
-            accessibilityLabel="Сповіщення"
-            testID="notifications-button"
-          >
-            <BellIcon color={colors.contentPrimary} size={20} />
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={styles.bellButton}
+              accessibilityRole="button"
+              accessibilityLabel="Сповіщення"
+              testID="notifications-button"
+            >
+              <BellIcon color={colors.contentPrimary} size={20} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {activeTab === 'home' && (
           <>
@@ -328,6 +333,12 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="-20% на комплексний грумінг у будні"
               >
+                <LinearGradient
+                  colors={['#ECEEF1', '#D1DCEE']}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={StyleSheet.absoluteFill}
+                />
                 <Image
                   source={require('../../../assets/images/promo_weekday_grooming-701240.png')}
                   style={styles.bannerWeekdayImage}
@@ -451,25 +462,12 @@ export const MainScreen: React.FC<MainScreenProps> = ({
         )}
 
         {activeTab === 'profile' && (
-          <View style={styles.tabContentContainer} testID="profile-tab-content">
-            <Text style={styles.tabHeading}>Профіль</Text>
-            <View style={styles.profileCard}>
-              <Text style={styles.profileNameText}>
-                {userName || 'Користувач'}
-              </Text>
-              {userEmail ? (
-                <Text style={styles.profileEmailText}>{userEmail}</Text>
-              ) : null}
-            </View>
-
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={onLogout}
-              testID="logout-button"
-            >
-              <Text style={styles.logoutButtonText}>Вийти з акаунту</Text>
-            </TouchableOpacity>
-          </View>
+          <ProfileScreen
+            userEmail={userEmail}
+            onLogout={onLogout}
+            onNavigateBooking={onNavigateBooking}
+            onNavigateAddPet={onNavigateAddPet}
+          />
         )}
       </ScrollView>
 
@@ -816,25 +814,30 @@ const styles = StyleSheet.create({
   },
   promoWeekdayCard: {
     backgroundColor: '#ECEEF1',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
   },
   bannerWeekdayImage: {
     position: 'absolute',
     right: 0,
     top: 0,
     bottom: 0,
-    width: 140,
+    height: '100%',
+    width: 145,
   },
   promoWeekdayPercent: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: '800',
     color: colors.terracotta,
     marginBottom: 2,
+    lineHeight: 38,
   },
   promoWeekdayText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: colors.contentPrimary,
-    maxWidth: 140,
+    lineHeight: 20,
+    maxWidth: 130,
   },
   adviceScrollView: {
     marginBottom: 24,

@@ -8,7 +8,7 @@ import { LandingScreen } from './src/features/landing/LandingScreen';
 import { LoginScreen } from './src/features/auth/LoginScreen';
 import { RegisterScreen } from './src/features/auth/RegisterScreen';
 import { PetOnboardingScreen } from './src/features/pets/PetOnboardingScreen';
-import { MainScreen } from './src/features/dashboard/MainScreen';
+import { DashboardTab, MainScreen } from './src/features/dashboard/MainScreen';
 import { colors } from './src/theme/tokens';
 
 export type ScreenState =
@@ -17,16 +17,19 @@ export type ScreenState =
   | 'login'
   | 'register'
   | 'pet_onboarding'
-  | 'authenticated';
+  | 'authenticated'
+  | 'profile';
 
 export interface AppProps {
   initialScreen?: ScreenState;
   skipSessionCheck?: boolean;
+  initialTab?: DashboardTab;
 }
 
 export default function App({
   initialScreen,
   skipSessionCheck = false,
+  initialTab,
 }: AppProps) {
   const [currentScreen, setCurrentScreen] = useState<ScreenState>(
     initialScreen || 'loading'
@@ -133,11 +136,12 @@ export default function App({
           />
         )}
 
-        {currentScreen === 'authenticated' && (
+        {(currentScreen === 'authenticated' || currentScreen === 'profile') && (
           <MainScreen
             userEmail={userEmail}
             onLogout={handleLogout}
             onNavigateAddPet={() => setCurrentScreen('pet_onboarding')}
+            initialTab={currentScreen === 'profile' ? 'profile' : initialTab}
           />
         )}
       </View>
