@@ -5,12 +5,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Image,
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
-import { colors, radii } from '../../theme/tokens';
+import { colors } from '../../theme/tokens';
 import {
   formatVisitDateDetails,
   formatVisitStatusText,
@@ -92,7 +94,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               service:services(name)
             `)
             .eq('client_id', currentUserId)
-            .in('status', ['confirmed', 'pending'])
+            .in('status', ['new', 'confirmed', 'in_progress'])
             .gte('starts_at', new Date().toISOString())
             .order('starts_at', { ascending: true })
             .limit(1)
@@ -112,7 +114,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                 startsAt: appointmentData.starts_at,
                 status: appointmentData.status,
                 petName: petObj?.name || 'Улюбленець',
-                serviceName: srvObj?.name || 'Комплексний догляд',
+                serviceName: srvObj?.name || 'Комплексний грумінг',
                 price: appointmentData.price,
               });
             } else {
@@ -121,7 +123,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           }
         }
       } catch {
-        if (isMounted) {
+        if (isMounted && initialVisit === undefined) {
           setVisit(null);
         }
       } finally {
@@ -180,25 +182,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           </TouchableOpacity>
         </View>
 
-        {userName ? (
-          <View style={styles.greetingContainer}>
-            <Text style={styles.greetingTitle}>Привіт, {userName}!</Text>
-          </View>
-        ) : null}
-
         {activeTab === 'home' && (
           <>
-            <TouchableOpacity
-              style={styles.quickBookButton}
-              onPress={onNavigateBooking}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel="Швидкий запис"
-              testID="quick-booking-button"
-            >
-              <Text style={styles.quickBookButtonText}>Швидкий запис</Text>
-            </TouchableOpacity>
-
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Запланований візит</Text>
             </View>
@@ -277,58 +262,137 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               </View>
             )}
 
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Актуальні пропозиції</Text>
-            </View>
-
-            <View style={styles.promoGrid}>
-              <View style={styles.promoCard} testID="promo-discount-card">
-                <Text style={styles.promoBadgeText}>25%</Text>
-                <Text style={styles.promoTitle}>знижка на перший візит</Text>
-                <TouchableOpacity
-                  style={styles.promoDetailButton}
-                  onPress={onNavigateBooking}
-                  testID="promo-detail-button"
-                >
-                  <Text style={styles.promoDetailText}>Детальніше</Text>
-                </TouchableOpacity>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.promoScrollContent}
+              style={styles.promoScrollView}
+            >
+              <View style={styles.promoBannerCard} testID="promo-discount-card">
+                <Image
+                  source={require('../../../assets/images/promo_grooming_tools.png')}
+                  style={styles.bannerImage}
+                  resizeMode="cover"
+                />
+                <LinearGradient
+                  colors={['rgba(0, 0, 0, 0.45)', 'rgba(0, 0, 0, 0.75)']}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.promoBannerContent}>
+                  <View>
+                    <Text style={styles.promoLabel}>НА ПЕРШИЙ ГРУМІНГ</Text>
+                    <Text style={styles.promoBigDiscount}>-25%</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.promoDetailButton}
+                    onPress={onNavigateBooking}
+                    testID="promo-detail-button"
+                    accessibilityRole="button"
+                    accessibilityLabel="Знижка 25% на перший грумінг: Детальніше"
+                  >
+                    <Text style={styles.promoDetailText}>Детальніше</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
-              <View
-                style={[styles.promoCard, styles.promoCardAlt]}
+              <TouchableOpacity
+                style={styles.promoBannerCard}
+                onPress={onNavigateBooking}
+                activeOpacity={0.9}
                 testID="promo-seasonal-card"
+                accessibilityRole="button"
+                accessibilityLabel="Безкоштовне підстригання кігтів при комплексному грумінгу"
               >
-                <Text style={styles.promoTitleAlt}>Сезонні пропозиції</Text>
-                <Text style={styles.promoSubtitleAlt}>
-                  СПА-догляд та захист лапок
-                </Text>
-              </View>
-            </View>
+                <Image
+                  source={require('../../../assets/images/promo_nail_trimming.png')}
+                  style={styles.bannerImage}
+                  resizeMode="cover"
+                />
+                <LinearGradient
+                  colors={['rgba(0, 0, 0, 0.15)', 'rgba(0, 0, 0, 0.85)']}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={[styles.promoBannerContent, { justifyContent: 'flex-end' }]}>
+                  <Text style={styles.promoHighlightText}>Безкоштовне</Text>
+                  <Text style={styles.promoSubText}>
+                    підстригання кігтів при комплексному грумінгу
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.promoBannerCard, styles.promoWeekdayCard]}
+                onPress={onNavigateBooking}
+                activeOpacity={0.9}
+                testID="promo-weekday-card"
+                accessibilityRole="button"
+                accessibilityLabel="-20% на комплексний грумінг у будні"
+              >
+                <Image
+                  source={require('../../../assets/images/promo_weekday_grooming-701240.png')}
+                  style={styles.bannerWeekdayImage}
+                  resizeMode="contain"
+                />
+                <View style={[styles.promoBannerContent, { justifyContent: 'center' }]}>
+                  <Text style={styles.promoWeekdayPercent}>-20%</Text>
+                  <Text style={styles.promoWeekdayText}>
+                    на комплексний грумінг у будні
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </ScrollView>
 
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Рекомендовано для вас</Text>
+              <Text style={styles.sectionTitle}>Поради експертів</Text>
             </View>
 
             <View style={styles.adviceContainer}>
-              <View style={styles.adviceCard} testID="advice-card-shampoo">
-                <Text style={styles.adviceTag}>ДОГЛЯД</Text>
-                <Text style={styles.adviceTitle}>
-                  Як обрати правильний шампунь?
-                </Text>
-                <Text style={styles.adviceSnippet}>
-                  Шкіра собак має особливий рівень pH, тому звичайні засоби не
-                  підходять.
-                </Text>
-              </View>
+              <TouchableOpacity
+                style={[styles.adviceCard, { backgroundColor: '#E6F0F6' }]}
+                onPress={onNavigateBooking}
+                activeOpacity={0.9}
+                testID="advice-card-shampoo"
+              >
+                <Image
+                  source={require('../../../assets/images/golden_retriever_bath.png')}
+                  style={styles.adviceImageRight}
+                  resizeMode="cover"
+                />
+                <LinearGradient
+                  colors={['#E6F0F6', 'rgba(230, 240, 246, 0.85)', 'transparent']}
+                  start={{ x: 0.45, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.adviceTextContainer}>
+                  <Text style={styles.adviceCardTitleDark}>
+                    ЯК ОБРАТИ{'\n'}ПРАВИЛЬНИЙ{'\n'}ШАМПУНЬ?
+                  </Text>
+                </View>
+              </TouchableOpacity>
 
-              <View style={styles.adviceCard} testID="advice-card-paws">
-                <Text style={styles.adviceTag}>КОРИСНО</Text>
-                <Text style={styles.adviceTitle}>5 порад для здорових лап</Text>
-                <Text style={styles.adviceSnippet}>
-                  Регулярне зволоження подушечок та стрижка кігтів запобігають
-                  травмам.
-                </Text>
-              </View>
+              <TouchableOpacity
+                style={[styles.adviceCard, { backgroundColor: '#D8E5F3' }]}
+                onPress={onNavigateBooking}
+                activeOpacity={0.9}
+                testID="advice-card-paws"
+              >
+                <Image
+                  source={require('../../../assets/images/dog_paw_close_up.png')}
+                  style={styles.adviceImageRight}
+                  resizeMode="cover"
+                />
+                <LinearGradient
+                  colors={['#D8E5F3', 'rgba(216, 229, 243, 0.85)', 'transparent']}
+                  start={{ x: 0.45, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.adviceTextContainer}>
+                  <Text style={styles.adviceCardTitleAccent}>5 ПОРАД</Text>
+                  <Text style={styles.adviceCardSubtitle}>для здорових лап</Text>
+                </View>
+              </TouchableOpacity>
             </View>
           </>
         )}
@@ -370,11 +434,11 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           <View style={styles.tabContentContainer} testID="booking-tab-content">
             <Text style={styles.tabHeading}>Запис на грумінг</Text>
             <TouchableOpacity
-              style={styles.quickBookButton}
+              style={styles.bookingPrimaryButton}
               onPress={onNavigateBooking}
               testID="booking-tab-action"
             >
-              <Text style={styles.quickBookButtonText}>Обрати послугу</Text>
+              <Text style={styles.bookingPrimaryButtonText}>Обрати послугу</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -518,7 +582,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     height: 48,
-    marginBottom: 8,
+    marginBottom: 16,
   },
   locationContainer: {
     flexDirection: 'row',
@@ -538,27 +602,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  greetingContainer: {
-    marginBottom: 16,
-  },
-  greetingTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.contentPrimary,
-  },
-  quickBookButton: {
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: colors.terracotta,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  quickBookButtonText: {
-    color: colors.surfaceCream,
-    fontSize: 16,
-    fontWeight: '600',
-  },
   sectionHeader: {
     marginBottom: 12,
   },
@@ -573,9 +616,9 @@ const styles = StyleSheet.create({
   },
   visitCard: {
     backgroundColor: colors.surfaceWhite,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
-    marginBottom: 24,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: '#ECEEF1',
   },
@@ -638,7 +681,7 @@ const styles = StyleSheet.create({
   },
   actionButtonSecondary: {
     flex: 1,
-    height: 36,
+    height: 38,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.textMuted,
@@ -652,7 +695,7 @@ const styles = StyleSheet.create({
   },
   actionButtonDanger: {
     flex: 1,
-    height: 36,
+    height: 38,
     borderRadius: 8,
     backgroundColor: 'rgba(255, 56, 60, 0.08)',
     alignItems: 'center',
@@ -665,9 +708,9 @@ const styles = StyleSheet.create({
   },
   emptyVisitCard: {
     backgroundColor: colors.surfaceWhite,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 20,
-    marginBottom: 24,
+    marginBottom: 20,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ECEEF1',
@@ -695,82 +738,138 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  promoGrid: {
-    flexDirection: 'row',
-    gap: 12,
+  promoScrollView: {
     marginBottom: 24,
+    marginHorizontal: -20,
   },
-  promoCard: {
+  promoScrollContent: {
+    paddingHorizontal: 20,
+    gap: 14,
+  },
+  promoBannerCard: {
+    width: 280,
+    height: 165,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#1E293B',
+    position: 'relative',
+  },
+  bannerImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
+  promoBannerContent: {
     flex: 1,
-    backgroundColor: '#FFE9E2',
-    borderRadius: 12,
-    padding: 14,
+    padding: 16,
     justifyContent: 'space-between',
-    minHeight: 120,
+    zIndex: 10,
   },
-  promoBadgeText: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: colors.terracotta,
-  },
-  promoTitle: {
+  promoLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: colors.contentPrimary,
-    marginBottom: 8,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  promoBigDiscount: {
+    fontSize: 40,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    lineHeight: 44,
+    marginTop: 2,
   },
   promoDetailButton: {
     alignSelf: 'flex-start',
     backgroundColor: colors.terracotta,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 16,
+    borderRadius: 10,
   },
   promoDetailText: {
     color: colors.surfaceCream,
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '600',
   },
-  promoCardAlt: {
-    backgroundColor: '#EBF1FA',
+  promoHighlightText: {
+    fontSize: 19,
+    fontWeight: '700',
+    color: colors.terracotta,
+    marginBottom: 4,
   },
-  promoTitleAlt: {
-    fontSize: 16,
+  promoSubText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    lineHeight: 18,
+  },
+  promoWeekdayCard: {
+    backgroundColor: '#ECEEF1',
+  },
+  bannerWeekdayImage: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 140,
+  },
+  promoWeekdayPercent: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: colors.terracotta,
+    marginBottom: 2,
+  },
+  promoWeekdayText: {
+    fontSize: 14,
     fontWeight: '700',
     color: colors.contentPrimary,
-  },
-  promoSubtitleAlt: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 4,
+    maxWidth: 140,
   },
   adviceContainer: {
     gap: 12,
     marginBottom: 16,
   },
   adviceCard: {
-    backgroundColor: colors.surfaceWhite,
-    borderRadius: 12,
+    minHeight: 110,
+    borderRadius: 14,
+    overflow: 'hidden',
+    position: 'relative',
+    justifyContent: 'center',
     padding: 16,
     borderWidth: 1,
-    borderColor: '#ECEEF1',
-    gap: 4,
+    borderColor: 'rgba(0,0,0,0.04)',
   },
-  adviceTag: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.terracotta,
-    letterSpacing: 0.5,
+  adviceImageRight: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 140,
   },
-  adviceTitle: {
+  adviceTextContainer: {
+    maxWidth: 180,
+    zIndex: 10,
+  },
+  adviceCardTitleDark: {
     fontSize: 15,
     fontWeight: '700',
     color: colors.contentPrimary,
+    lineHeight: 20,
   },
-  adviceSnippet: {
-    fontSize: 13,
-    color: colors.textMuted,
-    lineHeight: 18,
+  adviceCardTitleAccent: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 2,
+  },
+  adviceCardSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E293B',
   },
   tabContentContainer: {
     paddingVertical: 12,
@@ -829,6 +928,19 @@ const styles = StyleSheet.create({
   addPetButtonText: {
     color: colors.terracotta,
     fontSize: 15,
+    fontWeight: '600',
+  },
+  bookingPrimaryButton: {
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: colors.terracotta,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  bookingPrimaryButtonText: {
+    color: colors.surfaceCream,
+    fontSize: 16,
     fontWeight: '600',
   },
   profileCard: {

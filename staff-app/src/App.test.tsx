@@ -9,6 +9,12 @@ describe('Staff App Routing & Access Control', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
+    vi.spyOn(supabase, 'channel').mockReturnValue({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn().mockReturnThis(),
+      unsubscribe: vi.fn().mockResolvedValue('ok'),
+    } as never);
+    vi.spyOn(supabase, 'removeChannel').mockResolvedValue('ok' as never);
   });
 
   it('redirects unauthenticated user visiting /requests to /login', async () => {

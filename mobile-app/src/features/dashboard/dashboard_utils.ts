@@ -46,6 +46,7 @@ export function formatVisitStatusText(status?: string | null): string {
   switch (status?.toLowerCase()) {
     case 'confirmed':
       return 'Запланований візит';
+    case 'new':
     case 'pending':
       return 'Очікує підтвердження';
     case 'in_progress':

@@ -24,6 +24,7 @@ import ProfileUpcomingVisitsPage from '@/features/profile/ProfileUpcomingVisitsP
 import LoyaltyProgramPage from '@/features/profile/LoyaltyProgramPage';
 import QuickSchedulePage from '@/features/schedule/QuickSchedulePage';
 import BookingPage from '@/features/booking/BookingPage';
+import { getInitialBookingDate } from '@/features/booking/booking_date_utils';
 import ArticleDetailPage from '@/features/articles/ArticleDetailPage';
 import PromoDetailPage from '@/features/promotions/PromoDetailPage';
 import CitySelectionPage from '@/features/location/CitySelectionPage';
@@ -477,6 +478,7 @@ export function AppRoutes() {
             <ProtectedRoute isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading}>
               <BookingPage
                 isLoggedIn={isLoggedIn}
+                initialDate={getInitialBookingDate().date}
                 onLoginClick={() => navigate('/login')}
                 onRegisterClick={() => navigate('/register')}
                 onProfileClick={() => navigate('/profile')}

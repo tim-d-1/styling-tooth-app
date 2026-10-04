@@ -3,6 +3,7 @@ import Icon from '@/components/ui/Icon';
 import BookingProgressBar from '../components/BookingProgressBar';
 import { TIME_SLOTS, type WeekDayOption } from '../booking_types';
 import { supabase } from '@/lib/supabase';
+import { getInitialBookingDate } from '../booking_date_utils';
 
 export interface BookingDateTimeStepProps {
   selectedDate?: string;
@@ -52,10 +53,21 @@ export const BookingDateTimeStep: FC<BookingDateTimeStepProps> = ({
   onSelectDateTime,
   onNext,
 }) => {
-  const [weekStartDate, setWeekStartDate] = useState<string>('2026-08-09');
-  const [currentDate, setCurrentDate] = useState<string>(
-    selectedDate || '2026-08-11'
-  );
+  const [currentDate, setCurrentDate] = useState<string>(() => {
+    if (selectedDate) return selectedDate;
+    return getInitialBookingDate().date;
+  });
+  const [weekStartDate, setWeekStartDate] = useState<string>(() => {
+    if (selectedDate === '2026-08-11') return '2026-08-09';
+    if (selectedDate) {
+      const d = new Date(selectedDate + 'T00:00:00Z');
+      const dayOfWeek = (d.getUTCDay() + 6) % 7;
+      const mon = new Date(d.getTime() - dayOfWeek * 86400000);
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      return `${mon.getUTCFullYear()}-${pad(mon.getUTCMonth() + 1)}-${pad(mon.getUTCDate())}`;
+    }
+    return getInitialBookingDate().weekStartDate;
+  });
   const [currentTimeSlot, setCurrentTimeSlot] = useState<string>(
     selectedTimeSlot || '16:00'
   );

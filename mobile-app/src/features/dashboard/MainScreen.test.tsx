@@ -26,22 +26,54 @@ describe('MainScreen (Головна)', () => {
       },
       error: null,
     });
+    (supabase.from as any).mockImplementation((_table: string) => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      update: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      }),
+    }));
   });
 
-  it('renders top bar, quick booking CTA, promo banners, and advice matching frame 211:1755', () => {
+  it('renders top bar, scheduled visit before banners, promo banners with backgrounds, and advice', () => {
     render(<MainScreen initialVisit={null} userEmail="maria@example.com" />);
 
     expect(screen.getByTestId('main-screen')).toBeInTheDocument();
     expect(screen.getByTestId('location-indicator')).toBeInTheDocument();
     expect(screen.getByText('м. Київ')).toBeInTheDocument();
     expect(screen.getByTestId('notifications-button')).toBeInTheDocument();
-    expect(screen.getByTestId('quick-booking-button')).toBeInTheDocument();
 
-    expect(screen.getByTestId('empty-visit-card')).toBeInTheDocument();
-    expect(screen.getByText('Немає запланованих візитів')).toBeInTheDocument();
+    expect(screen.queryByTestId('quick-booking-button')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Привіт/i)).not.toBeInTheDocument();
 
-    expect(screen.getByTestId('promo-discount-card')).toBeInTheDocument();
+    const emptyVisitCard = screen.getByTestId('empty-visit-card');
+    const promoDiscountCard = screen.getByTestId('promo-discount-card');
+    expect(emptyVisitCard).toBeInTheDocument();
+    expect(promoDiscountCard).toBeInTheDocument();
+
+    expect(
+      Boolean(emptyVisitCard.compareDocumentPosition(promoDiscountCard) & Node.DOCUMENT_POSITION_FOLLOWING)
+    ).toBe(true);
+
+    expect(screen.getByText('-25%')).toBeInTheDocument();
+    expect(screen.getByText('НА ПЕРШИЙ ГРУМІНГ')).toBeInTheDocument();
+    expect(screen.getByTestId('promo-detail-button')).toBeInTheDocument();
+
     expect(screen.getByTestId('promo-seasonal-card')).toBeInTheDocument();
+    expect(screen.getByText('Безкоштовне')).toBeInTheDocument();
+    expect(
+      screen.getByText('підстригання кігтів при комплексному грумінгу')
+    ).toBeInTheDocument();
+
+    expect(screen.getByTestId('promo-weekday-card')).toBeInTheDocument();
+    expect(screen.getByText('-20%')).toBeInTheDocument();
+    expect(screen.getByText('на комплексний грумінг у будні')).toBeInTheDocument();
+
     expect(screen.getByTestId('advice-card-shampoo')).toBeInTheDocument();
     expect(screen.getByTestId('advice-card-paws')).toBeInTheDocument();
 
@@ -52,10 +84,18 @@ describe('MainScreen (Головна)', () => {
     expect(screen.getByTestId('tab-profile')).toBeInTheDocument();
   });
 
-  it('renders visit details and action buttons when visit exists', () => {
+  it('renders scheduled visit card before promo banners when visit exists', () => {
     render(<MainScreen initialVisit={mockVisit} />);
 
-    expect(screen.getByTestId('visit-card')).toBeInTheDocument();
+    const visitCard = screen.getByTestId('visit-card');
+    const promoCard = screen.getByTestId('promo-discount-card');
+
+    expect(visitCard).toBeInTheDocument();
+    expect(promoCard).toBeInTheDocument();
+    expect(
+      Boolean(visitCard.compareDocumentPosition(promoCard) & Node.DOCUMENT_POSITION_FOLLOWING)
+    ).toBe(true);
+
     expect(screen.getByTestId('visit-date-badge')).toBeInTheDocument();
     expect(screen.getByText('Тваринка: Барон')).toBeInTheDocument();
     expect(screen.getByText('Комплексний грумінг')).toBeInTheDocument();
@@ -67,8 +107,17 @@ describe('MainScreen (Головна)', () => {
     const mockUpdate = vi.fn().mockReturnValue({
       eq: vi.fn().mockResolvedValue({ error: null }),
     });
-    (supabase.from as any).mockReturnValue({
-      update: mockUpdate,
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'appointments') {
+        return {
+          update: mockUpdate,
+        };
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
     });
 
     render(<MainScreen initialVisit={mockVisit} />);

@@ -278,6 +278,90 @@ describe('BookingPage', () => {
     expect(mockInsert).toHaveBeenCalledTimes(1);
   });
 
+  it('calls supabase.rpc create_appointment on payment submission and navigates to main', async () => {
+    const handleComplete = vi.fn();
+    const handleToast = vi.fn();
+
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-booking-1', email: 'booker@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+
+    const mockRpc = vi.fn().mockResolvedValue({ data: { id: 'appt-123' }, error: null });
+    vi.spyOn(supabase, 'rpc').mockImplementation(mockRpc as never);
+
+    renderBooking({
+      initialStage: 'payment',
+      onComplete: handleComplete,
+      onToast: handleToast,
+    });
+
+    const payBtn = screen.getByRole('button', { name: /Оплатити/i });
+    await act(async () => {
+      fireEvent.click(payBtn);
+    });
+
+    await waitFor(() => {
+      expect(mockRpc).toHaveBeenCalledWith(
+        'create_appointment',
+        expect.objectContaining({
+          p_source: 'web',
+        })
+      );
+      expect(handleComplete).toHaveBeenCalledTimes(1);
+    });
+    expect(handleToast).toHaveBeenCalledWith('Візит успішно заброньовано!');
+  });
+
+  it('shows error toast when appointment creation fails', async () => {
+    const handleToast = vi.fn();
+
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-booking-1', email: 'booker@example.com' },
+        },
+      },
+      error: null,
+    } as never);
+
+    vi.spyOn(supabase, 'rpc').mockResolvedValue({
+      data: null,
+      error: { message: 'Slot unavailable' },
+    } as never);
+
+    vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
+      if (table === 'appointments') {
+        return {
+          insert: vi.fn().mockResolvedValue({ data: null, error: { message: 'Slot unavailable' } }),
+        };
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      };
+    }) as never);
+
+    renderBooking({
+      initialStage: 'payment',
+      onToast: handleToast,
+    });
+
+    const payBtn = screen.getByRole('button', { name: /Оплатити/i });
+    await act(async () => {
+      fireEvent.click(payBtn);
+    });
+
+    await waitFor(() => {
+      expect(handleToast).toHaveBeenCalledWith(expect.stringContaining('Помилка бронювання:'));
+    });
+  });
+
   it('renders payment stage without placeholder 4821 card and without input placeholders', () => {
     renderBooking({ initialStage: 'payment' });
 

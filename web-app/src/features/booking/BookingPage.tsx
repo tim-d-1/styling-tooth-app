@@ -19,10 +19,12 @@ import {
 } from './booking_types';
 import { supabase } from '@/lib/supabase';
 import { fetchPetsAvatarMap } from '@/features/pets/pet_media_utils';
+import { getKyivISOString, getInitialBookingDate } from './booking_date_utils';
 
 export interface BookingPageProps {
   isLoggedIn?: boolean;
   initialStage?: BookingStage;
+  initialDate?: string;
   initialPets?: PetOption[];
   initialMasters?: MasterProfile[];
   onBackClick?: () => void;
@@ -37,6 +39,7 @@ export interface BookingPageProps {
 export const BookingPage: FC<BookingPageProps> = ({
   isLoggedIn = false,
   initialStage = 'pet',
+  initialDate,
   initialPets,
   initialMasters,
   onBackClick,
@@ -67,6 +70,10 @@ export const BookingPage: FC<BookingPageProps> = ({
         ? DEMO_PETS[0]
         : null;
 
+    const initialDates = initialDate
+      ? getInitialBookingDate(new Date(initialDate))
+      : { date: '2026-08-11', dateFormatted: '11.08.2026' };
+
     return {
       petId: defaultPet?.id || '',
       petName: defaultPet?.name || '',
@@ -84,8 +91,8 @@ export const BookingPage: FC<BookingPageProps> = ({
       masterRole: initialMasters && initialMasters[0]?.role,
       masterAvatarUrl: initialMasters && initialMasters[0]?.avatarUrl,
 
-      date: '2026-08-11',
-      dateFormatted: '11.08.2026',
+      date: initialDates.date,
+      dateFormatted: initialDates.dateFormatted,
       timeSlot: '16:00',
 
       clientNote: '',
@@ -124,6 +131,20 @@ export const BookingPage: FC<BookingPageProps> = ({
             price: Number(s.price),
           }));
           setProcedures(mapped);
+          setBookingState((prev) => {
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(prev.procedureId);
+            if (!isUUID) {
+              const matched = mapped.find((m) => m.name === prev.procedureName) || mapped[0];
+              return {
+                ...prev,
+                procedureId: matched.id,
+                procedureName: matched.name,
+                procedurePrice: matched.price,
+                procedureDurationMin: matched.durationMin,
+              };
+            }
+            return prev;
+          });
         }
       } catch {
         if (isMounted) {
@@ -369,47 +390,123 @@ export const BookingPage: FC<BookingPageProps> = ({
       const { data: sessionData } = await supabase.auth.getSession();
       const currentUserId = sessionData?.session?.user?.id;
 
-      if (currentUserId) {
-        const startsAt = new Date(
-          `${bookingState.date}T${bookingState.timeSlot}:00Z`
-        ).toISOString();
-        const endsAt = new Date(
-          new Date(startsAt).getTime() +
-            (bookingState.procedureDurationMin || 90) * 60000
-        ).toISOString();
+      if (!currentUserId) {
+        throw new Error('Для оформлення візиту необхідно увійти в систему');
+      }
 
-        await supabase.from('appointments').insert({
+      let resolvedPetId = bookingState.petId;
+      const isUUID = (val?: string) =>
+        Boolean(val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val));
+
+      if (!isUUID(resolvedPetId) || resolvedPetId.startsWith('p-')) {
+        try {
+          const { data: userPets } = await supabase
+            .from('pets')
+            .select('id, name')
+            .eq('owner_id', currentUserId)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false });
+
+          if (userPets && userPets.length > 0) {
+            const matching = userPets.find((p) => p.name === bookingState.petName);
+            resolvedPetId = matching ? matching.id : userPets[0].id;
+          } else {
+            const petTable = supabase.from('pets');
+            if (petTable && typeof petTable.insert === 'function') {
+              const res = await petTable.insert({
+                owner_id: currentUserId,
+                name: bookingState.petName || 'Барон',
+                species: bookingState.petSpecies === 'Кіт' ? 'cat' : 'dog',
+                breed: bookingState.petBreed || 'Йоркширський тер’єр',
+              });
+              const created = res?.data as Array<{ id: string }> | null;
+              if (created && Array.isArray(created) && created[0]?.id) {
+                resolvedPetId = created[0].id;
+              }
+            }
+          }
+        } catch {
+          // Ignore in mocks
+        }
+      }
+
+      const SERVICE_SLUG_MAP: Record<string, string> = {
+        'express-grooming': '50000000-0000-0000-0000-000000000001',
+        'spa-complex': '50000000-0000-0000-0000-000000000002',
+        'ozone-therapy': '50000000-0000-0000-0000-000000000003',
+        'hygiene-care': '50000000-0000-0000-0000-000000000004',
+        'combing': '50000000-0000-0000-0000-000000000005',
+        'breed-haircut': '50000000-0000-0000-0000-000000000006',
+        'nail-trimming': '50000000-0000-0000-0000-000000000007',
+      };
+      const resolvedServiceId = isUUID(bookingState.procedureId)
+        ? bookingState.procedureId
+        : SERVICE_SLUG_MAP[bookingState.procedureId] || '50000000-0000-0000-0000-000000000001';
+
+      const resolvedMasterId = isUUID(bookingState.masterId)
+        ? bookingState.masterId
+        : null;
+
+      const startsAt = getKyivISOString(bookingState.date, bookingState.timeSlot);
+      const endsAt = new Date(
+        new Date(startsAt).getTime() + (bookingState.procedureDurationMin || 90) * 60000
+      ).toISOString();
+
+      const clientNoteParts = [
+        bookingState.clientNote,
+        bookingState.behaviorNotes ? `Поведінка: ${bookingState.behaviorNotes}` : '',
+        bookingState.transferEnabled ? `Трансфер: ${bookingState.transferAddress}` : '',
+      ].filter(Boolean).join(' | ');
+
+      let appointmentCreated = false;
+
+      if (typeof supabase.rpc === 'function') {
+        try {
+          const { data: rpcData, error: rpcError } = await supabase.rpc('create_appointment', {
+            p_pet_id: isUUID(resolvedPetId) ? resolvedPetId : null,
+            p_master_id: resolvedMasterId,
+            p_service_id: resolvedServiceId,
+            p_starts_at: startsAt,
+            p_client_note: clientNoteParts || null,
+            p_source: 'web',
+          });
+
+          if (!rpcError && rpcData) {
+            appointmentCreated = true;
+          }
+        } catch {
+          // Fall through to direct insert
+        }
+      }
+
+      if (!appointmentCreated) {
+        const { error: insertError } = await supabase.from('appointments').insert({
           client_id: currentUserId,
-          pet_id: bookingState.petId.startsWith('p-')
-            ? undefined
-            : bookingState.petId,
+          pet_id:
+            resolvedPetId && resolvedPetId.startsWith('p-')
+              ? undefined
+              : resolvedPetId || undefined,
           master_id:
             bookingState.masterId === 'any' ||
             bookingState.masterId.startsWith('m-')
               ? undefined
-              : bookingState.masterId,
+              : (resolvedMasterId || undefined),
           service_id:
             bookingState.procedureId.startsWith('p-')
               ? undefined
-              : bookingState.procedureId,
+              : resolvedServiceId,
           price:
             bookingState.procedurePrice +
             (bookingState.transferEnabled ? bookingState.transferPrice : 0),
           starts_at: startsAt,
           ends_at: endsAt,
           status: 'confirmed',
-          client_note: [
-            bookingState.clientNote,
-            bookingState.behaviorNotes
-              ? `Поведінка: ${bookingState.behaviorNotes}`
-              : '',
-            bookingState.transferEnabled
-              ? `Трансфер: ${bookingState.transferAddress}`
-              : '',
-          ]
-            .filter(Boolean)
-            .join(' | '),
+          client_note: clientNoteParts || null,
         });
+
+        if (insertError) {
+          throw new Error(insertError.message || 'Не вдалося створити візит');
+        }
       }
 
       if (onToast) {
@@ -421,15 +518,11 @@ export const BookingPage: FC<BookingPageProps> = ({
       } else {
         navigate('/main');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to create appointment:', err);
+      const errMsg = err instanceof Error ? err.message : 'Не вдалося створити візит';
       if (onToast) {
-        onToast('Візит успішно заброньовано!');
-      }
-      if (onComplete) {
-        onComplete();
-      } else {
-        navigate('/main');
+        onToast(`Помилка бронювання: ${errMsg}`);
       }
     } finally {
       setIsProcessingPayment(false);
