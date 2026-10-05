@@ -51,15 +51,14 @@ describe('profile_utils', () => {
     expect(formatProfilePhone('   ')).toBe('Номер не вказано');
   });
 
-  it('resolves payment subtitle with formatted labels or default Apple Pay', () => {
-    expect(resolvePaymentSubtitle([])).toBe('Apple Pay');
-    expect(resolvePaymentSubtitle(null as any)).toBe('Apple Pay');
+  it('resolves payment subtitle with formatted labels or default Банківська картка', () => {
+    expect(resolvePaymentSubtitle([])).toBe('Банківська картка');
+    expect(resolvePaymentSubtitle(null as any)).toBe('Банківська картка');
     expect(
       resolvePaymentSubtitle([
-        { type: 'apple_pay' },
         { type: 'card', last4: '4821' },
       ])
-    ).toBe('Apple Pay, *4821');
+    ).toBe('*4821');
   });
 
   it('formats bonus points with Ukrainian locale thousands separator', () => {

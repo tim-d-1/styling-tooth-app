@@ -74,7 +74,7 @@ export const ProfilePage: FC<ProfilePageProps> = ({
   const [isCancelling, setIsCancelling] = useState(false);
   const [pets, setPets] = useState<ProfilePet[]>(initialPets || []);
   const [isLoadingPets, setIsLoadingPets] = useState(initialPets === undefined);
-  const [paymentSubtitle, setPaymentSubtitle] = useState('Apple Pay');
+  const [paymentSubtitle, setPaymentSubtitle] = useState('Банківська картка');
 
   useEffect(() => {
     let isMounted = true;
@@ -134,11 +134,11 @@ export const ProfilePage: FC<ProfilePageProps> = ({
         const userMethods = sessionUser?.user_metadata?.payment_methods;
         if (Array.isArray(userMethods) && userMethods.length > 0) {
           const labels = userMethods.map((m: any) =>
-            m.type === 'apple_pay' ? 'Apple Pay' : `*${m.last4 || 'картка'}`
+            m.last4 ? `*${m.last4}` : 'Банківська картка'
           );
           setPaymentSubtitle(labels.join(', '));
         } else {
-          setPaymentSubtitle('Apple Pay');
+          setPaymentSubtitle('Банківська картка');
         }
 
         setUser((prev) => ({

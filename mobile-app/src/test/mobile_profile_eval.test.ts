@@ -42,7 +42,7 @@ describe('Mobile Profile Eval Suite: Frame 680:2061 Hierarchy, Data Contracts, a
     const expectedSettings = [
       { id: 'personal_info', title: 'Особисті дані', defaultSubtitle: "Ім'я, телефон, email" },
       { id: 'addresses', title: 'Мої адреси', defaultSubtitle: 'Дім, Офіс' },
-      { id: 'payment_methods', title: 'Способи оплати', defaultSubtitle: 'Apple Pay' },
+      { id: 'payment_methods', title: 'Способи оплати', defaultSubtitle: 'Банківська картка' },
       { id: 'notifications', title: 'Налаштування сповіщень' },
     ];
 
@@ -74,7 +74,7 @@ describe('Mobile Profile Eval Suite: Frame 680:2061 Hierarchy, Data Contracts, a
       { field: 'phone', placeholder: '+380 (97) *** ** 42' },
       { field: 'points', placeholder: '450' },
       { field: 'tier', placeholder: 'Gold Level • 25% Cashback' },
-      { field: 'payment', placeholder: 'Apple Pay, *4821' },
+      { field: 'payment', placeholder: 'Банківська картка, *4821' },
     ];
 
     it('evaluates dynamic greeting resolves from real name and never hardcodes "Катерино"', () => {
@@ -94,13 +94,13 @@ describe('Mobile Profile Eval Suite: Frame 680:2061 Hierarchy, Data Contracts, a
 
     it('evaluates payment subtitle dynamically reflects user cards or fallback', () => {
       const emptyMethods: any[] = [];
-      expect(resolvePaymentSubtitle(emptyMethods)).toBe('Apple Pay');
+      expect(resolvePaymentSubtitle(emptyMethods)).toBe('Банківська картка');
 
       const customMethods = [{ type: 'card', last4: '9988' }];
       expect(resolvePaymentSubtitle(customMethods)).toBe('*9988');
 
-      const appleAndVisa = [{ type: 'apple_pay' }, { type: 'card', last4: '1234' }];
-      expect(resolvePaymentSubtitle(appleAndVisa)).toBe('Apple Pay, *1234');
+      const cards = [{ type: 'card', last4: '5566' }, { type: 'card', last4: '1234' }];
+      expect(resolvePaymentSubtitle(cards)).toBe('*5566, *1234');
     });
   });
 

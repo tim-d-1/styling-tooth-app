@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act, waitFor, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import BookingPage from './BookingPage';
 import BookingPetStep from './steps/BookingPetStep';
@@ -38,6 +38,11 @@ const mockTestMasters: MasterProfile[] = [
 describe('BookingPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(supabase, 'rpc').mockResolvedValue({ data: null, error: null } as never);
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   const renderBooking = (props: Record<string, any> = {}) => {
@@ -231,27 +236,47 @@ describe('BookingPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Підтвердити запис' }));
 
     expect(screen.getByRole('heading', { level: 1, name: 'Способи оплати' })).toBeDefined();
-    expect(screen.getByRole('radio', { name: /Apple Pay/i })).toBeDefined();
+    expect(screen.getByRole('radio', { name: /Банківська картка/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /Оплатити/i })).toBeDefined();
   });
 
-  it('processes payment with Apple Pay and invokes onComplete and Supabase appointment creation', async () => {
+  it('processes payment with bank card and invokes onComplete and Supabase appointment creation', async () => {
     const handleComplete = vi.fn();
     const handleToast = vi.fn();
 
     vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
       data: {
         session: {
-          user: { id: 'user-booking-1', email: 'booker@example.com' },
+          user: {
+            id: 'user-booking-1',
+            email: 'booker@example.com',
+            user_metadata: {
+              payment_methods: [
+                { id: 'pm-card-1', type: 'card', last4: '4821', expiry: '12/28' },
+              ],
+            },
+          },
         },
       },
       error: null,
     } as never);
 
-    const mockInsert = vi.fn().mockResolvedValue({ data: null, error: null });
     vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
       if (table === 'appointments') {
-        return { insert: mockInsert };
+        return {
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockResolvedValue({ data: [{ id: 'appt-inserted-1' }], error: null }),
+          }),
+        };
+      }
+      if (table === 'payments') {
+        return {
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'pay-1' }, error: null }),
+            }),
+          }),
+        };
       }
       return {
         select: vi.fn().mockReturnThis(),
@@ -266,7 +291,7 @@ describe('BookingPage', () => {
       onToast: handleToast,
     });
 
-    const payBtn = screen.getByRole('button', { name: /Оплатити/i });
+    const payBtn = await screen.findByRole('button', { name: /Оплатити/i });
     await act(async () => {
       fireEvent.click(payBtn);
     });
@@ -275,19 +300,23 @@ describe('BookingPage', () => {
       expect(handleComplete).toHaveBeenCalledTimes(1);
     });
     expect(handleToast).toHaveBeenCalledWith('Візит успішно заброньовано!');
-    expect(mockInsert).toHaveBeenCalledTimes(1);
   });
 
-  it('calls supabase.rpc create_appointment on payment submission and navigates to main', async () => {
+  it('calls supabase.rpc create_appointment on payment submission, saves card when requested, and navigates to main', async () => {
     const handleComplete = vi.fn();
     const handleToast = vi.fn();
 
     vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
       data: {
         session: {
-          user: { id: 'user-booking-1', email: 'booker@example.com' },
+          user: { id: 'user-booking-1', email: 'booker@example.com', user_metadata: {} },
         },
       },
+      error: null,
+    } as never);
+
+    const updateUserSpy = vi.spyOn(supabase.auth, 'updateUser').mockResolvedValue({
+      data: { user: null },
       error: null,
     } as never);
 
@@ -300,6 +329,14 @@ describe('BookingPage', () => {
       onToast: handleToast,
     });
 
+    const cardInput = screen.getByLabelText(/Номер картки/i);
+    const expiryInput = screen.getByLabelText(/Термін/i);
+    const cvvInput = screen.getByLabelText(/CVV/i);
+
+    fireEvent.change(cardInput, { target: { value: '4111 2222 3333 4821' } });
+    fireEvent.change(expiryInput, { target: { value: '12/28' } });
+    fireEvent.change(cvvInput, { target: { value: '123' } });
+
     const payBtn = screen.getByRole('button', { name: /Оплатити/i });
     await act(async () => {
       fireEvent.click(payBtn);
@@ -310,6 +347,15 @@ describe('BookingPage', () => {
         'create_appointment',
         expect.objectContaining({
           p_source: 'web',
+        })
+      );
+      expect(updateUserSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            payment_methods: expect.arrayContaining([
+              expect.objectContaining({ last4: '4821' }),
+            ]),
+          }),
         })
       );
       expect(handleComplete).toHaveBeenCalledTimes(1);

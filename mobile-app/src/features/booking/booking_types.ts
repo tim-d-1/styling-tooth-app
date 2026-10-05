@@ -78,7 +78,7 @@ export interface BookingState {
   transferAddress: string;
   behaviorNotes: string;
 
-  paymentMethod: 'apple_pay' | 'card' | 'cash';
+  paymentMethod: 'card' | 'cash';
 }
 
 export const PROCEDURES_CATALOG: ProcedureOption[] = [

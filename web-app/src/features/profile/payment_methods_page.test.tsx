@@ -94,8 +94,7 @@ describe('PaymentMethodsPage', () => {
     );
 
     expect(screen.getByRole('heading', { level: 2, name: 'Збережені способи' })).toBeDefined();
-    expect(screen.getByText('Apple Pay')).toBeDefined();
-    expect(screen.getByText('Основний спосіб')).toBeDefined();
+    expect(screen.getByText('•••• 1234')).toBeDefined();
     expect(screen.getByText('•••• 4821')).toBeDefined();
 
     const cardMethod = screen.getByTestId('payment-method-pm-card-4821');

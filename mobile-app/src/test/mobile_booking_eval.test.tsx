@@ -120,7 +120,7 @@ describe('Mobile Booking Parity Eval Suite', () => {
     );
 
     expect(screen.getByTestId('step-payment')).toBeInTheDocument();
-    expect(screen.getByTestId('payment-method-apple-pay')).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-method-apple-pay')).not.toBeInTheDocument();
     expect(screen.getByTestId('payment-method-card')).toBeInTheDocument();
     expect(screen.getByTestId('payment-method-cash')).toBeInTheDocument();
 

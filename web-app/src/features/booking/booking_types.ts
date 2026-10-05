@@ -78,7 +78,7 @@ export interface BookingState {
   transferAddress: string;
   behaviorNotes: string;
 
-  paymentMethod: 'apple_pay' | 'card' | 'new_card';
+  paymentMethod: 'card' | 'new_card';
   savedCardId?: string;
 }
 

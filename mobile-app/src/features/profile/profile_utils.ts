@@ -37,11 +37,11 @@ export function formatProfilePhone(phone?: string | null): string {
 export function resolvePaymentSubtitle(userMethods?: any[]): string {
   if (Array.isArray(userMethods) && userMethods.length > 0) {
     const labels = userMethods.map((m: any) =>
-      m.type === 'apple_pay' ? 'Apple Pay' : `*${m.last4 || 'картка'}`
+      m.last4 ? `*${m.last4}` : 'Банківська картка'
     );
     return labels.join(', ');
   }
-  return 'Apple Pay';
+  return 'Банківська картка';
 }
 
 export function formatBonusPoints(points?: number | null): string {

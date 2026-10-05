@@ -140,7 +140,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       transferAddress: '',
       behaviorNotes: '',
 
-      paymentMethod: 'apple_pay',
+      paymentMethod: 'card',
     };
   });
 
@@ -1120,26 +1120,6 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             <Text style={styles.stepHeading}>Способи оплати</Text>
 
             <View style={styles.paymentMethodsList}>
-              <TouchableOpacity
-                style={[
-                  styles.paymentMethodCard,
-                  bookingState.paymentMethod === 'apple_pay' &&
-                    styles.paymentMethodCardSelected,
-                ]}
-                onPress={() =>
-                  setBookingState((prev) => ({ ...prev, paymentMethod: 'apple_pay' }))
-                }
-                testID="payment-method-apple-pay"
-              >
-                <View style={styles.paymentMethodCardLeft}>
-                  <ApplePayIcon color={colors.contentPrimary} size={22} />
-                  <Text style={styles.paymentMethodTitle}>Apple Pay</Text>
-                </View>
-                {bookingState.paymentMethod === 'apple_pay' && (
-                  <CheckIcon color={colors.terracotta} size={16} />
-                )}
-              </TouchableOpacity>
-
               <TouchableOpacity
                 style={[
                   styles.paymentMethodCard,

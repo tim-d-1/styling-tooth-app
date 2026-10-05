@@ -223,7 +223,7 @@ describe('Profile Feature Components', () => {
       expect(screen.getByText('Особисті дані')).toBeDefined();
       expect(screen.getByText('Мої адреси')).toBeDefined();
       expect(screen.getByText('Способи оплати')).toBeDefined();
-      expect(screen.getByText('Apple Pay')).toBeDefined();
+      expect(screen.getByText('Банківська картка')).toBeDefined();
       expect(screen.queryByText(/4821/)).toBeNull();
       expect(screen.getByText('Налаштування сповіщень')).toBeDefined();
       expect(screen.getByText('Підтримка')).toBeDefined();

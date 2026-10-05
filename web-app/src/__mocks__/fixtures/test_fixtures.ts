@@ -59,11 +59,13 @@ export const mockLoyaltyData: LoyaltyProgramData = {
 
 export const mockSavedMethods: SavedPaymentMethod[] = [
   {
-    id: 'pm-apple-pay',
-    type: 'apple_pay',
-    title: 'Apple Pay',
-    subtitle: 'Основний спосіб',
+    id: 'pm-card-1234',
+    type: 'card',
+    title: '•••• 1234',
+    subtitle: 'Термін: 05/29',
     isDefault: true,
+    last4: '1234',
+    expiry: '05/29',
   },
   {
     id: 'pm-card-4821',

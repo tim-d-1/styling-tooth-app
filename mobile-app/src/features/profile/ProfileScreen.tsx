@@ -76,7 +76,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       bonusPoints: 0,
     }
   );
-  const [paymentSubtitle, setPaymentSubtitle] = useState('Apple Pay');
+  const [paymentSubtitle, setPaymentSubtitle] = useState('Банківська картка');
 
   useEffect(() => {
     let isMounted = true;
