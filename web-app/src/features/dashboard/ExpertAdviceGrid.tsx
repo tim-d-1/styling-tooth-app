@@ -61,7 +61,7 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
                     className="absolute inset-0 z-20 pointer-events-none"
                     style={{
                       background:
-                        'linear-gradient(to right, #e8effa 0%, #e8effa 46%, rgba(232, 239, 250, 0.85) 53%, rgba(232, 239, 250, 0) 65%)',
+                        'linear-gradient(to left, rgba(232, 239, 250, 0) 0px, rgba(232, 239, 250, 0) 88px, rgba(232, 239, 250, 0.85) 126px, #e8effa 148px, #e8effa 100%)',
                     }}
                   />
 
