@@ -23,3 +23,12 @@ export interface ProfileSettingItem {
   iconName: ProfileIconName;
   isOnline?: boolean;
 }
+
+export interface UserAddress {
+  id?: string;
+  street: string;
+  apartment: string;
+  entranceFloor: string;
+  label: string;
+  isDefaultTransfer: boolean;
+}

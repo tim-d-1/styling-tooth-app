@@ -128,4 +128,11 @@ describe('App navigation and routing flow', () => {
       expect(screen.getByTestId('landing-screen')).toBeInTheDocument();
     });
   });
+
+  it('renders addresses screen directly via initialScreen="addresses"', () => {
+    render(<App initialScreen="addresses" />);
+
+    expect(screen.getByTestId('my-addresses-screen')).toBeInTheDocument();
+    expect(screen.getByText('Мої Адреси')).toBeInTheDocument();
+  });
 });

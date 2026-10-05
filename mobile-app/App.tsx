@@ -19,7 +19,8 @@ export type ScreenState =
   | 'pet_onboarding'
   | 'authenticated'
   | 'profile'
-  | 'personal_data';
+  | 'personal_data'
+  | 'addresses';
 
 export interface AppProps {
   initialScreen?: ScreenState;
@@ -139,18 +140,25 @@ export default function App({
 
         {(currentScreen === 'authenticated' ||
           currentScreen === 'profile' ||
-          currentScreen === 'personal_data') && (
+          currentScreen === 'personal_data' ||
+          currentScreen === 'addresses') && (
           <MainScreen
             userEmail={userEmail}
             onLogout={handleLogout}
             onNavigateAddPet={() => setCurrentScreen('pet_onboarding')}
             initialTab={
-              currentScreen === 'profile' || currentScreen === 'personal_data'
+              currentScreen === 'profile' ||
+              currentScreen === 'personal_data' ||
+              currentScreen === 'addresses'
                 ? 'profile'
                 : initialTab
             }
             initialProfileSubScreen={
-              currentScreen === 'personal_data' ? 'personal_data' : undefined
+              currentScreen === 'personal_data'
+                ? 'personal_data'
+                : currentScreen === 'addresses'
+                ? 'addresses'
+                : undefined
             }
           />
         )}

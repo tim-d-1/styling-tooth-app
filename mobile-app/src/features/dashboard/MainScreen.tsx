@@ -28,6 +28,8 @@ import {
 } from '../../components/icons/AuthIcons';
 import { ProfileScreen } from '../profile/ProfileScreen';
 import { PersonalDataScreen } from '../profile/PersonalDataScreen';
+import { MyAddressesScreen } from '../profile/MyAddressesScreen';
+import { UserAddress } from '../profile/profile_types';
 import { MyPetScreen } from '../pets/MyPetScreen';
 import {
   PetDetail,
@@ -45,11 +47,12 @@ export interface MainScreenProps {
   userEmail?: string | null;
   initialVisit?: MobileVisit | null;
   initialTab?: DashboardTab;
-  initialProfileSubScreen?: 'main' | 'personal_data';
+  initialProfileSubScreen?: 'main' | 'personal_data' | 'addresses';
   initialPets?: PetSwitcherItem[];
   initialPetDetail?: PetDetail | null;
   initialSchedule?: CareScheduleItem[];
   initialHistory?: PetProcedureHistory | null;
+  initialAddress?: Partial<UserAddress>;
 }
 
 export const MainScreen: React.FC<MainScreenProps> = ({
@@ -64,12 +67,13 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   initialPetDetail,
   initialSchedule,
   initialHistory,
+  initialAddress,
 }) => {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<DashboardTab>(initialTab || 'home');
-  const [profileSubScreen, setProfileSubScreen] = useState<'main' | 'personal_data'>(
-    initialProfileSubScreen || 'main'
-  );
+  const [profileSubScreen, setProfileSubScreen] = useState<
+    'main' | 'personal_data' | 'addresses'
+  >(initialProfileSubScreen || 'main');
   const [visit, setVisit] = useState<MobileVisit | null>(initialVisit ?? null);
   const [isLoadingVisit, setIsLoadingVisit] = useState(initialVisit === undefined);
   const [userName, setUserName] = useState('');
@@ -466,6 +470,11 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             <PersonalDataScreen
               onBack={() => setProfileSubScreen('main')}
             />
+          ) : profileSubScreen === 'addresses' ? (
+            <MyAddressesScreen
+              onBack={() => setProfileSubScreen('main')}
+              initialAddress={initialAddress}
+            />
           ) : (
             <ProfileScreen
               userEmail={userEmail}
@@ -473,6 +482,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               onNavigateBooking={onNavigateBooking}
               onNavigateAddPet={onNavigateAddPet}
               onPersonalInfoPress={() => setProfileSubScreen('personal_data')}
+              onAddressesPress={() => setProfileSubScreen('addresses')}
             />
           ))}
       </ScrollView>
