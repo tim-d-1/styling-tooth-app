@@ -3,6 +3,7 @@ import Icon from '@/components/ui/Icon';
 import Button from '@/components/ui/Button';
 import type { SupportTicket } from '@/features/support/support_types';
 import { supabase } from '@/lib/supabase';
+import { cleanClientPhone } from '@/features/requests/admin_service';
 
 interface CustomerContextCardProps {
   ticket: SupportTicket | null;
@@ -10,13 +11,16 @@ interface CustomerContextCardProps {
 
 export const CustomerContextCard: FC<CustomerContextCardProps> = ({ ticket }) => {
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [isLoadingPhone, setIsLoadingPhone] = useState(false);
 
   useEffect(() => {
     const fetchPhone = async () => {
       if (!ticket?.clientId) {
         setPhoneNumber(null);
+        setIsLoadingPhone(false);
         return;
       }
+      setIsLoadingPhone(true);
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -31,6 +35,8 @@ export const CustomerContextCard: FC<CustomerContextCardProps> = ({ ticket }) =>
         }
       } catch {
         setPhoneNumber(null);
+      } finally {
+        setIsLoadingPhone(false);
       }
     };
 
@@ -41,6 +47,7 @@ export const CustomerContextCard: FC<CustomerContextCardProps> = ({ ticket }) =>
 
   const clientMessage = ticket.messages?.find(m => m.senderRole === 'client');
   const clientName = clientMessage?.senderName || 'Клієнт';
+  const cleanedPhone = cleanClientPhone(phoneNumber);
 
   return (
     <div className="bg-white rounded-3xl border border-visit-gray/60 p-5 shadow-xs flex flex-col gap-4">
@@ -59,16 +66,20 @@ export const CustomerContextCard: FC<CustomerContextCardProps> = ({ ticket }) =>
           </div>
         </div>
 
-        {phoneNumber && (
+        {cleanedPhone ? (
           <div className="mt-2">
-            <a href={`tel:${phoneNumber}`} className="w-full block">
+            <a href={`tel:${cleanedPhone.replace(/[^\d+]/g, '')}`} className="w-full block">
               <Button variant="outline" className="w-full flex items-center justify-center gap-2">
                 <Icon name="fi-rr-phone-call" size={14} />
                 Зателефонувати
               </Button>
             </a>
           </div>
-        )}
+        ) : !isLoadingPhone ? (
+          <div className="text-xs text-content-dark/50 italic mt-1">
+            Номер телефону не вказано
+          </div>
+        ) : null}
       </div>
 
       {(ticket.petName || ticket.appointmentStartsAt) && (

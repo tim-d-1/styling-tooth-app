@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateMetrics } from './admin_service';
+import { calculateMetrics, cleanClientPhone } from './admin_service';
 import type { AppointmentRequest } from './admin_types';
 import type { UserRole } from '@/features/auth/auth_types';
 
@@ -155,4 +155,18 @@ describe('Staff Portal Request & Role System Eval Suite', () => {
     expect(isValidStatusTransition('completed', 'cancelled', false)).toBe(false);
     expect(isValidStatusTransition('completed', 'in_progress', true)).toBe(false);
   });
+
+  it('correctly filters out dummy placeholders and missing phone numbers', () => {
+    expect(cleanClientPhone(null)).toBe('');
+    expect(cleanClientPhone(undefined)).toBe('');
+    expect(cleanClientPhone('')).toBe('');
+    expect(cleanClientPhone('   ')).toBe('');
+    expect(cleanClientPhone('+380000000')).toBe('');
+    expect(cleanClientPhone('+38 (000) 000-00-00')).toBe('');
+    expect(cleanClientPhone('0000000000')).toBe('');
+    expect(cleanClientPhone('380000000000')).toBe('');
+    expect(cleanClientPhone('+380501234567')).toBe('+380501234567');
+    expect(cleanClientPhone('+38 (067) 123-45-67')).toBe('+38 (067) 123-45-67');
+  });
 });
+

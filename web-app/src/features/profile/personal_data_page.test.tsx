@@ -211,6 +211,11 @@ describe('PersonalDataPage', () => {
     fireEvent.change(emailInput, { target: { value: 'new.email@example.com' } });
     expect(emailInput.value).toBe('new.email@example.com');
 
+    fireEvent.click(screen.getByRole('button', { name: 'Редагувати Номер телефону' }));
+    const phoneInput = screen.getByLabelText('Номер телефону') as HTMLInputElement;
+    fireEvent.change(phoneInput, { target: { value: '+380 (97) 999 88 77' } });
+    expect(phoneInput.value).toBe('+380 (97) 999 88 77');
+
     fireEvent.click(screen.getByRole('button', { name: 'Редагувати Дату народження' }));
     const birthDateInput = screen.getByLabelText('Дата народження') as HTMLInputElement;
     fireEvent.change(birthDateInput, { target: { value: '15 Червня 1996' } });
@@ -270,6 +275,7 @@ describe('PersonalDataPage', () => {
       data: {
         full_name: 'Олена Сидоренко',
         birth_date: '20 Січня 1998',
+        phone: '+380 (50) 999 88 77',
       },
     });
 
@@ -412,4 +418,72 @@ describe('PersonalDataPage', () => {
     expect(screen.queryByTestId('verify-phone-telegram-btn')).toBeNull();
     expect(screen.queryByTestId('verify-email-btn')).toBeNull();
   });
+
+  it('allows adding and editing phone number when account has no phone number set', async () => {
+    const handleSave = vi.fn();
+    const handleToast = vi.fn();
+
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'usr-empty-phone' },
+        },
+      },
+      error: null,
+    } as never);
+
+    const updateProfileMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null }),
+    });
+
+    vi.spyOn(supabase, 'from').mockReturnValue({
+      update: updateProfileMock,
+    } as never);
+
+    const updateUserSpy = vi.spyOn(supabase.auth, 'updateUser').mockResolvedValue({
+      data: { user: null },
+      error: null,
+    } as never);
+
+    render(
+      <MemoryRouter>
+        <PersonalDataPage
+          onSave={handleSave}
+          onToast={handleToast}
+          initialData={{
+            fullName: 'Акаунт Без Телефону',
+            email: 'nophone@example.com',
+            phone: '',
+          }}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Не вказано')).toBeDefined();
+    expect(screen.queryByTestId('phone-verified-badge')).toBeNull();
+    expect(screen.queryByTestId('verify-phone-telegram-btn')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Редагувати Номер телефону' }));
+    const phoneInput = screen.getByLabelText('Номер телефону') as HTMLInputElement;
+    expect(phoneInput).toBeDefined();
+    fireEvent.change(phoneInput, { target: { value: '+380501234567' } });
+
+    const saveButton = screen.getByRole('button', { name: 'Зберегти зміни' });
+    await act(async () => {
+      fireEvent.click(saveButton);
+    });
+
+    expect(updateProfileMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        phone: '+380501234567',
+      })
+    );
+    expect(updateUserSpy).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        phone: '+380501234567',
+      }),
+    });
+    expect(screen.getByText('+380501234567')).toBeDefined();
+  });
 });
+

@@ -49,6 +49,7 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
   });
 
   const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [isEditingBirthDate, setIsEditingBirthDate] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -223,6 +224,7 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
           data: {
             full_name: formData.fullName,
             birth_date: formData.birthDate,
+            phone: formData.phone,
           },
         });
       }
@@ -232,6 +234,7 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
       }
 
       setIsEditingName(false);
+      setIsEditingPhone(false);
       setIsEditingEmail(false);
       setIsEditingBirthDate(false);
       showToast('Зміни успішно збережено');
@@ -351,39 +354,68 @@ export const PersonalDataPage: FC<PersonalDataPageProps> = ({
                 </div>
 
                 <div className="py-5 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 min-w-0">
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
                     <div className="w-11 h-11 rounded-full bg-interactive-lightgray text-content-dark/80 flex items-center justify-center shrink-0">
                       <Icon name="fi-rr-smartphone" size={18} />
                     </div>
-                    <div className="flex flex-col min-w-0">
+                    <div className="flex flex-col min-w-0 flex-1">
                       <span className="text-xs text-text-muted font-primary">
                         Номер телефону
                       </span>
-                      <span className="font-accented font-semibold text-base text-content-dark">
-                        {formData.phone}
-                      </span>
+                      {isEditingPhone ? (
+                        <input
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              phone: e.target.value,
+                              isPhoneVerified: false,
+                            }))
+                          }
+                          aria-label="Номер телефону"
+                          placeholder="+380..."
+                          className="font-accented font-semibold text-base text-content-dark bg-[#f3f4f6] px-3 py-1 rounded-lg mt-1 outline-none border border-soft-blue"
+                          autoFocus
+                        />
+                      ) : (
+                        <span className="font-accented font-semibold text-base text-content-dark truncate">
+                          {formData.phone || 'Не вказано'}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {formData.isPhoneVerified ? (
-                    <div
-                      data-testid="phone-verified-badge"
-                      className="flex items-center gap-1.5 text-[#34C759] font-primary font-medium text-xs sm:text-sm shrink-0"
-                    >
-                      <Icon name="fi-rr-check" size={14} />
-                      <span>Підтверджено</span>
-                    </div>
-                  ) : formData.phone ? (
+                  <div className="flex items-center gap-2 shrink-0">
+                    {!isEditingPhone && formData.isPhoneVerified ? (
+                      <div
+                        data-testid="phone-verified-badge"
+                        className="flex items-center gap-1.5 text-[#34C759] font-primary font-medium text-xs sm:text-sm shrink-0"
+                      >
+                        <Icon name="fi-rr-check" size={14} />
+                        <span>Підтверджено</span>
+                      </div>
+                    ) : !isEditingPhone && formData.phone ? (
+                      <button
+                        type="button"
+                        onClick={handleVerifyPhoneViaTelegram}
+                        data-testid="verify-phone-telegram-btn"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-soft-blue/10 hover:bg-soft-blue/20 text-soft-blue text-xs font-semibold cursor-pointer border-0 transition-colors"
+                      >
+                        <SocialIcon platform="Telegram" size={14} colorScheme="Original" />
+                        <span>Підтвердити через Telegram</span>
+                      </button>
+                    ) : null}
+
                     <button
                       type="button"
-                      onClick={handleVerifyPhoneViaTelegram}
-                      data-testid="verify-phone-telegram-btn"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-soft-blue/10 hover:bg-soft-blue/20 text-soft-blue text-xs font-semibold cursor-pointer border-0 transition-colors"
+                      onClick={() => setIsEditingPhone((prev) => !prev)}
+                      aria-label="Редагувати Номер телефону"
+                      className="text-text-muted hover:text-terracotta transition-colors p-2 cursor-pointer outline-none shrink-0"
                     >
-                      <SocialIcon platform="Telegram" size={14} colorScheme="Original" />
-                      <span>Підтвердити через Telegram</span>
+                      <Icon name="fi-rr-edit" size={18} />
                     </button>
-                  ) : null}
+                  </div>
                 </div>
 
                 <div className="py-5 flex items-center justify-between gap-4">

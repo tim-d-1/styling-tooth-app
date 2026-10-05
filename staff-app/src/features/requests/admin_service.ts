@@ -6,6 +6,20 @@ import type {
   RequestStatus,
 } from './admin_types';
 
+export function cleanClientPhone(phone?: string | null): string {
+  if (!phone) return '';
+  const trimmed = phone.trim();
+  const digits = trimmed.replace(/\D/g, '');
+  if (!digits || digits.length < 5) return '';
+  const withoutPrefix = digits.startsWith('380')
+    ? digits.slice(3)
+    : digits.startsWith('38')
+    ? digits.slice(2)
+    : digits;
+  if (/^0+$/.test(withoutPrefix) || /^0+$/.test(digits)) return '';
+  return trimmed;
+}
+
 function formatShortNumber(uuid: string): string {
   const clean = uuid.replace(/-/g, '');
   const sub = clean.slice(0, 4);
@@ -72,7 +86,7 @@ export async function fetchAppointmentRequests(): Promise<AppointmentRequest[]> 
         client: {
           id: client?.id || '',
           fullName: client?.full_name || 'Невідомий клієнт',
-          phone: client?.phone || '+38 (000) 000-00-00',
+          phone: cleanClientPhone(client?.phone),
           avatarUrl: client?.avatar_url || null,
         },
         pet: {

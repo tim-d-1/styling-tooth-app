@@ -5,6 +5,7 @@ import type {
   MasterRosterItem,
   RequestStatus,
 } from '../admin_types';
+import { cleanClientPhone } from '../admin_service';
 
 export interface RequestDetailsInspectorProps {
   request: AppointmentRequest | null;
@@ -158,12 +159,18 @@ export const RequestDetailsInspector: FC<RequestDetailsInspectorProps> = ({
           <span className="font-accented font-bold text-sm text-content-dark truncate">
             {request.client.fullName}
           </span>
-          <a
-            href={`tel:${request.client.phone.replace(/[^\d+]/g, '')}`}
-            className="font-primary text-xs text-content-dark/60 hover:text-[#EB6D48] transition-colors"
-          >
-            {request.client.phone}
-          </a>
+          {cleanClientPhone(request.client.phone) ? (
+            <a
+              href={`tel:${cleanClientPhone(request.client.phone).replace(/[^\d+]/g, '')}`}
+              className="font-primary text-xs text-content-dark/60 hover:text-[#EB6D48] transition-colors"
+            >
+              {cleanClientPhone(request.client.phone)}
+            </a>
+          ) : (
+            <span className="font-primary text-xs text-content-dark/50 italic">
+              Номер телефону не вказано
+            </span>
+          )}
         </div>
       </div>
 

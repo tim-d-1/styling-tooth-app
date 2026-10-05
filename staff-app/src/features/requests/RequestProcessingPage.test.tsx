@@ -321,4 +321,53 @@ describe('RequestProcessingPage', () => {
       screen.getByText('У цій вкладці наразі немає жодних заявок')
     ).toBeDefined();
   });
+
+  it('displays "Номер телефону не вказано" when request client phone is empty', () => {
+    const noPhoneRequests: AppointmentRequest[] = [
+      {
+        ...mockRequests[0],
+        id: 'req-no-phone',
+        client: {
+          ...mockRequests[0].client,
+          phone: '',
+        },
+      },
+    ];
+
+    render(
+      <RequestProcessingPage
+        initialRequests={noPhoneRequests}
+        initialMasters={mockMasters}
+        initialSelectedRequestId="req-no-phone"
+      />
+    );
+
+    expect(screen.getByText('Номер телефону не вказано')).toBeDefined();
+    expect(screen.queryByRole('link', { name: /\+38/ })).toBeNull();
+  });
+
+  it('displays "Номер телефону не вказано" when request client phone has dummy +380000000 placeholder', () => {
+    const placeholderPhoneRequests: AppointmentRequest[] = [
+      {
+        ...mockRequests[0],
+        id: 'req-placeholder-phone',
+        client: {
+          ...mockRequests[0].client,
+          phone: '+380000000',
+        },
+      },
+    ];
+
+    render(
+      <RequestProcessingPage
+        initialRequests={placeholderPhoneRequests}
+        initialMasters={mockMasters}
+        initialSelectedRequestId="req-placeholder-phone"
+      />
+    );
+
+    expect(screen.getByText('Номер телефону не вказано')).toBeDefined();
+    expect(screen.queryByText('+380000000')).toBeNull();
+  });
 });
+
