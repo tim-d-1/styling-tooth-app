@@ -23,14 +23,15 @@ export function evaluatePercentageGradient(
 }
 
 describe('Expert Advice Shampoo Card Gradient Eval Suite', () => {
-  it('evaluates web shampoo advice gradient distribution and coverage', () => {
-    const webGrad = evaluatePercentageGradient(0, 50, 100);
+  it('evaluates web shampoo advice gradient concentration', () => {
+    const webGrad = evaluatePercentageGradient(46, 53, 65);
 
-    expect(webGrad.startPercent).toBe(0);
-    expect(webGrad.midPercent).toBe(50);
-    expect(webGrad.endPercent).toBe(100);
-    expect(webGrad.transitionSpan).toBe(100);
-    expect(webGrad.unmaskedRatio).toBe(0);
+    expect(webGrad.startPercent).toBe(46);
+    expect(webGrad.midPercent).toBe(53);
+    expect(webGrad.endPercent).toBe(65);
+    expect(webGrad.transitionSpan).toBe(19);
+    expect(webGrad.transitionSpan).toBeLessThanOrEqual(20);
+    expect(webGrad.unmaskedRatio).toBeGreaterThanOrEqual(0.35);
   });
 
   it('evaluates mobile shampoo advice gradient concentration', () => {

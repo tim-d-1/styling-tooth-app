@@ -218,7 +218,7 @@ describe('Main Page Components', () => {
       expect(handleClick).toHaveBeenCalledWith('art3');
     });
 
-    it('renders shampoo card with linear gradient overlay blending border into image', () => {
+    it('renders shampoo card with concentrated linear gradient blending border', () => {
       const mockArticles = [
         {
           id: 'shampoo-guide',
@@ -228,11 +228,11 @@ describe('Main Page Components', () => {
         },
       ];
       const { container } = render(<ExpertAdviceGrid articles={mockArticles} />);
-      const overlay = container.querySelector('.bg-gradient-to-r') as HTMLElement;
+      const overlay = container.querySelector('div[style*="linear-gradient"]') as HTMLElement;
       expect(overlay).not.toBeNull();
-      expect(overlay.className).toContain('from-soft-ice');
-      expect(overlay.className).toContain('via-soft-ice/80');
-      expect(overlay.className).toContain('to-transparent');
+      expect(overlay.style.background).toContain('linear-gradient');
+      expect(overlay.style.background).toContain('46%');
+      expect(overlay.style.background).toContain('65%');
     });
   });
 
