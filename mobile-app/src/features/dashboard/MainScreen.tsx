@@ -28,17 +28,28 @@ import {
 } from '../../components/icons/AuthIcons';
 import { ProfileScreen } from '../profile/ProfileScreen';
 import { PersonalDataScreen } from '../profile/PersonalDataScreen';
+import { MyPetScreen } from '../pets/MyPetScreen';
+import {
+  PetDetail,
+  PetSwitcherItem,
+  CareScheduleItem,
+  PetProcedureHistory,
+} from '../pets/pet_types';
 
 export type DashboardTab = 'home' | 'booking' | 'pets' | 'profile';
 
 export interface MainScreenProps {
   onLogout?: () => void;
-  onNavigateBooking?: () => void;
+  onNavigateBooking?: (petId?: string) => void;
   onNavigateAddPet?: () => void;
   userEmail?: string | null;
   initialVisit?: MobileVisit | null;
   initialTab?: DashboardTab;
   initialProfileSubScreen?: 'main' | 'personal_data';
+  initialPets?: PetSwitcherItem[];
+  initialPetDetail?: PetDetail | null;
+  initialSchedule?: CareScheduleItem[];
+  initialHistory?: PetProcedureHistory | null;
 }
 
 export const MainScreen: React.FC<MainScreenProps> = ({
@@ -49,6 +60,10 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   initialVisit,
   initialTab,
   initialProfileSubScreen,
+  initialPets,
+  initialPetDetail,
+  initialSchedule,
+  initialHistory,
 }) => {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<DashboardTab>(initialTab || 'home');
@@ -163,6 +178,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   };
 
   const visitDateDetails = visit ? formatVisitDateDetails(visit.startsAt) : null;
+  const handleBookingNavigation = () => onNavigateBooking && onNavigateBooking();
 
   return (
     <View style={styles.safeArea} testID="main-screen">
@@ -175,7 +191,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           },
         ]}
       >
-        {activeTab !== 'profile' && (
+        {activeTab !== 'profile' && activeTab !== 'pets' && (
           <View style={styles.topHeader}>
             <View style={styles.locationContainer} testID="location-indicator">
               <MarkerIcon color={colors.terracotta} size={18} />
@@ -232,7 +248,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                 <View style={styles.visitActionsRow}>
                   <TouchableOpacity
                     style={styles.actionButtonSecondary}
-                    onPress={onNavigateBooking}
+                    onPress={handleBookingNavigation}
                     accessibilityRole="button"
                     accessibilityLabel="Перенести візит"
                     testID="reschedule-visit-button"
@@ -263,7 +279,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                 </Text>
                 <TouchableOpacity
                   style={styles.emptyBookButton}
-                  onPress={onNavigateBooking}
+                  onPress={handleBookingNavigation}
                   testID="empty-book-button"
                 >
                   <Text style={styles.emptyBookButtonText}>
@@ -296,7 +312,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                   </View>
                   <TouchableOpacity
                     style={styles.promoDetailButton}
-                    onPress={onNavigateBooking}
+                    onPress={handleBookingNavigation}
                     testID="promo-detail-button"
                     accessibilityRole="button"
                     accessibilityLabel="Знижка 25% на перший грумінг: Детальніше"
@@ -308,7 +324,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
               <TouchableOpacity
                 style={styles.promoBannerCard}
-                onPress={onNavigateBooking}
+                onPress={handleBookingNavigation}
                 activeOpacity={0.9}
                 testID="promo-seasonal-card"
                 accessibilityRole="button"
@@ -333,7 +349,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
               <TouchableOpacity
                 style={[styles.promoBannerCard, styles.promoWeekdayCard]}
-                onPress={onNavigateBooking}
+                onPress={handleBookingNavigation}
                 activeOpacity={0.9}
                 testID="promo-weekday-card"
                 accessibilityRole="button"
@@ -371,7 +387,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             >
               <TouchableOpacity
                 style={[styles.adviceCard, { backgroundColor: '#E6F0F6' }]}
-                onPress={onNavigateBooking}
+                onPress={handleBookingNavigation}
                 activeOpacity={0.9}
                 testID="advice-card-shampoo"
               >
@@ -396,7 +412,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
               <TouchableOpacity
                 style={[styles.adviceCard, { backgroundColor: '#D8E5F3' }]}
-                onPress={onNavigateBooking}
+                onPress={handleBookingNavigation}
                 activeOpacity={0.9}
                 testID="advice-card-paws"
               >
@@ -422,36 +438,14 @@ export const MainScreen: React.FC<MainScreenProps> = ({
         )}
 
         {activeTab === 'pets' && (
-          <View style={styles.tabContentContainer} testID="pets-tab-content">
-            <Text style={styles.tabHeading}>Мої улюбленці</Text>
-            {pets.length > 0 ? (
-              pets.map((p) => (
-                <View key={p.id} style={styles.petItemCard}>
-                  <View style={styles.petIconCircle}>
-                    <PawIcon color={colors.terracotta} size={22} />
-                  </View>
-                  <View style={styles.petItemInfo}>
-                    <Text style={styles.petItemName}>{p.name}</Text>
-                    <Text style={styles.petItemSpecies}>
-                      {p.species === 'cat' ? 'Кіт' : 'Собака'}
-                    </Text>
-                  </View>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.noPetsText}>
-                У вас ще немає доданих тваринок
-              </Text>
-            )}
-
-            <TouchableOpacity
-              style={styles.addPetButton}
-              onPress={onNavigateAddPet}
-              testID="add-pet-cta-button"
-            >
-              <Text style={styles.addPetButtonText}>+ Додати тваринку</Text>
-            </TouchableOpacity>
-          </View>
+          <MyPetScreen
+            onNavigateAddPet={onNavigateAddPet}
+            onNavigateBooking={onNavigateBooking}
+            initialPets={initialPets}
+            initialPetDetail={initialPetDetail}
+            initialSchedule={initialSchedule}
+            initialHistory={initialHistory}
+          />
         )}
 
         {activeTab === 'booking' && (
@@ -459,7 +453,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             <Text style={styles.tabHeading}>Запис на грумінг</Text>
             <TouchableOpacity
               style={styles.bookingPrimaryButton}
-              onPress={onNavigateBooking}
+              onPress={handleBookingNavigation}
               testID="booking-tab-action"
             >
               <Text style={styles.bookingPrimaryButtonText}>Обрати послугу</Text>

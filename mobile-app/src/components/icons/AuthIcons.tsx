@@ -361,3 +361,63 @@ export const EditIcon: React.FC<{ color?: string; size?: number }> = ({
     />
   </Svg>
 );
+
+export const PlusIcon: React.FC<{ color?: string; size?: number }> = ({
+  color = '#242F35',
+  size = 18,
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 4C12.5523 4 13 4.44772 13 5V11H19C19.5523 11 20 11.4477 20 12C20 12.5523 19.5523 13 19 13H13V19C13 19.5523 12.5523 20 12 20C11.4477 20 11 19.5523 11 19V13H5C4.44772 13 4 12.5523 4 12C4 11.4477 4 11 5 11H11V5C11 4.44772 11.4477 4 12 4Z"
+      fill={color}
+    />
+  </Svg>
+);
+
+export const CameraIcon: React.FC<{ color?: string; size?: number }> = ({
+  color = '#242F35',
+  size = 20,
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M19 4H17.414L15.707 2.293C15.332 1.918 14.823 1.707 14.293 1.707H9.707C9.177 1.707 8.668 1.918 8.293 2.293L6.586 4H5C3.346 4 2 5.346 2 7V19C2 20.654 3.346 22 5 22H19C20.654 22 22 20.654 22 19V7C22 5.346 20.654 4 19 4ZM12 18C9.243 18 7 15.757 7 13C7 10.243 9.243 8 12 8C14.757 8 17 10.243 17 13C17 15.757 14.757 18 12 18ZM12 10C10.346 10 9 11.346 9 13C9 14.654 10.346 16 12 16C13.654 16 15 14.654 15 13C15 11.346 13.654 10 12 10Z"
+      fill={color}
+    />
+  </Svg>
+);
+
+export const ExclamationIcon: React.FC<{ color?: string; size?: number }> = ({
+  color = '#EC643A',
+  size = 18,
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+      fill={color}
+    />
+  </Svg>
+);
+
+export const StarIcon: React.FC<{ color?: string; size?: number }> = ({
+  color = '#EC643A',
+  size = 16,
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+      fill={color}
+    />
+  </Svg>
+);
+
+export const ScissorsIcon: React.FC<{ color?: string; size?: number }> = ({
+  color = '#242F35',
+  size = 18,
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M9.64 7.64C9.87 7.14 10 6.59 10 6C10 3.79 8.21 2 6 2S2 3.79 2 6C2 8.21 3.79 10 6 10C6.59 10 7.14 9.87 7.64 9.64L10 12L7.64 14.36C7.14 14.13 6.59 14 6 14C3.79 14 2 15.79 2 18C2 20.21 3.79 22 6 22C8.21 22 10 20.21 10 18C10 17.41 9.87 16.86 9.64 16.36L12 14L19 21H22L12 11L14.7 8.3L19 12.6L20.4 11.2L9.64 7.64ZM6 8C4.9 8 4 7.1 4 6C4 4.9 4.9 4 6 4C7.1 4 8 4.9 8 6C8 7.1 7.1 8 6 8ZM6 20C4.9 20 4 19.1 4 18C4 16.9 4.9 16 6 16C7.1 16 8 16.9 8 18C8 19.1 7.1 20 6 20Z"
+      fill={color}
+    />
+  </Svg>
+);
