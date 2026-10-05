@@ -243,6 +243,11 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
+# Customize signup confirmation email template
+[auth.email.template.confirmation]
+subject = "Підтвердження реєстрації | «Стильний Зубець»"
+content_path = "./templates/confirmation.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"

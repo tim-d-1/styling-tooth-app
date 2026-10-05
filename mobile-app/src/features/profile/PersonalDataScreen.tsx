@@ -12,8 +12,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import * as Linking from 'expo-linking';
 import { supabase } from '../../lib/supabase';
 import { colors } from '../../theme/tokens';
+import { generateTelegramLink } from './telegram_service';
 import {
   ArrowLeftIcon,
   BellIcon,
@@ -150,6 +152,33 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
       onToast(message);
     } else {
       Alert.alert('Повідомлення', message);
+    }
+  };
+
+  const handleVerifyPhoneViaTelegram = async () => {
+    try {
+      const linkInfo = await generateTelegramLink();
+      await Linking.openURL(linkInfo.linkUrl);
+      showFeedback('Відкриваємо Telegram бота для підтвердження');
+    } catch {
+      showFeedback('Помилка створення посилання');
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    if (!formData.email) return;
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: formData.email,
+      });
+      if (error) {
+        showFeedback('Помилка відправки підтвердження');
+      } else {
+        showFeedback('Лист із підтвердженням надіслано на вашу пошту');
+      }
+    } catch {
+      showFeedback('Помилка відправки підтвердження');
     }
   };
 
@@ -462,12 +491,22 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
                 </Text>
               )}
             </View>
-            {formData.isPhoneVerified && !isEditingPhone && (
+            {formData.isPhoneVerified && !isEditingPhone ? (
               <View style={styles.verifiedBadge} testID="phone-verified-badge">
                 <CheckIcon color="#16A34A" size={12} />
                 <Text style={styles.verifiedBadgeText}>Підтверджено</Text>
               </View>
-            )}
+            ) : !isEditingPhone && formData.phone ? (
+              <TouchableOpacity
+                style={styles.verifyButton}
+                onPress={handleVerifyPhoneViaTelegram}
+                accessibilityRole="button"
+                accessibilityLabel="Підтвердити через Telegram"
+                testID="verify-phone-telegram-button"
+              >
+                <Text style={styles.verifyButtonText}>Telegram</Text>
+              </TouchableOpacity>
+            ) : null}
             <TouchableOpacity
               style={styles.rowActionButton}
               onPress={() => setIsEditingPhone(!isEditingPhone)}
@@ -517,6 +556,22 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
                 </Text>
               )}
             </View>
+            {formData.isEmailVerified && !isEditingEmail ? (
+              <View style={styles.verifiedBadge} testID="email-verified-badge">
+                <CheckIcon color="#16A34A" size={12} />
+                <Text style={styles.verifiedBadgeText}>Підтверджено</Text>
+              </View>
+            ) : !isEditingEmail && formData.email ? (
+              <TouchableOpacity
+                style={styles.verifyButton}
+                onPress={handleVerifyEmail}
+                accessibilityRole="button"
+                accessibilityLabel="Підтвердити пошту"
+                testID="verify-email-button"
+              >
+                <Text style={styles.verifyButtonText}>Підтвердити</Text>
+              </TouchableOpacity>
+            ) : null}
             <TouchableOpacity
               style={styles.rowActionButton}
               onPress={() => setIsEditingEmail(!isEditingEmail)}
@@ -754,6 +809,18 @@ const styles = StyleSheet.create({
     color: '#16A34A',
     fontWeight: '600',
     marginLeft: 4,
+  },
+  verifyButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: '#EFF6FF',
+    marginRight: 4,
+  },
+  verifyButtonText: {
+    fontSize: 12,
+    color: '#2563EB',
+    fontWeight: '600',
   },
   genderOptionsContainer: {
     flexDirection: 'row',

@@ -4,6 +4,7 @@ import React from 'react';
 import { PersonalDataScreen } from './PersonalDataScreen';
 import { supabase } from '../../lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
+import * as Linking from 'expo-linking';
 
 describe('PersonalDataScreen', () => {
   beforeEach(() => {
@@ -154,5 +155,74 @@ describe('PersonalDataScreen', () => {
         'Ваші контактні дані використовуються для підтвердження бронювань та сповіщень про візити. Ми гарантуємо їх безпеку.'
       )
     ).toBeInTheDocument();
+  });
+
+  it('renders verify buttons when phone or email is unconfirmed, and triggers verification flows', async () => {
+    const handleToast = vi.fn();
+    const openURLSpy = vi.spyOn(Linking, 'openURL').mockResolvedValue(true as never);
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: { session: { user: { id: 'usr-10' } } },
+      error: null,
+    } as never);
+    const rpcSpy = vi.spyOn(supabase, 'rpc').mockResolvedValue({
+      data: { code: '654321' },
+      error: null,
+    } as never);
+    const resendSpy = vi.spyOn(supabase.auth, 'resend').mockResolvedValue({
+      data: {},
+      error: null,
+    } as never);
+
+    render(
+      <PersonalDataScreen
+        initialData={{
+          phone: '+380501234567',
+          isPhoneVerified: false,
+          email: 'unconfirmed@example.com',
+          isEmailVerified: false,
+        }}
+        onToast={handleToast}
+      />
+    );
+
+    const tgBtn = screen.getByTestId('verify-phone-telegram-button');
+    expect(tgBtn).toBeInTheDocument();
+    fireEvent.click(tgBtn);
+
+    await waitFor(() => {
+      expect(rpcSpy).toHaveBeenCalledWith('generate_verification_code', {
+        p_channel: 'telegram',
+        p_target: 'usr-10',
+      });
+      expect(openURLSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/https:\/\/t\.me\/(styling_tooth_bot|StylingToothBot)\?start=654321/)
+      );
+      expect(handleToast).toHaveBeenCalledWith('Відкриваємо Telegram бота для підтвердження');
+    });
+
+    const emailBtn = screen.getByTestId('verify-email-button');
+    expect(emailBtn).toBeInTheDocument();
+    fireEvent.click(emailBtn);
+
+    await waitFor(() => {
+      expect(resendSpy).toHaveBeenCalledWith({
+        type: 'signup',
+        email: 'unconfirmed@example.com',
+      });
+      expect(handleToast).toHaveBeenCalledWith('Лист із підтвердженням надіслано на вашу пошту');
+    });
+  });
+
+  it('renders email verified badge when email is verified', () => {
+    render(
+      <PersonalDataScreen
+        initialData={{
+          email: 'confirmed@example.com',
+          isEmailVerified: true,
+        }}
+      />
+    );
+
+    expect(screen.getByTestId('email-verified-badge')).toBeInTheDocument();
   });
 });

@@ -198,6 +198,39 @@ describe('Personal Data Mobile Eval Suite (Figma Frame 680:3482 & Web Parity)', 
       expect(screen.getByTestId('phone-verified-badge')).toBeInTheDocument();
       expect(screen.getByText('Підтверджено')).toBeInTheDocument();
     });
+
+    it('evaluates verification request buttons and email verified badge contract', () => {
+      const { rerender } = render(
+        <PersonalDataScreen
+          initialData={{
+            phone: '+380509998877',
+            isPhoneVerified: false,
+            email: 'user@example.com',
+            isEmailVerified: false,
+          }}
+        />
+      );
+
+      expect(screen.getByTestId('verify-phone-telegram-button')).toBeInTheDocument();
+      expect(screen.getByTestId('verify-email-button')).toBeInTheDocument();
+      expect(screen.queryByTestId('email-verified-badge')).not.toBeInTheDocument();
+
+      rerender(
+        <PersonalDataScreen
+          initialData={{
+            phone: '+380509998877',
+            isPhoneVerified: true,
+            email: 'user@example.com',
+            isEmailVerified: true,
+          }}
+        />
+      );
+
+      expect(screen.queryByTestId('verify-phone-telegram-button')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('verify-email-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('phone-verified-badge')).toBeInTheDocument();
+      expect(screen.getByTestId('email-verified-badge')).toBeInTheDocument();
+    });
   });
 
   describe('Eval 5: End-to-End Navigation Flow Integration', () => {

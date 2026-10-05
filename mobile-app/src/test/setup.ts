@@ -45,6 +45,7 @@ vi.mock('expo-linking', () => ({
   addEventListener: vi.fn(() => ({ remove: vi.fn() })),
   getInitialURL: vi.fn().mockResolvedValue(null),
   createURL: vi.fn((path) => `stylingtooth://${path || ''}`),
+  openURL: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock('expo-secure-store', () => ({
@@ -118,6 +119,7 @@ vi.mock('../lib/supabase', () => {
           ),
         }),
       },
+      rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
       from: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnThis(),
         insert: vi.fn().mockReturnThis(),

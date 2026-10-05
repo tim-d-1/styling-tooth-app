@@ -333,4 +333,83 @@ describe('PersonalDataPage', () => {
     expect(screen.getByText('fetched.profile@example.com')).toBeDefined();
     expect(screen.getByText('+380 (67) 555 44 33')).toBeDefined();
   });
+
+  it('renders verify buttons when phone or email is unconfirmed, and triggers verification flows', async () => {
+    const handleToast = vi.fn();
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    const resendSpy = vi.spyOn(supabase.auth, 'resend').mockResolvedValue({
+      data: {},
+      error: null,
+    } as never);
+    vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
+      data: { user: { id: 'usr-web-test' } },
+      error: null,
+    } as never);
+    vi.spyOn(supabase, 'rpc').mockResolvedValue({
+      data: { code: '998877' },
+      error: null,
+    } as never);
+
+    render(
+      <MemoryRouter>
+        <PersonalDataPage
+          onToast={handleToast}
+          initialData={{
+            fullName: 'Тестовий Користувач',
+            phone: '+380501112233',
+            isPhoneVerified: false,
+            email: 'unconfirmed.web@example.com',
+            isEmailVerified: false,
+          }}
+        />
+      </MemoryRouter>
+    );
+
+    const tgBtn = screen.getByTestId('verify-phone-telegram-btn');
+    expect(tgBtn).toBeDefined();
+
+    await act(async () => {
+      fireEvent.click(tgBtn);
+    });
+
+    expect(openSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/https:\/\/t\.me\/(styling_tooth_bot|StylingToothBot)\?start=998877/),
+      '_blank'
+    );
+    expect(handleToast).toHaveBeenCalledWith('Відкриваємо Telegram бота для підтвердження');
+
+    const emailBtn = screen.getByTestId('verify-email-btn');
+    expect(emailBtn).toBeDefined();
+
+    await act(async () => {
+      fireEvent.click(emailBtn);
+    });
+
+    expect(resendSpy).toHaveBeenCalledWith({
+      type: 'signup',
+      email: 'unconfirmed.web@example.com',
+    });
+    expect(handleToast).toHaveBeenCalledWith('Лист із підтвердженням надіслано на вашу пошту');
+  });
+
+  it('renders verified badges when phone and email are confirmed', async () => {
+    render(
+      <MemoryRouter>
+        <PersonalDataPage
+          initialData={{
+            fullName: 'Підтверджений Користувач',
+            phone: '+380501112233',
+            isPhoneVerified: true,
+            email: 'confirmed.web@example.com',
+            isEmailVerified: true,
+          }}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByTestId('phone-verified-badge')).toBeDefined();
+    expect(screen.getByTestId('email-verified-badge')).toBeDefined();
+    expect(screen.queryByTestId('verify-phone-telegram-btn')).toBeNull();
+    expect(screen.queryByTestId('verify-email-btn')).toBeNull();
+  });
 });
