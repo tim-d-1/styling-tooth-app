@@ -20,7 +20,8 @@ export type ScreenState =
   | 'authenticated'
   | 'profile'
   | 'personal_data'
-  | 'addresses';
+  | 'addresses'
+  | 'booking';
 
 export interface AppProps {
   initialScreen?: ScreenState;
@@ -141,7 +142,8 @@ export default function App({
         {(currentScreen === 'authenticated' ||
           currentScreen === 'profile' ||
           currentScreen === 'personal_data' ||
-          currentScreen === 'addresses') && (
+          currentScreen === 'addresses' ||
+          currentScreen === 'booking') && (
           <MainScreen
             userEmail={userEmail}
             onLogout={handleLogout}
@@ -151,6 +153,8 @@ export default function App({
               currentScreen === 'personal_data' ||
               currentScreen === 'addresses'
                 ? 'profile'
+                : currentScreen === 'booking'
+                ? 'booking'
                 : initialTab
             }
             initialProfileSubScreen={

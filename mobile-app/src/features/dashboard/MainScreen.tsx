@@ -31,6 +31,7 @@ import { PersonalDataScreen } from '../profile/PersonalDataScreen';
 import { MyAddressesScreen } from '../profile/MyAddressesScreen';
 import { UserAddress } from '../profile/profile_types';
 import { MyPetScreen } from '../pets/MyPetScreen';
+import { BookingScreen } from '../booking/BookingScreen';
 import {
   PetDetail,
   PetSwitcherItem,
@@ -182,7 +183,13 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   };
 
   const visitDateDetails = visit ? formatVisitDateDetails(visit.startsAt) : null;
-  const handleBookingNavigation = () => onNavigateBooking && onNavigateBooking();
+  const handleBookingNavigation = () => {
+    if (onNavigateBooking) {
+      onNavigateBooking();
+    } else {
+      setActiveTab('booking');
+    }
+  };
 
   return (
     <View style={styles.safeArea} testID="main-screen">
@@ -195,6 +202,14 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             initialPetDetail={initialPetDetail}
             initialSchedule={initialSchedule}
             initialHistory={initialHistory}
+          />
+        </View>
+      ) : activeTab === 'booking' ? (
+        <View style={styles.petsTabContainer} testID="booking-tab-content">
+          <BookingScreen
+            onBack={() => setActiveTab('home')}
+            onComplete={() => setActiveTab('home')}
+            onNavigateAddPet={onNavigateAddPet}
           />
         </View>
       ) : (
@@ -451,20 +466,6 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               </TouchableOpacity>
             </ScrollView>
           </>
-        )}
-
-
-        {activeTab === 'booking' && (
-          <View style={styles.tabContentContainer} testID="booking-tab-content">
-            <Text style={styles.tabHeading}>Запис на грумінг</Text>
-            <TouchableOpacity
-              style={styles.bookingPrimaryButton}
-              onPress={handleBookingNavigation}
-              testID="booking-tab-action"
-            >
-              <Text style={styles.bookingPrimaryButtonText}>Обрати послугу</Text>
-            </TouchableOpacity>
-          </View>
         )}
 
         {activeTab === 'profile' &&

@@ -6,6 +6,7 @@ import LandingServices from './LandingServices';
 import LandingContacts from './LandingContacts';
 import LandingFooter from './LandingFooter';
 import { scrollToSection } from '@/lib/section_navigation';
+import { supabase } from '@/lib/supabase';
 
 export interface LandingPageProps {
   onRegisterClick?: () => void;
@@ -33,6 +34,74 @@ export const LandingPage: FC<LandingPageProps> = ({
   userAvatarUrl,
 }) => {
   const [activeNav, setActiveNav] = useState('home');
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(
+    userAvatarUrl || null
+  );
+  const [profileName, setProfileName] = useState<string>(
+    userName || 'Користувач'
+  );
+
+  useEffect(() => {
+    if (userAvatarUrl) {
+      setProfileAvatarUrl(userAvatarUrl);
+    }
+  }, [userAvatarUrl]);
+
+  useEffect(() => {
+    if (userName) {
+      setProfileName(userName);
+    }
+  }, [userName]);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+
+    let isMounted = true;
+    async function loadUserProfile() {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const user = sessionData?.session?.user;
+        if (!user || !isMounted) return;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (isMounted) {
+          const userMeta = user.user_metadata;
+          const fullName =
+            profile?.full_name ||
+            userMeta?.full_name ||
+            userMeta?.name ||
+            userName ||
+            'Користувач';
+          setProfileName(fullName.split(' ')[0] || fullName);
+
+          const avatar =
+            profile?.avatar_url ||
+            userMeta?.avatar_url ||
+            userMeta?.picture ||
+            userAvatarUrl ||
+            null;
+          if (avatar) {
+            setProfileAvatarUrl(avatar);
+          }
+        }
+      } catch {
+        void 0;
+      }
+    }
+
+    loadUserProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isLoggedIn, userName, userAvatarUrl]);
 
   useEffect(() => {
     const handleHash = () => {
@@ -90,8 +159,8 @@ export const LandingPage: FC<LandingPageProps> = ({
         onLoginClick={onLoginClick}
         onRegisterClick={onRegisterClick}
         onProfileClick={onProfileClick}
-        userName={userName}
-        userAvatarUrl={userAvatarUrl}
+        userName={profileName}
+        userAvatarUrl={profileAvatarUrl || userAvatarUrl || '/assets/images/default-avatar.svg'}
         activeNav={activeNav}
         onNavClick={handleNavClick}
       />

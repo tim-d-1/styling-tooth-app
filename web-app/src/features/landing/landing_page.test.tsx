@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import LandingHero from './LandingHero';
 import LandingAbout from './LandingAbout';
 import LandingServices from './LandingServices';
@@ -178,6 +178,43 @@ describe('Landing Page Components', () => {
       const homeBtn = screen.getByRole('button', { name: 'Головна сторінка' });
       fireEvent.click(homeBtn);
       expect(windowScrollMock).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+    });
+
+    it('preserves and renders custom user avatar when navigating to landing as logged in user', async () => {
+      const { supabase } = await import('@/lib/supabase');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: {
+              id: 'usr-custom-avatar',
+              user_metadata: {
+                full_name: 'Оксана',
+                avatar_url: 'https://images.example.com/custom-user-avatar.png',
+              },
+            },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase, 'from').mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: {
+            full_name: 'Оксана',
+            avatar_url: 'https://images.example.com/custom-user-avatar.png',
+          },
+          error: null,
+        }),
+      } as never);
+
+      await act(async () => {
+        render(<LandingPage isLoggedIn={true} />);
+      });
+
+      const avatarImg = screen.getByAltText('Оксана');
+      expect(avatarImg).toBeDefined();
+      expect(avatarImg.getAttribute('src')).toBe('https://images.example.com/custom-user-avatar.png');
     });
   });
 });
