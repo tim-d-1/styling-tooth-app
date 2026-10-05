@@ -27,6 +27,7 @@ import {
   MarkerIcon,
 } from '../../components/icons/AuthIcons';
 import { ProfileScreen } from '../profile/ProfileScreen';
+import { PersonalDataScreen } from '../profile/PersonalDataScreen';
 
 export type DashboardTab = 'home' | 'booking' | 'pets' | 'profile';
 
@@ -37,6 +38,7 @@ export interface MainScreenProps {
   userEmail?: string | null;
   initialVisit?: MobileVisit | null;
   initialTab?: DashboardTab;
+  initialProfileSubScreen?: 'main' | 'personal_data';
 }
 
 export const MainScreen: React.FC<MainScreenProps> = ({
@@ -46,9 +48,13 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   userEmail,
   initialVisit,
   initialTab,
+  initialProfileSubScreen,
 }) => {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<DashboardTab>(initialTab || 'home');
+  const [profileSubScreen, setProfileSubScreen] = useState<'main' | 'personal_data'>(
+    initialProfileSubScreen || 'main'
+  );
   const [visit, setVisit] = useState<MobileVisit | null>(initialVisit ?? null);
   const [isLoadingVisit, setIsLoadingVisit] = useState(initialVisit === undefined);
   const [userName, setUserName] = useState('');
@@ -461,14 +467,20 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           </View>
         )}
 
-        {activeTab === 'profile' && (
-          <ProfileScreen
-            userEmail={userEmail}
-            onLogout={onLogout}
-            onNavigateBooking={onNavigateBooking}
-            onNavigateAddPet={onNavigateAddPet}
-          />
-        )}
+        {activeTab === 'profile' &&
+          (profileSubScreen === 'personal_data' ? (
+            <PersonalDataScreen
+              onBack={() => setProfileSubScreen('main')}
+            />
+          ) : (
+            <ProfileScreen
+              userEmail={userEmail}
+              onLogout={onLogout}
+              onNavigateBooking={onNavigateBooking}
+              onNavigateAddPet={onNavigateAddPet}
+              onPersonalInfoPress={() => setProfileSubScreen('personal_data')}
+            />
+          ))}
       </ScrollView>
 
       <View

@@ -103,6 +103,8 @@ vi.mock('../lib/supabase', () => {
           error: null,
         }),
         signOut: vi.fn().mockResolvedValue({ error: null }),
+        updateUser: vi.fn().mockResolvedValue({ data: { user: {} }, error: null }),
+        resend: vi.fn().mockResolvedValue({ data: {}, error: null }),
       },
       storage: {
         from: vi.fn().mockReturnValue({
