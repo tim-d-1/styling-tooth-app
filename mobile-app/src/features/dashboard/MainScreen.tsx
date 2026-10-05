@@ -186,16 +186,28 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
   return (
     <View style={styles.safeArea} testID="main-screen">
-      <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingTop: Math.max(insets.top, 16) + 8,
-            paddingBottom: Math.max(insets.bottom, 20) + 70,
-          },
-        ]}
-      >
-        {activeTab !== 'profile' && activeTab !== 'pets' && (
+      {activeTab === 'pets' ? (
+        <View style={styles.petsTabContainer} testID="pets-tab-container">
+          <MyPetScreen
+            onNavigateAddPet={onNavigateAddPet}
+            onNavigateBooking={onNavigateBooking}
+            initialPets={initialPets}
+            initialPetDetail={initialPetDetail}
+            initialSchedule={initialSchedule}
+            initialHistory={initialHistory}
+          />
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: Math.max(insets.top, 16) + 8,
+              paddingBottom: Math.max(insets.bottom, 20) + 70,
+            },
+          ]}
+        >
+          {activeTab !== 'profile' && (
           <View style={styles.topHeader}>
             <View style={styles.locationContainer} testID="location-indicator">
               <MarkerIcon color={colors.terracotta} size={18} />
@@ -441,16 +453,6 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           </>
         )}
 
-        {activeTab === 'pets' && (
-          <MyPetScreen
-            onNavigateAddPet={onNavigateAddPet}
-            onNavigateBooking={onNavigateBooking}
-            initialPets={initialPets}
-            initialPetDetail={initialPetDetail}
-            initialSchedule={initialSchedule}
-            initialHistory={initialHistory}
-          />
-        )}
 
         {activeTab === 'booking' && (
           <View style={styles.tabContentContainer} testID="booking-tab-content">
@@ -486,6 +488,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             />
           ))}
       </ScrollView>
+      )}
 
       <View
         style={[
@@ -594,6 +597,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.surfaceCream,
+  },
+  petsTabContainer: {
+    flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 20,

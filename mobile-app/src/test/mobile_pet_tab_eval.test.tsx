@@ -260,4 +260,25 @@ describe('My Pet Tab Eval Suite (Figma Frame 774:2002 & Web Parity)', () => {
       expect(handleAdd).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('Eval 6: Layout Paddings and Scroll Isolation Guarantee', () => {
+    it('evaluates pets tab container provides isolated root layout without duplicate scroll wrappers', () => {
+      const { container } = render(
+        <MainScreen
+          initialTab="pets"
+          initialPets={samplePets}
+          initialPetDetail={sampleDetail}
+        />
+      );
+
+      const tabContainer = screen.getByTestId('pets-tab-container');
+      expect(tabContainer).toBeInTheDocument();
+
+      const petsContent = screen.getByTestId('pets-tab-content');
+      expect(tabContainer).toContainElement(petsContent);
+
+      const outerScrollIndicator = container.querySelector('[data-testid="location-indicator"]');
+      expect(outerScrollIndicator).toBeNull();
+    });
+  });
 });

@@ -57,13 +57,7 @@ export const ExpertAdviceGrid: FC<ExpertAdviceGridProps> = ({
                     />
                   )}
 
-                  <div
-                    className="absolute inset-0 z-20 pointer-events-none"
-                    style={{
-                      background:
-                        'linear-gradient(to right, #e8effa 0%, #e8effa 46%, rgba(232, 239, 250, 0.85) 53%, rgba(232, 239, 250, 0) 65%)',
-                    }}
-                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-soft-ice via-soft-ice/80 to-transparent z-20 pointer-events-none" />
 
                   <div className="relative z-30 max-w-[240px]">
                     <h3 className="m-0 text-xl font-bold text-content-dark leading-snug font-primary">

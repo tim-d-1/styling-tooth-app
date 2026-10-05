@@ -327,7 +327,7 @@ export const MyPetScreen: React.FC<MyPetScreenProps> = ({
       <View
         style={[
           styles.headerRow,
-          { paddingTop: Math.max(insets.top + 8, 20) },
+          { paddingTop: Math.max(insets.top, 16) + 8 },
         ]}
       >
         <Text style={styles.headerTitle} testID="pets-screen-title">
@@ -348,7 +348,7 @@ export const MyPetScreen: React.FC<MyPetScreenProps> = ({
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom + 24, 40) },
+          { paddingBottom: Math.max(insets.bottom, 20) + 70 },
         ]}
         showsVerticalScrollIndicator={false}
       >

@@ -159,4 +159,12 @@ describe('MainScreen (Головна)', () => {
     const gradient = screen.getByTestId('advice-shampoo-gradient');
     expect(gradient).toBeInTheDocument();
   });
+
+  it('renders pets tab in dedicated container outside outer ScrollView to avoid nested scrolling and double padding', () => {
+    render(<MainScreen initialVisit={null} userEmail="maria@example.com" />);
+
+    fireEvent.click(screen.getByTestId('tab-pets'));
+    expect(screen.getByTestId('pets-tab-container')).toBeInTheDocument();
+    expect(screen.getByTestId('pets-tab-content')).toBeInTheDocument();
+  });
 });
