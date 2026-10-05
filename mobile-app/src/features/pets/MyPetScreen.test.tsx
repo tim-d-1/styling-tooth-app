@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { MyPetScreen } from './MyPetScreen';
 import * as ImagePicker from 'expo-image-picker';
+import { supabase } from '../../lib/supabase';
 
 describe('MyPetScreen', () => {
   const mockPets = [
@@ -165,5 +166,76 @@ describe('MyPetScreen', () => {
 
     fireEvent.click(screen.getByTestId('add-pet-cta-button'));
     expect(handleAdd).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads real pets and resolves signed avatar url from pet-media bucket', async () => {
+    (supabase.auth.getSession as any).mockResolvedValue({
+      data: { session: { user: { id: 'owner-test-1' } } },
+      error: null,
+    });
+
+    vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+      if (table === 'pets') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({
+            data: [
+              {
+                id: 'db-pet-1',
+                name: 'Барон',
+                species: 'dog',
+                breed: 'Лабрадор',
+                is_active: true,
+              },
+            ],
+            error: null,
+          }),
+        } as never;
+      }
+      if (table === 'pet_media') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({
+            data: [
+              {
+                id: 'pm-1',
+                pet_id: 'db-pet-1',
+                storage_path: 'db-pet-1/photo.jpg',
+                photo_type: 'general',
+              },
+            ],
+            error: null,
+          }),
+        } as never;
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        neq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      } as never;
+    });
+
+    vi.spyOn(supabase.storage, 'from').mockReturnValue({
+      createSignedUrl: vi.fn().mockResolvedValue({
+        data: { signedUrl: 'https://storage.signed.url/photo.jpg' },
+        error: null,
+      }),
+      getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: '' } }),
+    } as never);
+
+    render(<MyPetScreen />);
+
+    await waitFor(() => {
+      const avatarContainer = screen.getByTestId('pet-avatar-image');
+      expect(avatarContainer).toBeInTheDocument();
+      const img = avatarContainer.querySelector('img');
+      expect(img?.src).toBe('https://storage.signed.url/photo.jpg');
+    });
   });
 });

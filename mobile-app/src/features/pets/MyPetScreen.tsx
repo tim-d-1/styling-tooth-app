@@ -39,6 +39,11 @@ import {
   parseHealthNotes,
   isFigmaPetPlaceholder,
 } from './pet_utils';
+import {
+  resolveStorageUrl,
+  fetchPetsAvatarMap,
+  uploadPetMediaFromUri,
+} from './pet_media_utils';
 
 export interface MyPetScreenProps {
   onNavigateAddPet?: () => void;
@@ -81,6 +86,7 @@ export const MyPetScreen: React.FC<MyPetScreenProps> = ({
   const [isLoading, setIsLoading] = useState(
     initialPets === undefined && initialPetDetail === undefined
   );
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   const showFeedback = (message: string) => {
     if (onToast) {
@@ -139,11 +145,15 @@ export const MyPetScreen: React.FC<MyPetScreenProps> = ({
         if (!isMounted) return;
 
         if (dbPets && dbPets.length > 0) {
+          const petIds = dbPets.map((p) => p.id);
+          const avatarMap = await fetchPetsAvatarMap(petIds);
+
           const switcherItems: PetSwitcherItem[] = dbPets.map((p, idx) => ({
             id: p.id,
             name: isFigmaPetPlaceholder(p.name) ? `Улюбленець ${idx + 1}` : p.name,
             species: p.species,
             isActive: idx === 0,
+            avatarUrl: avatarMap[p.id] || null,
           }));
 
           const activeId = selectedPetId || switcherItems[0].id;
@@ -193,10 +203,7 @@ export const MyPetScreen: React.FC<MyPetScreenProps> = ({
 
           if (mediaItems && mediaItems.length > 0) {
             for (const item of mediaItems) {
-              const { data: pubData } = supabase.storage
-                .from('pet-media')
-                .getPublicUrl(item.storage_path);
-              const itemUrl = pubData?.publicUrl || null;
+              const itemUrl = await resolveStorageUrl(item.storage_path);
 
               if (item.photo_type === 'before' && !beforeUrl) {
                 beforeUrl = itemUrl;
@@ -208,6 +215,8 @@ export const MyPetScreen: React.FC<MyPetScreenProps> = ({
             }
           }
 
+          const resolvedAvatar =
+            generalAvatarUrl || afterUrl || avatarMap[currentPet.id] || null;
           const totalVisits = visitsCount || 0;
 
           setPetDetail({
@@ -220,7 +229,7 @@ export const MyPetScreen: React.FC<MyPetScreenProps> = ({
             weightKg: currentPet.weight_kg ? Number(currentPet.weight_kg) : null,
             behaviorNotes: currentPet.behavior_notes || null,
             medicalNotes: currentPet.medical_notes || null,
-            avatarUrl: generalAvatarUrl || afterUrl || null,
+            avatarUrl: resolvedAvatar,
             visitsCount: totalVisits,
             isVip: totalVisits >= 5,
           });
@@ -289,6 +298,7 @@ export const MyPetScreen: React.FC<MyPetScreenProps> = ({
   }, [initialPets, initialPetDetail, selectedPetId]);
 
   const handleSelectPet = (petId: string) => {
+    setAvatarLoadError(false);
     setSelectedPetId(petId);
     setPetsList((prev) =>
       prev.map((pet) => ({
@@ -309,7 +319,11 @@ export const MyPetScreen: React.FC<MyPetScreenProps> = ({
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const pickedUri = result.assets[0].uri;
+        setAvatarLoadError(false);
         setPetDetail((prev) => (prev ? { ...prev, avatarUrl: pickedUri } : null));
+        if (petDetail?.id) {
+          uploadPetMediaFromUri(petDetail.id, pickedUri, 'general').catch(() => {});
+        }
         showFeedback('Фото улюбленця оновлено');
       }
     } catch {
@@ -411,11 +425,12 @@ export const MyPetScreen: React.FC<MyPetScreenProps> = ({
             <View style={styles.profileCard} testID="pet-profile-card">
               <View style={styles.avatarSection}>
                 <View style={styles.avatarRing}>
-                  {petDetail.avatarUrl ? (
+                  {petDetail.avatarUrl && !avatarLoadError ? (
                     <Image
                       source={{ uri: petDetail.avatarUrl }}
                       style={styles.avatarImage}
                       testID="pet-avatar-image"
+                      onError={() => setAvatarLoadError(true)}
                     />
                   ) : (
                     <View style={styles.avatarPlaceholder} testID="default-pet-avatar">

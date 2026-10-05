@@ -110,6 +110,12 @@ vi.mock('../lib/supabase', () => {
         from: vi.fn().mockReturnValue({
           upload: vi.fn().mockResolvedValue({ data: { path: 'mock-path' }, error: null }),
           getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'https://example.com/mock.jpg' } }),
+          createSignedUrl: vi.fn().mockImplementation((path: string) =>
+            Promise.resolve({
+              data: { signedUrl: `https://example.com/signed/${path}` },
+              error: null,
+            })
+          ),
         }),
       },
       from: vi.fn().mockReturnValue({

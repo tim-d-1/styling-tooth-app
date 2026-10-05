@@ -41,6 +41,7 @@ import {
   TIME_SLOTS,
 } from './booking_types';
 import { getKyivISOString, getInitialBookingDate } from './booking_date_utils';
+import { fetchPetsAvatarMap } from '../pets/pet_media_utils';
 
 export interface BookingScreenProps {
   onBack?: () => void;
@@ -49,6 +50,7 @@ export interface BookingScreenProps {
   onToast?: (message: string) => void;
   initialStage?: BookingStage;
   initialDate?: string;
+  initialPetId?: string;
   initialPets?: PetOption[];
   initialMasters?: MasterProfile[];
 }
@@ -90,6 +92,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   onToast,
   initialStage = 'pet',
   initialDate,
+  initialPetId,
   initialPets,
   initialMasters,
 }) => {
@@ -144,6 +147,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   const [weekStartDate, setWeekStartDate] = useState<string>(
     initialDates.weekStartDate || '2026-08-09'
   );
+  const [failedPetImages, setFailedPetImages] = useState<Record<string, boolean>>({});
 
   const showToast = (message: string) => {
     setFeedbackMessage(message);
@@ -169,20 +173,26 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             .order('created_at', { ascending: false });
 
           if (isMounted && userPets && userPets.length > 0) {
+            const petIds = userPets.map((p) => p.id);
+            const avatarMap = await fetchPetsAvatarMap(petIds);
+
             const mappedPets: PetOption[] = userPets.map((p) => ({
               id: p.id,
               name: p.name,
               species: p.species === 'dog' ? 'Собака' : p.species === 'cat' ? 'Кіт' : p.species,
               breed: p.breed || undefined,
-              avatar_url: null,
+              avatar_url: avatarMap[p.id] || null,
             }));
             setPets(mappedPets);
+            const selectedPet =
+              mappedPets.find((p) => p.id === initialPetId) || mappedPets[0];
             setBookingState((prev) => ({
               ...prev,
-              petId: mappedPets[0].id,
-              petName: mappedPets[0].name,
-              petSpecies: mappedPets[0].species,
-              petBreed: mappedPets[0].breed,
+              petId: selectedPet.id,
+              petName: selectedPet.name,
+              petSpecies: selectedPet.species,
+              petBreed: selectedPet.breed,
+              petAvatarUrl: selectedPet.avatar_url || null,
             }));
           }
         }
@@ -490,10 +500,13 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                     testID={`pet-card-${pet.id}`}
                   >
                     <View style={styles.petCardImageArea}>
-                      {pet.avatar_url ? (
+                      {pet.avatar_url && !failedPetImages[pet.id] ? (
                         <Image
                           source={{ uri: pet.avatar_url }}
                           style={styles.petCardImage}
+                          onError={() =>
+                            setFailedPetImages((prev) => ({ ...prev, [pet.id]: true }))
+                          }
                         />
                       ) : (
                         <View style={styles.petCardPlaceholder}>

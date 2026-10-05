@@ -193,4 +193,61 @@ describe('BookingScreen', () => {
     fireEvent.click(screen.getByTestId('booking-back-button'));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
+
+  it('loads real user pets and displays pet avatar image from pet_media', async () => {
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'pets') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({
+            data: [
+              { id: 'pet-avatar-test', name: 'Рекс', species: 'dog', breed: 'Вівчарка' },
+            ],
+            error: null,
+          }),
+        };
+      }
+      if (table === 'pet_media') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({
+            data: [
+              {
+                id: 'pm-rexs',
+                pet_id: 'pet-avatar-test',
+                storage_path: 'pet-avatar-test/rexs.jpg',
+                photo_type: 'general',
+              },
+            ],
+            error: null,
+          }),
+        };
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+      };
+    });
+
+    vi.spyOn(supabase.storage, 'from').mockReturnValue({
+      createSignedUrl: vi.fn().mockResolvedValue({
+        data: { signedUrl: 'https://supabase.co/signed/pet-avatar-test/rexs.jpg?token=abc' },
+        error: null,
+      }),
+      getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: '' } }),
+    } as never);
+
+    render(<BookingScreen />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Рекс')).toBeInTheDocument();
+      const petCard = screen.getByTestId('pet-card-pet-avatar-test');
+      const img = petCard.querySelector('img');
+      expect(img).not.toBeNull();
+      expect(img?.src).toBe('https://supabase.co/signed/pet-avatar-test/rexs.jpg?token=abc');
+    });
+  });
 });

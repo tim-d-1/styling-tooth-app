@@ -18,6 +18,7 @@ export interface PetSwitcherItem {
   name: string;
   species: string;
   isActive: boolean;
+  avatarUrl?: string | null;
 }
 
 export interface CareScheduleItem {
