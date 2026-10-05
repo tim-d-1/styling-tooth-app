@@ -10,7 +10,7 @@ export const LandingServices: FC<LandingServicesProps> = ({
   onQuickBookClick,
 }) => {
   return (
-    <section id="services" className="w-full py-20 bg-landing-page">
+    <section id="services" className="w-full py-20 bg-landing-page scroll-mt-20">
       <div className="max-w-[75rem] mx-auto px-6 flex flex-col gap-10">
         <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-6">
           <div className="max-w-2xl flex flex-col gap-5">

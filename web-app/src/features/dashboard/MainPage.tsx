@@ -7,6 +7,7 @@ import ExpertAdviceGrid, { type ArticleItem } from './ExpertAdviceGrid';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/lib/supabase';
 import { formatVisitDateDetails } from './dashboard_utils';
+import { navigateToSection } from '@/lib/section_navigation';
 
 const EXPERT_ARTICLES: ArticleItem[] = [
   {
@@ -48,6 +49,7 @@ export interface MainPageProps {
   onBookClick?: () => void;
   userRole?: string;
   onDashboardClick?: () => void;
+  onNavClick?: (nav: string) => void;
 }
 
 export const MainPage: FC<MainPageProps> = ({
@@ -65,6 +67,7 @@ export const MainPage: FC<MainPageProps> = ({
   onBookClick,
   userRole,
   onDashboardClick,
+  onNavClick,
 }) => {
   const currentCity =
     selectedCity ||
@@ -260,6 +263,10 @@ export const MainPage: FC<MainPageProps> = ({
           onNavClick={(nav: string) => {
             if (nav === 'admin/requests' && onDashboardClick) {
               onDashboardClick();
+            } else if (onNavClick) {
+              onNavClick(nav);
+            } else if (['services', 'about', 'contacts'].includes(nav)) {
+              navigateToSection(nav, undefined, isLoggedIn);
             } else {
               setActiveNav(nav);
             }

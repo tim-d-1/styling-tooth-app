@@ -40,6 +40,7 @@ import type { UserRole } from '@/features/auth/auth_types';
 import { CITY_STORAGE_KEY } from '@/features/location/city_types';
 import ScrollToTop from '@/components/layout/ScrollToTop';
 import { supabase } from '@/lib/supabase';
+import { scrollToSection } from '@/lib/section_navigation';
 
 interface ProtectedRouteProps {
   isLoggedIn: boolean;
@@ -373,6 +374,14 @@ export function AppRoutes() {
     }, 3000);
   };
 
+  const handleSectionNav = (nav: string) => {
+    if (nav === 'home') {
+      navigate(isLoggedIn ? '/main' : '/');
+    } else if (['services', 'about', 'contacts'].includes(nav)) {
+      navigate(`/landing#${nav}`);
+    }
+  };
+
   return (
     <>
       {toastMessage && (
@@ -398,11 +407,17 @@ export function AppRoutes() {
                 onLocationClick={() => navigate('/select-city')}
                 selectedCity={selectedCity}
                 onToast={showToast}
+                onNavClick={handleSectionNav}
               />
             ) : (
               <LandingPage
+                isLoggedIn={false}
                 onLoginClick={() => navigate('/login')}
                 onRegisterClick={() => navigate('/register')}
+                onProfileClick={() => navigate('/profile')}
+                onHomeClick={() => {
+                  scrollToSection('home');
+                }}
                 onBookClick={() => {
                   if (isLoggedIn) {
                     navigate('/booking');
@@ -421,8 +436,16 @@ export function AppRoutes() {
           path="/landing"
           element={
             <LandingPage
+              isLoggedIn={isLoggedIn}
               onLoginClick={() => navigate('/login')}
               onRegisterClick={() => navigate('/register')}
+              onProfileClick={() => navigate('/profile')}
+              onHomeClick={() => navigate(isLoggedIn ? '/main' : '/landing')}
+              onNavClick={(nav) => {
+                if (nav === 'home' && isLoggedIn) {
+                  navigate('/main');
+                }
+              }}
               onBookClick={() => {
                 if (isLoggedIn) {
                   navigate('/booking');
@@ -575,6 +598,7 @@ export function AppRoutes() {
                 onLocationClick={() => navigate('/select-city')}
                 selectedCity={selectedCity}
                 onToast={showToast}
+                onNavClick={handleSectionNav}
               />
             </ProtectedRoute>
           }

@@ -4,7 +4,7 @@ import { CONTACT_ITEMS } from './landing_types';
 
 export const LandingContacts: FC = () => {
   return (
-    <section id="contacts" className="w-full py-20 bg-landing-page">
+    <section id="contacts" className="w-full py-20 bg-landing-page scroll-mt-20">
       <div className="max-w-[75rem] mx-auto px-6 flex flex-col gap-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <h2 className="font-accented font-bold text-3xl md:text-4xl leading-tight text-content-dark">

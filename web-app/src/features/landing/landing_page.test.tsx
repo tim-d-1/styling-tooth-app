@@ -150,5 +150,34 @@ describe('Landing Page Components', () => {
       fireEvent.click(quickBookBtn);
       expect(handleQuickBook).toHaveBeenCalledTimes(1);
     });
+
+    it('renders navbar buttons and scrolls to sections with URL hash update', () => {
+      const scrollIntoViewMock = vi.fn();
+      window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
+      const windowScrollMock = vi.fn();
+      window.scrollTo = windowScrollMock;
+      const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
+
+      render(<LandingPage />);
+
+      const servicesBtn = screen.getByRole('button', { name: 'Послуги' });
+      fireEvent.click(servicesBtn);
+      expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth' });
+      expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '#services');
+
+      const aboutBtn = screen.getByRole('button', { name: 'Про нас' });
+      fireEvent.click(aboutBtn);
+      expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth' });
+      expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '#about');
+
+      const contactsBtn = screen.getByRole('button', { name: 'Контакти' });
+      fireEvent.click(contactsBtn);
+      expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth' });
+      expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '#contacts');
+
+      const homeBtn = screen.getByRole('button', { name: 'Головна сторінка' });
+      fireEvent.click(homeBtn);
+      expect(windowScrollMock).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+    });
   });
 });

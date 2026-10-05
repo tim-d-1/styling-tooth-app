@@ -610,6 +610,36 @@ describe('Main Page Components', () => {
       expect(screen.getByRole('button', { name: 'Про нас' })).toBeDefined();
       expect(screen.getByRole('button', { name: 'Контакти' })).toBeDefined();
     });
+
+    it('MainPage propagates onNavClick when navbar items are clicked', async () => {
+      const handleNavClick = vi.fn();
+      await act(async () => {
+        render(
+          <MainPage
+            isLoggedIn={true}
+            onNavClick={handleNavClick}
+          />
+        );
+      });
+
+      const servicesBtn = screen.getByRole('button', { name: 'Послуги' });
+      act(() => {
+        fireEvent.click(servicesBtn);
+      });
+      expect(handleNavClick).toHaveBeenCalledWith('services');
+
+      const aboutBtn = screen.getByRole('button', { name: 'Про нас' });
+      act(() => {
+        fireEvent.click(aboutBtn);
+      });
+      expect(handleNavClick).toHaveBeenCalledWith('about');
+
+      const contactsBtn = screen.getByRole('button', { name: 'Контакти' });
+      act(() => {
+        fireEvent.click(contactsBtn);
+      });
+      expect(handleNavClick).toHaveBeenCalledWith('contacts');
+    });
   });
 });
 

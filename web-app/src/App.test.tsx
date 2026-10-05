@@ -1868,6 +1868,49 @@ describe('App Root and Auth Gating', () => {
 
       expect(staffRedirect.redirectToStaffApp).toHaveBeenCalled();
     });
+
+    it('navigates to landing hash section when navbar item is clicked on main page', async () => {
+      window.history.pushState(null, '', '/main');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'usr-nav-test', email: 'nav@test.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-nav-flow',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+      const chain: Record<string, unknown> = {
+        select: vi.fn(() => chain),
+        eq: vi.fn(() => chain),
+        neq: vi.fn(() => chain),
+        gte: vi.fn(() => chain),
+        order: vi.fn(() => chain),
+        limit: vi.fn(() => chain),
+        maybeSingle: vi.fn().mockResolvedValue({ data: { role: 'client' }, error: null }),
+      };
+      vi.spyOn(supabase, 'from').mockReturnValue(chain as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      const servicesBtn = screen.getByRole('button', { name: 'Послуги' });
+      await act(async () => {
+        fireEvent.click(servicesBtn);
+      });
+
+      expect(window.location.pathname).toBe('/landing');
+      expect(window.location.hash).toBe('#services');
+    });
   });
 });
 

@@ -2,6 +2,7 @@ import { useState, useEffect, type FC } from 'react';
 import Logo from '@/components/ui/Logo';
 import Icon from '@/components/ui/Icon';
 import Button from '@/components/ui/Button';
+import { navigateToSection } from '@/lib/section_navigation';
 
 export interface HeaderProps {
   isLoggedIn?: boolean;
@@ -51,6 +52,22 @@ export const Header: FC<HeaderProps> = ({
     { id: 'contacts', label: 'Контакти' },
   ];
 
+  const handleHomeClick = () => {
+    if (onNavClick) {
+      onNavClick('home');
+    } else {
+      navigateToSection('home', undefined, isLoggedIn);
+    }
+  };
+
+  const handleItemClick = (id: string) => {
+    if (onNavClick) {
+      onNavClick(id);
+    } else {
+      navigateToSection(id, undefined, isLoggedIn);
+    }
+  };
+
   return (
     <header
       className={[
@@ -62,7 +79,7 @@ export const Header: FC<HeaderProps> = ({
     >
       <button
         type="button"
-        onClick={() => onNavClick?.('home')}
+        onClick={handleHomeClick}
         aria-label="Головна сторінка"
         className="cursor-pointer flex items-center bg-transparent border-0 p-0 text-left hover:opacity-90 transition-opacity outline-none"
       >
@@ -76,7 +93,7 @@ export const Header: FC<HeaderProps> = ({
             <button
               key={item.id}
               type="button"
-              onClick={() => onNavClick?.(item.id)}
+              onClick={() => handleItemClick(item.id)}
               aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}
               className={[

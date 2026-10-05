@@ -6,7 +6,7 @@ export interface LandingAboutProps {
 
 export const LandingAbout: FC<LandingAboutProps> = ({ onBookClick }) => {
   return (
-    <section id="about" className="w-full py-20 bg-landing-page">
+    <section id="about" className="w-full py-20 bg-landing-page scroll-mt-20">
       <div className="max-w-[75rem] mx-auto px-6 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-28">
         <div className="w-full lg:max-w-lg flex flex-col gap-10">
           <div className="flex flex-col gap-6">
