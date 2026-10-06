@@ -13,6 +13,7 @@ import {
 } from '../features/booking/booking_date_utils';
 import { supabase } from '../lib/supabase';
 import { MainScreen } from '../features/dashboard/MainScreen';
+import { formatVisitDateDetails } from '../features/dashboard/dashboard_utils';
 
 describe('Mobile Booking Parity Eval Suite', () => {
   beforeEach(() => {
@@ -105,6 +106,10 @@ describe('Mobile Booking Parity Eval Suite', () => {
     fireEvent.click(screen.getByTestId('tab-booking'));
 
     expect(screen.getByTestId('booking-tab-content')).toBeInTheDocument();
+    expect(screen.getByTestId('quick-schedule-screen')).toBeInTheDocument();
+    expect(screen.getByTestId('quick-schedule-banner')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('quick-book-button'));
     expect(screen.getByTestId('booking-screen')).toBeInTheDocument();
     expect(screen.getByText('Оберіть улюбленця')).toBeInTheDocument();
   });
@@ -163,14 +168,53 @@ describe('Mobile Booking Parity Eval Suite', () => {
     expect(screen.queryByTestId('booking-bottom-bar')).not.toBeInTheDocument();
   });
 
-  it('Eval 7: Procedure Description Excluded from 2nd Page (Modal Window Isolation)', () => {
+  it('Eval 7: Procedure Description Excluded from 2nd Page (Modal Window Isolation)', async () => {
     render(<BookingScreen initialStage="procedure" initialPets={DEMO_PETS} />);
 
     expect(screen.getByTestId('step-procedure')).toBeInTheDocument();
-    expect(screen.getByTestId('procedure-detail-card')).toBeInTheDocument();
+    expect(screen.queryByTestId('procedure-detail-card')).not.toBeInTheDocument();
 
     PROCEDURES_CATALOG.forEach((proc) => {
       expect(screen.queryByText(proc.description)).not.toBeInTheDocument();
     });
+
+    fireEvent.click(screen.getByTestId('procedure-option-express-grooming'));
+    await waitFor(() => {
+      expect(screen.getByTestId('procedure-modal-sheet')).toBeInTheDocument();
+    });
+  });
+
+  it('Eval 8: QuickSchedule Screen Parity with Figma 121:1236 & QuickSchedulePage', () => {
+    const mockVisit = {
+      id: 'visit-999',
+      startsAt: '2026-08-10T16:00:00.000Z',
+      masterName: 'Марія Шевченко',
+      serviceName: 'Комплексний грумінг',
+      status: 'confirmed',
+    };
+
+    render(
+      <MainScreen
+        initialTab="booking"
+        initialBookingSubScreen="schedule"
+        initialVisit={mockVisit}
+      />
+    );
+
+    const dateDetails = formatVisitDateDetails(mockVisit.startsAt)!;
+    expect(screen.getByTestId('quick-schedule-screen')).toBeInTheDocument();
+    expect(screen.getByTestId('visit-card')).toBeInTheDocument();
+    expect(screen.getByText(dateDetails.dayNumber)).toBeInTheDocument();
+    expect(screen.getByText(dateDetails.time)).toBeInTheDocument();
+    expect(screen.getByText('Марія Шевченко')).toBeInTheDocument();
+    expect(screen.getByText('Комплексний грумінг')).toBeInTheDocument();
+    expect(screen.getByTestId('reschedule-visit-button')).toHaveTextContent('Перенести');
+    expect(screen.getByTestId('cancel-visit-button')).toHaveTextContent('Скасувати');
+
+    expect(screen.getByTestId('quick-schedule-banner')).toBeInTheDocument();
+    expect(screen.getByTestId('quick-book-button')).toHaveTextContent('Швидкий запис');
+
+    fireEvent.click(screen.getByTestId('reschedule-visit-button'));
+    expect(screen.getByTestId('booking-screen')).toBeInTheDocument();
   });
 });

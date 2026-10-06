@@ -32,6 +32,9 @@ import { MyAddressesScreen } from '../profile/MyAddressesScreen';
 import { UserAddress } from '../profile/profile_types';
 import { MyPetScreen } from '../pets/MyPetScreen';
 import { BookingScreen } from '../booking/BookingScreen';
+import { QuickScheduleScreen } from '../schedule/QuickScheduleScreen';
+import { DashboardTopHeader } from './DashboardTopHeader';
+import { ScheduledVisitSection } from './ScheduledVisitSection';
 import {
   PetDetail,
   PetSwitcherItem,
@@ -49,6 +52,7 @@ export interface MainScreenProps {
   initialVisit?: MobileVisit | null;
   initialTab?: DashboardTab;
   initialProfileSubScreen?: 'main' | 'personal_data' | 'addresses';
+  initialBookingSubScreen?: 'schedule' | 'flow';
   initialPets?: PetSwitcherItem[];
   initialPetDetail?: PetDetail | null;
   initialSchedule?: CareScheduleItem[];
@@ -64,6 +68,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   initialVisit,
   initialTab,
   initialProfileSubScreen,
+  initialBookingSubScreen,
   initialPets,
   initialPetDetail,
   initialSchedule,
@@ -75,10 +80,25 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   const [profileSubScreen, setProfileSubScreen] = useState<
     'main' | 'personal_data' | 'addresses'
   >(initialProfileSubScreen || 'main');
+  const [bookingSubScreen, setBookingSubScreen] = useState<'schedule' | 'flow'>(
+    initialBookingSubScreen || 'schedule'
+  );
   const [visit, setVisit] = useState<MobileVisit | null>(initialVisit ?? null);
   const [isLoadingVisit, setIsLoadingVisit] = useState(initialVisit === undefined);
   const [userName, setUserName] = useState('');
   const [pets, setPets] = useState<Array<{ id: string; name: string; species: string }>>([]);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
+  useEffect(() => {
+    if (initialBookingSubScreen) {
+      setBookingSubScreen(initialBookingSubScreen);
+    }
+  }, [initialBookingSubScreen]);
 
   useEffect(() => {
     let isMounted = true;
@@ -193,6 +213,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
       onNavigateBooking();
     } else {
       setActiveTab('booking');
+      setBookingSubScreen('flow');
     }
   };
 
@@ -213,16 +234,30 @@ export const MainScreen: React.FC<MainScreenProps> = ({
         <View
           style={[
             styles.petsTabContainer,
-            { paddingBottom: Math.max(insets.bottom, 10) + 54 },
+            bookingSubScreen === 'flow' && {
+              paddingBottom: Math.max(insets.bottom, 10) + 54,
+            },
           ]}
           testID="booking-tab-content"
         >
-          <BookingScreen
-            onBack={() => setActiveTab('home')}
-            onComplete={() => setActiveTab('home')}
-            onNavigateAddPet={onNavigateAddPet}
-            bottomInset={8}
-          />
+          {bookingSubScreen === 'flow' ? (
+            <BookingScreen
+              onBack={() => setBookingSubScreen('schedule')}
+              onComplete={() => {
+                setBookingSubScreen('schedule');
+                setActiveTab('home');
+              }}
+              onNavigateAddPet={onNavigateAddPet}
+              bottomInset={8}
+            />
+          ) : (
+            <QuickScheduleScreen
+              onNavigateBooking={() => setBookingSubScreen('flow')}
+              onNavigateHome={() => setActiveTab('home')}
+              initialVisit={visit}
+              onToast={(msg) => Alert.alert('Повідомлення', msg)}
+            />
+          )}
         </View>
       ) : activeTab === 'profile' ? (
         <View style={styles.petsTabContainer} testID="profile-tab-wrapper">
@@ -267,114 +302,17 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             },
           ]}
         >
-          <View style={styles.topHeader}>
-            <View style={styles.locationContainer} testID="location-indicator">
-              <MarkerIcon color={colors.terracotta} size={18} />
-              <Text style={styles.locationText}>м. Київ</Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.bellButton}
-              accessibilityRole="button"
-              accessibilityLabel="Сповіщення"
-              testID="notifications-button"
-            >
-              <BellIcon color={colors.contentPrimary} size={20} />
-            </TouchableOpacity>
-          </View>
+          <DashboardTopHeader />
 
         {activeTab === 'home' && (
           <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Запланований візит</Text>
-            </View>
-
-            {isLoadingVisit ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator color={colors.terracotta} />
-              </View>
-            ) : visit && visitDateDetails ? (
-              <View testID="visit-card-container">
-                <View style={styles.visitCard} testID="visit-card">
-                  <View style={styles.dateBadge} testID="visit-date-badge">
-                    <Text style={styles.dayOfWeekText}>
-                      {visitDateDetails.dayOfWeek}
-                    </Text>
-                    <Text style={styles.dayNumberText}>
-                      {visitDateDetails.dayNumber}
-                    </Text>
-                    <View style={styles.dateDividerLine} />
-                    <Text style={styles.timeText}>{visitDateDetails.time}</Text>
-                  </View>
-
-                  <View style={styles.nestedInfoCard}>
-                    <View style={styles.infoField}>
-                      <Text style={styles.infoLabel}>Майстер:</Text>
-                      <Text style={styles.infoValue}>
-                        {visit.masterName || 'Марія Шевченко'}
-                      </Text>
-                    </View>
-                    <View style={styles.infoField}>
-                      <Text style={styles.infoLabel}>Процедура:</Text>
-                      <Text style={styles.infoValue}>
-                        {visit.serviceName || 'Комплексний грумінг'}
-                      </Text>
-                    </View>
-                    {visit.petName && (
-                      <View style={styles.infoField}>
-                        <Text style={styles.petNameText}>
-                          Тваринка: {visit.petName}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-
-                <View style={styles.visitActionsRow}>
-                  <TouchableOpacity
-                    style={styles.actionButtonPrimary}
-                    onPress={handleBookingNavigation}
-                    accessibilityRole="button"
-                    accessibilityLabel="Перенести візит"
-                    testID="reschedule-visit-button"
-                  >
-                    <Text style={styles.actionButtonPrimaryText}>
-                      Перенести
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.actionButtonSecondary}
-                    onPress={handleCancelVisit}
-                    accessibilityRole="button"
-                    accessibilityLabel="Скасувати візит"
-                    testID="cancel-visit-button"
-                  >
-                    <Text style={styles.actionButtonSecondaryText}>
-                      Скасувати
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.emptyVisitCard} testID="empty-visit-card">
-                <Text style={styles.emptyVisitTitle}>
-                  Немає запланованих візитів
-                </Text>
-                <Text style={styles.emptyVisitSubtitle}>
-                  Запишіть свого улюбленця на зручний час
-                </Text>
-                <TouchableOpacity
-                  style={styles.emptyBookButton}
-                  onPress={handleBookingNavigation}
-                  testID="empty-book-button"
-                >
-                  <Text style={styles.emptyBookButtonText}>
-                    Записати улюбленця
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            <ScheduledVisitSection
+              visit={visit}
+              isLoading={isLoadingVisit}
+              onReschedule={handleBookingNavigation}
+              onCancel={handleCancelVisit}
+              onBook={handleBookingNavigation}
+            />
 
             <ScrollView
               horizontal
@@ -558,7 +496,10 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
         <TouchableOpacity
           style={styles.tabItem}
-          onPress={() => setActiveTab('booking')}
+          onPress={() => {
+            setActiveTab('booking');
+            setBookingSubScreen('schedule');
+          }}
           accessibilityRole="button"
           accessibilityLabel="Запис"
           testID="tab-booking"
