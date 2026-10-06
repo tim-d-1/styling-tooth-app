@@ -250,4 +250,39 @@ describe('BookingScreen', () => {
       expect(img?.src).toBe('https://supabase.co/signed/pet-avatar-test/rexs.jpg?token=abc');
     });
   });
+
+  it('opens procedure bottom sheet modal on click and advances on Записатись', async () => {
+    render(<BookingScreen initialStage="procedure" initialPets={DEMO_PETS} />);
+
+    expect(screen.getByTestId('step-procedure')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('procedure-option-express-grooming'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('procedure-modal-sheet')).toBeInTheDocument();
+      expect(screen.getByTestId('modal-select-procedure-button')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('modal-select-procedure-button'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('step-master')).toBeInTheDocument();
+    });
+  });
+
+  it('renders completed screen with success message and navigates via actions', () => {
+    const onComplete = vi.fn();
+    render(<BookingScreen initialStage="completed" onComplete={onComplete} />);
+
+    expect(screen.getByTestId('step-completed')).toBeInTheDocument();
+    expect(screen.getByText('Запис підтверджено!')).toBeInTheDocument();
+    expect(
+      screen.getByText(/За 24 години до візиту ми/i)
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('view-booking-button'));
+    expect(onComplete).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByTestId('go-home-button'));
+    expect(onComplete).toHaveBeenCalledTimes(2);
+  });
 });

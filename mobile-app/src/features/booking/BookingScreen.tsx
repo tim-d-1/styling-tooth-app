@@ -9,6 +9,8 @@ import {
   Image,
   Switch,
   ActivityIndicator,
+  Modal,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radii } from '../../theme/tokens';
@@ -21,12 +23,16 @@ import {
   PlusIcon,
   CreditCardIcon,
   CheckIcon,
+  MarkerIcon,
+  ScissorsIcon,
 } from '../../components/icons/AuthIcons';
 import {
   ClockIcon,
   AngleSmallLeftIcon,
+  AngleSmallRightIcon,
   ApplePayIcon,
   CashIcon,
+  CheckCircleIcon,
 } from './BookingIcons';
 import { BookingProgressBar } from './BookingProgressBar';
 import {
@@ -107,6 +113,11 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   const [procedures, setProcedures] = useState<ProcedureOption[]>(PROCEDURES_CATALOG);
   const [masters, setMasters] = useState<MasterProfile[]>(initialMasters || []);
   const [currentMasterIndex, setCurrentMasterIndex] = useState(0);
+  const [modalProcedure, setModalProcedure] = useState<ProcedureOption | null>(null);
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvv, setCvv] = useState('');
+  const [saveCard, setSaveCard] = useState(false);
 
   const initialDates = initialDate
     ? getInitialBookingDate(new Date(initialDate))
@@ -287,6 +298,14 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       setStage('confirmation');
       return;
     }
+    if (stage === 'completed') {
+      if (onComplete) {
+        onComplete();
+      } else if (onBack) {
+        onBack();
+      }
+      return;
+    }
   };
 
   const handleNextFromStep = (nextStage: BookingStage) => {
@@ -410,10 +429,35 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
         });
       }
 
+      if (saveCard && cardNumber.replace(/\s+/g, '').length >= 4) {
+        try {
+          const last4 = cardNumber.replace(/\s+/g, '').slice(-4);
+          const currentMeta = sessionData?.session?.user?.user_metadata || {};
+          const existingMethods = Array.isArray(currentMeta.payment_methods)
+            ? currentMeta.payment_methods
+            : [];
+          const updatedMethods = [
+            ...existingMethods,
+            {
+              id: `card-${Date.now()}`,
+              type: 'card',
+              last4,
+              expiry: expiry || '12/28',
+            },
+          ];
+          await supabase.auth.updateUser({
+            data: { payment_methods: updatedMethods },
+          });
+        } catch {
+          // Ignore
+        }
+      }
+
       showToast('Візит успішно заброньовано!');
       if (onComplete) {
         onComplete();
       }
+      setStage('completed');
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : 'Не вдалося створити візит';
       showToast(`Помилка бронювання: ${errMsg}`);
@@ -475,19 +519,6 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             <Text style={styles.stepHeading}>Оберіть улюбленця</Text>
 
             <View style={styles.petsGrid}>
-              <TouchableOpacity
-                style={styles.addPetCard}
-                onPress={onNavigateAddPet}
-                accessibilityRole="button"
-                accessibilityLabel="Додати нового улюбленця"
-                testID="booking-add-pet-button"
-              >
-                <View style={styles.addPetIconCircle}>
-                  <PlusIcon color={colors.contentPrimary} size={24} />
-                </View>
-                <Text style={styles.addPetText}>Додати нового улюбленця</Text>
-              </TouchableOpacity>
-
               {isLoadingPets ? (
                 <View style={styles.loadingPetsCard} testID="loading-pets-indicator">
                   <ActivityIndicator size="small" color={colors.terracotta} />
@@ -546,6 +577,16 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             </View>
 
             <TouchableOpacity
+              style={styles.outlineAddPetButton}
+              onPress={onNavigateAddPet}
+              accessibilityRole="button"
+              accessibilityLabel="Додати нового улюбленця"
+              testID="booking-add-pet-button"
+            >
+              <Text style={styles.outlineAddPetText}>Додати нового улюбленця</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={[
                 styles.primaryButton,
                 (!bookingState.petId || isLoadingPets) && styles.buttonDisabled,
@@ -565,33 +606,34 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           <View testID="step-procedure">
             <Text style={styles.stepHeading}>Обери процедуру</Text>
 
-            <View style={styles.proceduresWrap}>
+            <View style={styles.proceduresColumn}>
               {procedures.map((proc) => {
                 const isSelected = proc.id === bookingState.procedureId;
                 return (
                   <TouchableOpacity
                     key={proc.id}
                     style={[
-                      styles.procedurePill,
-                      isSelected && styles.procedurePillSelected,
+                      styles.procedureCard,
+                      isSelected && styles.procedureCardSelected,
                     ]}
-                    onPress={() =>
+                    onPress={() => {
                       setBookingState((prev) => ({
                         ...prev,
                         procedureId: proc.id,
                         procedureName: proc.name,
                         procedurePrice: proc.price,
                         procedureDurationMin: proc.durationMin,
-                      }))
-                    }
+                      }));
+                      setModalProcedure(proc);
+                    }}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: isSelected }}
                     testID={`procedure-option-${proc.id}`}
                   >
                     <Text
                       style={[
-                        styles.procedurePillText,
-                        isSelected && styles.procedurePillTextSelected,
+                        styles.procedureCardText,
+                        isSelected && styles.procedureCardTextSelected,
                       ]}
                     >
                       {proc.name}
@@ -643,6 +685,70 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             </TouchableOpacity>
 
             <BookingProgressBar currentStep={2} />
+
+            <Modal
+              visible={modalProcedure !== null}
+              transparent
+              animationType="slide"
+              onRequestClose={() => setModalProcedure(null)}
+            >
+              <View style={styles.modalOverlay}>
+                <TouchableOpacity
+                  style={styles.modalBackdropTouch}
+                  activeOpacity={1}
+                  onPress={() => setModalProcedure(null)}
+                />
+                <View style={styles.modalSheet} testID="procedure-modal-sheet">
+                  <View style={styles.modalDragHandleContainer}>
+                    <View style={styles.modalDragHandle} />
+                  </View>
+
+                  {modalProcedure && (
+                    <View style={styles.modalContent}>
+                      <View style={styles.modalTitleRow}>
+                        <Text style={styles.modalTitle}>{modalProcedure.name}</Text>
+                        <Text style={styles.modalDuration}>{modalProcedure.duration}</Text>
+                      </View>
+
+                      <View style={styles.modalDescriptionBox}>
+                        <Text style={styles.modalDescriptionText}>
+                          {modalProcedure.description}
+                        </Text>
+                      </View>
+
+                      <Text style={styles.modalPrice}>{modalProcedure.priceFormatted}</Text>
+
+                      <TouchableOpacity
+                        style={styles.modalPrimaryButton}
+                        onPress={() => {
+                          setBookingState((prev) => ({
+                            ...prev,
+                            procedureId: modalProcedure.id,
+                            procedureName: modalProcedure.name,
+                            procedurePrice: modalProcedure.price,
+                            procedureDurationMin: modalProcedure.durationMin,
+                          }));
+                          setModalProcedure(null);
+                          handleNextFromStep('master');
+                        }}
+                        testID="modal-select-procedure-button"
+                      >
+                        <Text style={styles.modalPrimaryButtonText}>Записатись</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.modalSecondaryLink}
+                        onPress={() => setModalProcedure(null)}
+                      >
+                        <Text style={styles.modalSecondaryLinkText}>
+                          Додати ще процедуру
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </Modal>
           </View>
         )}
 
@@ -650,10 +756,103 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           <View testID="step-master">
             <Text style={styles.stepHeading}>Вибір майстра</Text>
 
+            {masters.length > 0 && currentMaster && (
+              <View style={styles.masterFigmaCard} testID="master-carousel-card">
+                <View style={styles.masterAvatar105Wrapper}>
+                  {currentMaster.avatarUrl ? (
+                    <Image
+                      source={{ uri: currentMaster.avatarUrl }}
+                      style={styles.masterAvatar105}
+                    />
+                  ) : (
+                    <View style={styles.masterAvatar105Placeholder}>
+                      <UserIcon color={colors.textMuted} size={48} />
+                    </View>
+                  )}
+                </View>
+
+                <Text style={styles.masterFigmaName}>{currentMaster.name}</Text>
+                <Text style={styles.masterFigmaRole}>{currentMaster.role}</Text>
+
+                <View style={styles.masterBadgesStack}>
+                  <View style={styles.masterReviewsBadge}>
+                    <Text style={styles.masterReviewsBadgeText}>
+                      {currentMaster.reviewsCount > 0
+                        ? `${currentMaster.reviewsCount} відгуків`
+                        : '176 відгуків'}
+                    </Text>
+                  </View>
+
+                  {(currentMaster.specialties && currentMaster.specialties.length > 0
+                    ? currentMaster.specialties
+                    : ['Відновлення шерсті', 'Озонотерапія', 'Креативний грумінг']
+                  ).map((spec, idx) => (
+                    <View key={idx} style={styles.masterSpecialtyPill}>
+                      <Text style={styles.masterSpecialtyPillText}>{spec}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            <View style={styles.masterCarouselRow}>
+              <TouchableOpacity
+                onPress={() =>
+                  setCurrentMasterIndex((prev) =>
+                    prev > 0 ? prev - 1 : masters.length - 1
+                  )
+                }
+                style={styles.masterCircleArrowButton}
+                testID="prev-master-button"
+                accessibilityLabel="Попередній майстер"
+              >
+                <AngleSmallLeftIcon color={colors.contentPrimary} size={18} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.masterSelectCta,
+                  currentMaster && bookingState.masterId === currentMaster.id &&
+                    styles.masterSelectCtaActive,
+                ]}
+                onPress={() => {
+                  if (currentMaster) {
+                    setBookingState((prev) => ({
+                      ...prev,
+                      masterId: currentMaster.id,
+                      masterName: currentMaster.name,
+                      masterRole: currentMaster.role,
+                      masterAvatarUrl: currentMaster.avatarUrl,
+                    }));
+                  }
+                }}
+                testID="select-current-master-button"
+              >
+                <Text style={styles.masterSelectCtaText}>
+                  {currentMaster && bookingState.masterId === currentMaster.id
+                    ? 'Обрано'
+                    : 'Обрати майстра'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() =>
+                  setCurrentMasterIndex((prev) =>
+                    prev < masters.length - 1 ? prev + 1 : 0
+                  )
+                }
+                style={styles.masterCircleArrowButton}
+                testID="next-master-button"
+                accessibilityLabel="Наступний майстер"
+              >
+                <AngleSmallRightIcon color={colors.contentPrimary} size={18} />
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity
               style={[
-                styles.anyMasterCard,
-                bookingState.masterId === 'any' && styles.anyMasterCardSelected,
+                styles.anyMasterOutlineButton,
+                bookingState.masterId === 'any' && styles.anyMasterOutlineButtonActive,
               ]}
               onPress={() =>
                 setBookingState((prev) => ({
@@ -668,103 +867,15 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
               accessibilityState={{ selected: bookingState.masterId === 'any' }}
               testID="choose-any-master"
             >
-              <View style={styles.anyMasterIconArea}>
-                <UserIcon color={colors.terracotta} size={24} />
-              </View>
-              <View style={styles.anyMasterTextArea}>
-                <Text style={styles.anyMasterTitle}>Будь-який вільний майстер</Text>
-                <Text style={styles.anyMasterSubtitle}>
-                  Ми підберемо найкращого спеціаліста на обраний час
-                </Text>
-              </View>
+              <Text
+                style={[
+                  styles.anyMasterOutlineText,
+                  bookingState.masterId === 'any' && styles.anyMasterOutlineTextActive,
+                ]}
+              >
+                Будь-який вільний майстер
+              </Text>
             </TouchableOpacity>
-
-            {masters.length > 0 && currentMaster && (
-              <View style={styles.masterCarouselCard} testID="master-carousel-card">
-                <View style={styles.masterHeaderRow}>
-                  <TouchableOpacity
-                    onPress={() =>
-                      setCurrentMasterIndex((prev) =>
-                        prev > 0 ? prev - 1 : masters.length - 1
-                      )
-                    }
-                    style={styles.carouselArrowButton}
-                    testID="prev-master-button"
-                  >
-                    <AngleSmallLeftIcon color={colors.contentPrimary} size={22} />
-                  </TouchableOpacity>
-
-                  <View style={styles.masterAvatarWrapper}>
-                    {currentMaster.avatarUrl ? (
-                      <Image
-                        source={{ uri: currentMaster.avatarUrl }}
-                        style={styles.masterAvatarImage}
-                      />
-                    ) : (
-                      <View style={styles.masterAvatarPlaceholder}>
-                        <UserIcon color={colors.textMuted} size={40} />
-                      </View>
-                    )}
-                  </View>
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      setCurrentMasterIndex((prev) =>
-                        prev < masters.length - 1 ? prev + 1 : 0
-                      )
-                    }
-                    style={styles.carouselArrowButton}
-                    testID="next-master-button"
-                  >
-                    <AngleSmallLeftIcon
-                      color={colors.contentPrimary}
-                      size={22}
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                <Text style={styles.masterName}>{currentMaster.name}</Text>
-                <Text style={styles.masterRole}>{currentMaster.role}</Text>
-
-                <View style={styles.specialtiesWrap}>
-                  {currentMaster.specialties.map((spec, idx) => (
-                    <View key={idx} style={styles.specialtyBadge}>
-                      <Text style={styles.specialtyBadgeText}>{spec}</Text>
-                    </View>
-                  ))}
-                </View>
-
-                <TouchableOpacity
-                  style={[
-                    styles.selectMasterButton,
-                    bookingState.masterId === currentMaster.id &&
-                      styles.selectMasterButtonActive,
-                  ]}
-                  onPress={() =>
-                    setBookingState((prev) => ({
-                      ...prev,
-                      masterId: currentMaster.id,
-                      masterName: currentMaster.name,
-                      masterRole: currentMaster.role,
-                      masterAvatarUrl: currentMaster.avatarUrl,
-                    }))
-                  }
-                  testID="select-current-master-button"
-                >
-                  <Text
-                    style={[
-                      styles.selectMasterButtonText,
-                      bookingState.masterId === currentMaster.id &&
-                        styles.selectMasterButtonTextActive,
-                    ]}
-                  >
-                    {bookingState.masterId === currentMaster.id
-                      ? 'Обрано'
-                      : 'Обрати майстра'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
 
             <TouchableOpacity
               style={styles.primaryButton}
@@ -780,83 +891,85 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
 
         {stage === 'datetime' && (
           <View testID="step-datetime">
-            <Text style={styles.stepHeading}>Дата та час</Text>
+            <Text style={styles.stepHeading}>Коли вам зручно?</Text>
+            <Text style={styles.stepSubheading}>Дата та час</Text>
 
-            <View style={styles.weekNavigator}>
-              <TouchableOpacity
-                onPress={handlePrevWeek}
-                style={styles.navArrowButton}
-                testID="prev-week-button"
-              >
-                <AngleSmallLeftIcon color={colors.contentPrimary} size={22} />
-              </TouchableOpacity>
-              <Text style={styles.monthTitle}>{monthName}</Text>
-              <TouchableOpacity
-                onPress={handleNextWeek}
-                style={styles.navArrowButton}
-                testID="next-week-button"
-              >
-                <AngleSmallLeftIcon color={colors.contentPrimary} size={22} />
-              </TouchableOpacity>
+            <View style={styles.calendarCard}>
+              <View style={styles.monthNavRow}>
+                <TouchableOpacity
+                  onPress={handlePrevWeek}
+                  style={styles.circleNavButton}
+                  testID="prev-week-button"
+                  accessibilityLabel="Попередній тиждень"
+                >
+                  <AngleSmallLeftIcon color={colors.contentPrimary} size={16} />
+                </TouchableOpacity>
+
+                <Text style={styles.monthTitleBold}>{monthName}</Text>
+
+                <TouchableOpacity
+                  onPress={handleNextWeek}
+                  style={styles.circleNavButton}
+                  testID="next-week-button"
+                  accessibilityLabel="Наступний тиждень"
+                >
+                  <AngleSmallRightIcon color={colors.contentPrimary} size={16} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.sevenDaysStrip}>
+                {weekDays.map((day) => {
+                  const isSelected = day.fullDate === bookingState.date;
+                  return (
+                    <TouchableOpacity
+                      key={day.fullDate}
+                      style={[
+                        styles.dayStripItem,
+                        isSelected && styles.dayStripItemSelected,
+                      ]}
+                      onPress={() => {
+                        const parts = day.fullDate.split('-');
+                        const formatted = `${parts[2]}.${parts[1]}.${parts[0]}`;
+                        setBookingState((prev) => ({
+                          ...prev,
+                          date: day.fullDate,
+                          dateFormatted: formatted,
+                        }));
+                      }}
+                      testID={`day-pill-${day.fullDate}`}
+                    >
+                      <Text
+                        style={[
+                          styles.dayStripName,
+                          isSelected && styles.dayStripTextSelected,
+                        ]}
+                      >
+                        {day.dayName.toUpperCase()}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.dayStripNumber,
+                          isSelected && styles.dayStripTextSelected,
+                        ]}
+                      >
+                        {day.dayNumber}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.daysScrollContent}
-              style={styles.daysScrollView}
-            >
-              {weekDays.map((day) => {
-                const isSelected = day.fullDate === bookingState.date;
-                return (
-                  <TouchableOpacity
-                    key={day.fullDate}
-                    style={[
-                      styles.dayPill,
-                      isSelected && styles.dayPillSelected,
-                    ]}
-                    onPress={() => {
-                      const parts = day.fullDate.split('-');
-                      const formatted = `${parts[2]}.${parts[1]}.${parts[0]}`;
-                      setBookingState((prev) => ({
-                        ...prev,
-                        date: day.fullDate,
-                        dateFormatted: formatted,
-                      }));
-                    }}
-                    testID={`day-pill-${day.fullDate}`}
-                  >
-                    <Text
-                      style={[
-                        styles.dayPillName,
-                        isSelected && styles.dayPillNameSelected,
-                      ]}
-                    >
-                      {day.dayName}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.dayPillNumber,
-                        isSelected && styles.dayPillNumberSelected,
-                      ]}
-                    >
-                      {day.dayNumber}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
             <Text style={styles.sectionSubtitle}>Оберіть час</Text>
-            <View style={styles.timeSlotsGrid}>
+            <View style={styles.timeSlotsTwoColGrid}>
               {TIME_SLOTS.map((slot) => {
                 const isSelected = slot === bookingState.timeSlot;
                 return (
                   <TouchableOpacity
                     key={slot}
                     style={[
-                      styles.timeSlotChip,
-                      isSelected && styles.timeSlotChipSelected,
+                      styles.timeSlotTwoColChip,
+                      isSelected && styles.timeSlotTwoColChipSelected,
                     ]}
                     onPress={() =>
                       setBookingState((prev) => ({
@@ -868,8 +981,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                   >
                     <Text
                       style={[
-                        styles.timeSlotText,
-                        isSelected && styles.timeSlotTextSelected,
+                        styles.timeSlotTwoColText,
+                        isSelected && styles.timeSlotTwoColTextSelected,
                       ]}
                     >
                       {slot}
@@ -980,127 +1093,153 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
 
         {stage === 'confirmation' && (
           <View testID="step-confirmation">
-            <Text style={styles.stepHeading}>Деталі запису</Text>
+            <View style={styles.summaryFormCard}>
+              <Text style={styles.summaryFormTitle}>Деталі запису</Text>
 
-            <View style={styles.summaryList}>
-              <View style={styles.summaryItem}>
-                <View style={styles.summaryItemLeft}>
-                  <View style={styles.summaryIconBadge}>
-                    <PawIcon color={colors.terracotta} size={18} />
+              <View style={styles.summaryFigmaRow}>
+                <View style={styles.summaryFigmaRowLeft}>
+                  <View style={styles.summaryCircleIconBadge}>
+                    <PawIcon color={colors.terracotta} size={19} />
                   </View>
-                  <View>
-                    <Text style={styles.summaryLabel}>Улюбленець</Text>
-                    <Text style={styles.summaryValue}>
-                      {bookingState.petName || 'Не обрано'}
+                  <View style={styles.summaryFigmaTextStack}>
+                    <Text style={styles.summaryFigmaLabel}>Улюбленець</Text>
+                    <Text style={styles.summaryFigmaValue}>
+                      {bookingState.petName || 'Барон'}
                     </Text>
                   </View>
                 </View>
                 <TouchableOpacity
                   onPress={() => handleEditStage('pet')}
-                  style={styles.editButton}
+                  style={styles.summaryFigmaEditButton}
                   accessibilityLabel="Редагувати: Улюбленець"
                   testID="edit-pet-button"
                 >
-                  <PencilIcon color={colors.contentPrimary} size={16} />
+                  <PencilIcon color={colors.contentPrimary} size={18} />
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.summaryItem}>
-                <View style={styles.summaryItemLeft}>
-                  <View style={styles.summaryIconBadge}>
-                    <ClockIcon color={colors.terracotta} size={18} />
+              <View style={styles.summaryFigmaRow}>
+                <View style={styles.summaryFigmaRowLeft}>
+                  <View style={styles.summaryCircleIconBadge}>
+                    <ScissorsIcon color={colors.terracotta} size={17} />
                   </View>
-                  <View>
-                    <Text style={styles.summaryLabel}>Процедура</Text>
-                    <Text style={styles.summaryValue}>
-                      {bookingState.procedureName || 'Не обрано'}
+                  <View style={styles.summaryFigmaTextStack}>
+                    <Text style={styles.summaryFigmaLabel}>Процедура</Text>
+                    <Text style={styles.summaryFigmaValue}>
+                      {bookingState.procedureName || 'Комплексний грумінг'}
                     </Text>
                   </View>
                 </View>
                 <TouchableOpacity
                   onPress={() => handleEditStage('procedure')}
-                  style={styles.editButton}
+                  style={styles.summaryFigmaEditButton}
                   accessibilityLabel="Редагувати: Процедура"
                   testID="edit-procedure-button"
                 >
-                  <PencilIcon color={colors.contentPrimary} size={16} />
+                  <PencilIcon color={colors.contentPrimary} size={18} />
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.summaryItem}>
-                <View style={styles.summaryItemLeft}>
-                  <View style={styles.summaryIconBadge}>
-                    <UserIcon color={colors.terracotta} size={18} />
+              <View style={styles.summaryFigmaRow}>
+                <View style={styles.summaryFigmaRowLeft}>
+                  <View style={styles.summaryCircleIconBadge}>
+                    <UserIcon color={colors.terracotta} size={20} />
                   </View>
-                  <View>
-                    <Text style={styles.summaryLabel}>Майстер</Text>
-                    <Text style={styles.summaryValue}>
+                  <View style={styles.summaryFigmaTextStack}>
+                    <Text style={styles.summaryFigmaLabel}>Майстер</Text>
+                    <Text style={styles.summaryFigmaValue}>
                       {bookingState.masterName}
                     </Text>
                   </View>
                 </View>
                 <TouchableOpacity
                   onPress={() => handleEditStage('master')}
-                  style={styles.editButton}
+                  style={styles.summaryFigmaEditButton}
                   accessibilityLabel="Редагувати: Майстер"
                   testID="edit-master-button"
                 >
-                  <PencilIcon color={colors.contentPrimary} size={16} />
+                  <PencilIcon color={colors.contentPrimary} size={18} />
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.summaryItem}>
-                <View style={styles.summaryItemLeft}>
-                  <View style={styles.summaryIconBadge}>
-                    <ClockIcon color={colors.terracotta} size={18} />
+              <View style={styles.summaryFigmaDivider} />
+
+              <View style={styles.summaryFigmaRow}>
+                <View style={styles.summaryFigmaRowLeft}>
+                  <View style={styles.summaryCircleIconBadge}>
+                    <ClockIcon color={colors.terracotta} size={20} />
                   </View>
-                  <View>
-                    <Text style={styles.summaryLabel}>Дата та час</Text>
-                    <Text style={styles.summaryValue}>
-                      {bookingState.dateFormatted}, {bookingState.timeSlot}
+                  <View style={styles.summaryFigmaTextStack}>
+                    <Text style={styles.summaryFigmaLabel}>Дата візиту</Text>
+                    <Text style={styles.summaryFigmaValue}>
+                      {bookingState.dateFormatted}
                     </Text>
                   </View>
                 </View>
                 <TouchableOpacity
                   onPress={() => handleEditStage('datetime')}
-                  style={styles.editButton}
-                  accessibilityLabel="Редагувати: Дата та час"
+                  style={styles.summaryFigmaEditButton}
+                  accessibilityLabel="Редагувати: Дата візиту"
                   testID="edit-datetime-button"
                 >
-                  <PencilIcon color={colors.contentPrimary} size={16} />
+                  <PencilIcon color={colors.contentPrimary} size={18} />
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.summaryItem}>
-                <View style={styles.summaryItemLeft}>
-                  <View style={styles.summaryIconBadge}>
-                    <CreditCardIcon color={colors.terracotta} size={18} />
+              <View style={styles.summaryFigmaRow}>
+                <View style={styles.summaryFigmaRowLeft}>
+                  <View style={styles.summaryCircleIconBadge}>
+                    <ClockIcon color={colors.terracotta} size={17} />
                   </View>
-                  <View>
-                    <Text style={styles.summaryLabel}>Вартість процедур</Text>
-                    <Text style={styles.summaryValue}>
+                  <View style={styles.summaryFigmaTextStack}>
+                    <Text style={styles.summaryFigmaLabel}>Час</Text>
+                    <Text style={styles.summaryFigmaValue}>
+                      {bookingState.timeSlot}
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  onPress={() => handleEditStage('datetime')}
+                  style={styles.summaryFigmaEditButton}
+                  accessibilityLabel="Редагувати: Час"
+                  testID="edit-time-button"
+                >
+                  <PencilIcon color={colors.contentPrimary} size={18} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.summaryFigmaDivider} />
+
+              <View style={styles.summaryFigmaRow}>
+                <View style={styles.summaryFigmaRowLeft}>
+                  <View style={styles.summaryCircleIconBadge}>
+                    <CreditCardIcon color={colors.terracotta} size={17} />
+                  </View>
+                  <View style={styles.summaryFigmaTextStack}>
+                    <Text style={styles.summaryFigmaLabel}>Вартість обраних процедур</Text>
+                    <Text style={styles.summaryFigmaValue}>
                       {bookingState.procedurePrice} ₴
                     </Text>
                   </View>
                 </View>
                 <TouchableOpacity
                   onPress={() => handleEditStage('procedure')}
-                  style={styles.editButton}
+                  style={styles.summaryFigmaEditButton}
                   accessibilityLabel="Редагувати: Вартість"
                   testID="edit-price-button"
                 >
-                  <PencilIcon color={colors.contentPrimary} size={16} />
+                  <PencilIcon color={colors.contentPrimary} size={18} />
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.summaryItem}>
-                <View style={styles.summaryItemLeft}>
-                  <View style={styles.summaryIconBadge}>
-                    <PawIcon color={colors.terracotta} size={18} />
+              <View style={styles.summaryFigmaRow}>
+                <View style={styles.summaryFigmaRowLeft}>
+                  <View style={styles.summaryCircleIconBadge}>
+                    <MarkerIcon color={colors.terracotta} size={17} />
                   </View>
-                  <View>
-                    <Text style={styles.summaryLabel}>Трансфер улюбленця</Text>
-                    <Text style={styles.summaryValue}>
+                  <View style={styles.summaryFigmaTextStack}>
+                    <Text style={styles.summaryFigmaLabel}>Трансфер улюбленця</Text>
+                    <Text style={styles.summaryFigmaValue}>
                       {bookingState.transferEnabled
                         ? `${bookingState.transferPrice} ₴`
                         : 'Не замовлено'}
@@ -1109,11 +1248,11 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                 </View>
                 <TouchableOpacity
                   onPress={() => handleEditStage('remarks')}
-                  style={styles.editButton}
+                  style={styles.summaryFigmaEditButton}
                   accessibilityLabel="Редагувати: Трансфер"
                   testID="edit-transfer-button"
                 >
-                  <PencilIcon color={colors.contentPrimary} size={16} />
+                  <PencilIcon color={colors.contentPrimary} size={18} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -1138,6 +1277,31 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             <Text style={styles.stepHeading}>Способи оплати</Text>
 
             <View style={styles.paymentMethodsList}>
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity
+                  style={[
+                    styles.paymentMethodCard,
+                    bookingState.paymentMethod === 'card' &&
+                      styles.paymentMethodCardSelected,
+                  ]}
+                  onPress={() =>
+                    setBookingState((prev) => ({ ...prev, paymentMethod: 'card' }))
+                  }
+                  testID="payment-method-apple-pay"
+                >
+                  <View style={styles.paymentMethodCardLeft}>
+                    <ApplePayIcon color={colors.contentDark} size={24} />
+                    <View>
+                      <Text style={styles.paymentMethodTitle}>Apple Pay</Text>
+                      <Text style={styles.paymentMethodSubtitleGreen}>
+                        Основний спосіб
+                      </Text>
+                    </View>
+                  </View>
+                  <CheckIcon color={colors.terracotta} size={16} />
+                </TouchableOpacity>
+              )}
+
               <TouchableOpacity
                 style={[
                   styles.paymentMethodCard,
@@ -1179,6 +1343,75 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
               </TouchableOpacity>
             </View>
 
+            {bookingState.paymentMethod === 'card' && (
+              <View style={styles.cardFormCard} testID="card-form-card">
+                <Text style={styles.cardFormTitle}>Додати банківську картку</Text>
+
+                <View style={styles.cardFormField}>
+                  <Text style={styles.cardFormLabel}>Номер картки</Text>
+                  <View style={styles.cardInputRow}>
+                    <TextInput
+                      style={styles.cardTextInput}
+                      value={cardNumber}
+                      onChangeText={setCardNumber}
+                      placeholder="0000 0000 0000 0000"
+                      placeholderTextColor={colors.textMuted}
+                      keyboardType="numeric"
+                      maxLength={19}
+                      testID="card-number-input"
+                    />
+                    <CreditCardIcon color={colors.contentPrimary} size={20} />
+                  </View>
+                </View>
+
+                <View style={styles.cardTwoColRow}>
+                  <View style={[styles.cardFormField, { flex: 1 }]}>
+                    <Text style={styles.cardFormLabel}>Термін (MM/YY)</Text>
+                    <TextInput
+                      style={styles.cardInputSolo}
+                      value={expiry}
+                      onChangeText={setExpiry}
+                      placeholder="12/27"
+                      placeholderTextColor={colors.textMuted}
+                      maxLength={5}
+                      testID="card-expiry-input"
+                    />
+                  </View>
+                  <View style={[styles.cardFormField, { flex: 1 }]}>
+                    <Text style={styles.cardFormLabel}>CVV / CVC</Text>
+                    <TextInput
+                      style={styles.cardInputSolo}
+                      value={cvv}
+                      onChangeText={setCvv}
+                      placeholder="•••"
+                      placeholderTextColor={colors.textMuted}
+                      secureTextEntry
+                      maxLength={4}
+                      keyboardType="numeric"
+                      testID="card-cvv-input"
+                    />
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.saveCardCheckboxRow}
+                  onPress={() => setSaveCard(!saveCard)}
+                  activeOpacity={0.8}
+                >
+                  <Switch
+                    value={saveCard}
+                    onValueChange={setSaveCard}
+                    trackColor={{ false: colors.visitGray, true: colors.terracotta }}
+                    thumbColor={colors.surfaceWhite}
+                    testID="save-card-switch"
+                  />
+                  <Text style={styles.saveCardLabel}>
+                    Зберегти картку для швидкої оплати
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             <View style={styles.paymentBreakdownCard}>
               <View style={styles.breakdownRow}>
                 <Text style={styles.breakdownLabel}>Вартість послуги</Text>
@@ -1217,6 +1450,50 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                 </Text>
               )}
             </TouchableOpacity>
+          </View>
+        )}
+
+        {stage === 'completed' && (
+          <View style={styles.completedContainer} testID="step-completed">
+            <View style={styles.completedCenterCard}>
+              <View style={styles.completedIconWrapper}>
+                <CheckCircleIcon size={56} color="#34C759" />
+              </View>
+              <Text style={styles.completedTitle}>Запис підтверджено!</Text>
+              <Text style={styles.completedSubtitle}>
+                За 24 години до візиту ми{'\n'}надішлемо вам нагадування
+              </Text>
+
+              <View style={styles.completedActionsStack}>
+                <TouchableOpacity
+                  style={styles.primaryButton}
+                  onPress={() => {
+                    if (onComplete) {
+                      onComplete();
+                    } else if (onBack) {
+                      onBack();
+                    }
+                  }}
+                  testID="view-booking-button"
+                >
+                  <Text style={styles.primaryButtonText}>Переглянути запис</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.outlineSecondaryButton}
+                  onPress={() => {
+                    if (onComplete) {
+                      onComplete();
+                    } else if (onBack) {
+                      onBack();
+                    }
+                  }}
+                  testID="go-home-button"
+                >
+                  <Text style={styles.outlineSecondaryButtonText}>На головну</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         )}
       </ScrollView>
@@ -1835,5 +2112,527 @@ const styles = StyleSheet.create({
     color: colors.surfaceWhite,
     fontSize: 13,
     fontWeight: '500',
+  },
+  outlineAddPetButton: {
+    width: '100%',
+    height: 48,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.contentDark,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  outlineAddPetText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.contentDark,
+  },
+  proceduresColumn: {
+    gap: 12,
+    marginBottom: 20,
+  },
+  procedureCard: {
+    height: 56,
+    width: '100%',
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.contentDark,
+    backgroundColor: colors.surfaceWhite,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  procedureCardSelected: {
+    backgroundColor: colors.terracotta,
+    borderWidth: 0,
+    borderRadius: radii.md,
+  },
+  procedureCardText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.contentDark,
+    textAlign: 'center',
+  },
+  procedureCardTextSelected: {
+    color: colors.surfaceCream,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(36, 47, 53, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalBackdropTouch: {
+    flex: 1,
+  },
+  modalSheet: {
+    backgroundColor: colors.surfaceCream,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 34,
+    maxHeight: '80%',
+  },
+  modalDragHandleContainer: {
+    paddingTop: 12,
+    paddingBottom: 16,
+    alignItems: 'center',
+  },
+  modalDragHandle: {
+    width: 40,
+    height: 6,
+    borderRadius: radii.full,
+    backgroundColor: colors.visitGray,
+  },
+  modalContent: {
+    gap: 14,
+  },
+  modalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.contentDark,
+    flex: 1,
+  },
+  modalDuration: {
+    fontSize: 15,
+    color: colors.contentDark,
+  },
+  modalDescriptionBox: {
+    backgroundColor: colors.surfaceWhite,
+    borderRadius: radii.sm,
+    padding: 12,
+  },
+  modalDescriptionText: {
+    fontSize: 14,
+    color: colors.contentDark,
+    lineHeight: 20,
+  },
+  modalPrice: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.contentDark,
+    textAlign: 'right',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  modalPrimaryButton: {
+    height: 48,
+    backgroundColor: colors.terracotta,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalPrimaryButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.surfaceCream,
+  },
+  modalSecondaryLink: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  modalSecondaryLinkText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.contentDark,
+  },
+  masterFigmaCard: {
+    backgroundColor: colors.surfaceWhite,
+    borderRadius: radii.sm,
+    padding: 24,
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: colors.contentDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
+    elevation: 2,
+  },
+  masterAvatar105Wrapper: {
+    width: 105,
+    height: 105,
+    borderRadius: radii.full,
+    overflow: 'hidden',
+    backgroundColor: colors.visitGray,
+    marginBottom: 12,
+  },
+  masterAvatar105: {
+    width: 105,
+    height: 105,
+  },
+  masterAvatar105Placeholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  masterFigmaName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.contentDark,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  masterFigmaRole: {
+    fontSize: 14,
+    color: colors.terracotta,
+    fontWeight: '500',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  masterBadgesStack: {
+    width: '100%',
+    gap: 10,
+    alignItems: 'stretch',
+  },
+  masterReviewsBadge: {
+    height: 44,
+    borderRadius: radii.sm,
+    backgroundColor: colors.surfaceCream,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  masterReviewsBadgeText: {
+    fontSize: 14,
+    color: colors.terracotta,
+    fontWeight: '500',
+  },
+  masterSpecialtyPill: {
+    height: 44,
+    borderRadius: radii.sm,
+    backgroundColor: colors.visitGray,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  masterSpecialtyPillText: {
+    fontSize: 14,
+    color: colors.contentDark,
+    fontWeight: '500',
+  },
+  masterCarouselRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 12,
+  },
+  masterCircleArrowButton: {
+    width: 32,
+    height: 32,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.contentDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  masterSelectCta: {
+    flex: 1,
+    height: 48,
+    borderRadius: radii.md,
+    backgroundColor: colors.terracotta,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  masterSelectCtaActive: {
+    backgroundColor: colors.terracotta,
+  },
+  masterSelectCtaText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.surfaceCream,
+  },
+  anyMasterOutlineButton: {
+    width: '100%',
+    height: 48,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.contentDark,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  anyMasterOutlineButtonActive: {
+    borderColor: colors.terracotta,
+    backgroundColor: 'rgba(236, 100, 58, 0.05)',
+  },
+  anyMasterOutlineText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.contentDark,
+  },
+  anyMasterOutlineTextActive: {
+    color: colors.terracotta,
+  },
+  stepSubheading: {
+    fontSize: 14,
+    color: colors.textMuted,
+    marginTop: -14,
+    marginBottom: 16,
+  },
+  calendarCard: {
+    backgroundColor: colors.surfaceWhite,
+    borderRadius: radii.sm,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: colors.contentDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
+    elevation: 2,
+  },
+  monthNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  circleNavButton: {
+    width: 26,
+    height: 26,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.contentDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monthTitleBold: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.contentDark,
+  },
+  sevenDaysStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dayStripItem: {
+    width: 44,
+    height: 50,
+    borderRadius: radii.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayStripItemSelected: {
+    backgroundColor: '#96B3E2',
+  },
+  dayStripName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.contentDark,
+    marginBottom: 2,
+  },
+  dayStripNumber: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.contentDark,
+  },
+  dayStripTextSelected: {
+    color: colors.surfaceCream,
+  },
+  timeSlotsTwoColGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 24,
+  },
+  timeSlotTwoColChip: {
+    width: '48%',
+    height: 40,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.contentDark,
+    backgroundColor: colors.surfaceWhite,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timeSlotTwoColChipSelected: {
+    backgroundColor: '#96B3E2',
+    borderColor: '#96B3E2',
+  },
+  timeSlotTwoColText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.contentDark,
+  },
+  timeSlotTwoColTextSelected: {
+    color: colors.surfaceWhite,
+  },
+  summaryFormCard: {
+    backgroundColor: colors.surfaceWhite,
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 20,
+    shadowColor: colors.contentDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
+    elevation: 2,
+  },
+  summaryFormTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.contentDark,
+    marginBottom: 16,
+  },
+  summaryFigmaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+  },
+  summaryFigmaRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  summaryCircleIconBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.full,
+    backgroundColor: colors.visitGray,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  summaryFigmaTextStack: {
+    flex: 1,
+  },
+  summaryFigmaLabel: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginBottom: 2,
+  },
+  summaryFigmaValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.contentDark,
+  },
+  summaryFigmaEditButton: {
+    padding: 8,
+  },
+  summaryFigmaDivider: {
+    height: 1,
+    backgroundColor: colors.visitGray,
+    marginVertical: 4,
+  },
+  cardFormCard: {
+    backgroundColor: colors.surfaceWhite,
+    borderRadius: radii.md,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: colors.visitGray,
+  },
+  cardFormTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.contentDark,
+    marginBottom: 14,
+  },
+  cardFormField: {
+    marginBottom: 12,
+  },
+  cardFormLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.contentDark,
+    marginBottom: 6,
+  },
+  cardInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    borderWidth: 1,
+    borderColor: colors.visitGray,
+    borderRadius: radii.sm,
+    paddingHorizontal: 12,
+    backgroundColor: colors.surfaceWhite,
+  },
+  cardTextInput: {
+    flex: 1,
+    fontSize: 15,
+    color: colors.contentDark,
+  },
+  cardTwoColRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cardInputSolo: {
+    height: 48,
+    borderWidth: 1,
+    borderColor: colors.visitGray,
+    borderRadius: radii.sm,
+    paddingHorizontal: 12,
+    fontSize: 15,
+    color: colors.contentDark,
+    backgroundColor: colors.surfaceWhite,
+  },
+  saveCardCheckboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 6,
+  },
+  saveCardLabel: {
+    fontSize: 13,
+    color: colors.contentDark,
+    flex: 1,
+  },
+  paymentMethodSubtitleGreen: {
+    fontSize: 12,
+    color: '#34C759',
+    marginTop: 2,
+  },
+  completedContainer: {
+    paddingTop: 40,
+    alignItems: 'center',
+  },
+  completedCenterCard: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  completedIconWrapper: {
+    marginBottom: 20,
+  },
+  completedTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.contentDark,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  completedSubtitle: {
+    fontSize: 14,
+    color: colors.contentDark,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 36,
+  },
+  completedActionsStack: {
+    width: '100%',
+    gap: 12,
+  },
+  outlineSecondaryButton: {
+    height: 48,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.contentDark,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  outlineSecondaryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.contentDark,
   },
 });

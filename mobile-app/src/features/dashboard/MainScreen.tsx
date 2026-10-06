@@ -120,7 +120,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               status,
               price,
               pet:pets(name, species),
-              service:services!appointments_service_id_fkey(name)
+              service:services!appointments_service_id_fkey(name),
+              master:masters(display_name)
             `)
             .eq('client_id', currentUserId)
             .neq('status', 'cancelled')
@@ -137,6 +138,9 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               const srvObj = Array.isArray(appointmentData.service)
                 ? appointmentData.service[0]
                 : appointmentData.service;
+              const mstrObj = Array.isArray(appointmentData.master)
+                ? appointmentData.master[0]
+                : appointmentData.master;
 
               setVisit({
                 id: appointmentData.id,
@@ -144,6 +148,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                 status: appointmentData.status,
                 petName: petObj?.name || 'Улюбленець',
                 serviceName: srvObj?.name || 'Комплексний грумінг',
+                masterName: mstrObj?.display_name || 'Марія Шевченко',
                 price: appointmentData.price,
               });
             } else {
@@ -282,8 +287,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                 <ActivityIndicator color={colors.terracotta} />
               </View>
             ) : visit && visitDateDetails ? (
-              <View style={styles.visitCard} testID="visit-card">
-                <View style={styles.visitDetailsRow}>
+              <View testID="visit-card-container">
+                <View style={styles.visitCard} testID="visit-card">
                   <View style={styles.dateBadge} testID="visit-date-badge">
                     <Text style={styles.dayOfWeekText}>
                       {visitDateDetails.dayOfWeek}
@@ -291,43 +296,56 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                     <Text style={styles.dayNumberText}>
                       {visitDateDetails.dayNumber}
                     </Text>
+                    <View style={styles.dateDividerLine} />
                     <Text style={styles.timeText}>{visitDateDetails.time}</Text>
                   </View>
 
-                  <View style={styles.visitInfoColumn}>
-                    <Text style={styles.visitLabelText}>
-                      {formatVisitStatusText(visit.status)}
-                    </Text>
-                    <Text style={styles.visitPetText}>
-                      Тваринка: {visit.petName}
-                    </Text>
-                    <Text style={styles.visitServiceText}>
-                      {visit.serviceName}
-                    </Text>
+                  <View style={styles.nestedInfoCard}>
+                    <View style={styles.infoField}>
+                      <Text style={styles.infoLabel}>Майстер:</Text>
+                      <Text style={styles.infoValue}>
+                        {visit.masterName || 'Марія Шевченко'}
+                      </Text>
+                    </View>
+                    <View style={styles.infoField}>
+                      <Text style={styles.infoLabel}>Процедура:</Text>
+                      <Text style={styles.infoValue}>
+                        {visit.serviceName || 'Комплексний грумінг'}
+                      </Text>
+                    </View>
+                    {visit.petName && (
+                      <View style={styles.infoField}>
+                        <Text style={styles.petNameText}>
+                          Тваринка: {visit.petName}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 </View>
 
                 <View style={styles.visitActionsRow}>
                   <TouchableOpacity
-                    style={styles.actionButtonSecondary}
+                    style={styles.actionButtonPrimary}
                     onPress={handleBookingNavigation}
                     accessibilityRole="button"
                     accessibilityLabel="Перенести візит"
                     testID="reschedule-visit-button"
                   >
-                    <Text style={styles.actionButtonSecondaryText}>
+                    <Text style={styles.actionButtonPrimaryText}>
                       Перенести
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={styles.actionButtonDanger}
+                    style={styles.actionButtonSecondary}
                     onPress={handleCancelVisit}
                     accessibilityRole="button"
                     accessibilityLabel="Скасувати візит"
                     testID="cancel-visit-button"
                   >
-                    <Text style={styles.actionButtonDangerText}>Скасувати</Text>
+                    <Text style={styles.actionButtonSecondaryText}>
+                      Скасувати
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -653,96 +671,103 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   visitCard: {
-    backgroundColor: colors.surfaceWhite,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#ECEEF1',
-  },
-  visitDetailsRow: {
+    backgroundColor: '#ECEEF1',
+    borderRadius: 10,
+    paddingVertical: 17,
+    paddingHorizontal: 20,
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 16,
-    marginBottom: 14,
+    marginBottom: 11,
   },
   dateBadge: {
-    width: 72,
-    height: 78,
-    backgroundColor: 'rgba(236, 100, 58, 0.1)',
-    borderRadius: 10,
+    width: 68,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 2,
   },
   dayOfWeekText: {
-    fontSize: 12,
+    fontSize: 18,
     fontWeight: '600',
-    color: colors.terracotta,
+    color: '#242F35',
     textTransform: 'uppercase',
   },
   dayNumberText: {
-    fontSize: 24,
+    fontSize: 48,
     fontWeight: '700',
-    color: colors.terracotta,
-    lineHeight: 28,
+    color: '#242F35',
+    lineHeight: 50,
+  },
+  dateDividerLine: {
+    width: 54,
+    height: 1,
+    backgroundColor: '#FFFBF6',
+    marginVertical: 4,
   },
   timeText: {
-    fontSize: 11,
-    color: colors.contentPrimary,
-    fontWeight: '500',
-  },
-  visitInfoColumn: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 4,
-  },
-  visitLabelText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.terracotta,
-    textTransform: 'uppercase',
-  },
-  visitPetText: {
     fontSize: 15,
-    fontWeight: '700',
-    color: colors.contentPrimary,
+    fontWeight: '500',
+    color: '#242F35',
   },
-  visitServiceText: {
+  nestedInfoCard: {
+    flex: 1,
+    backgroundColor: '#FFFBF6',
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  infoField: {
+    gap: 2,
+  },
+  infoLabel: {
     fontSize: 13,
+    fontWeight: '500',
+    color: '#242F35',
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#242F35',
+  },
+  petNameText: {
+    fontSize: 12,
+    fontWeight: '500',
     color: colors.textMuted,
   },
   visitActionsRow: {
     flexDirection: 'row',
-    gap: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#ECEEF1',
-    paddingTop: 12,
+    gap: 16,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  actionButtonPrimary: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: colors.terracotta,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionButtonPrimaryText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFBF6',
   },
   actionButtonSecondary: {
     flex: 1,
-    height: 38,
-    borderRadius: 8,
+    height: 44,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.textMuted,
+    borderColor: '#242F35',
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionButtonSecondaryText: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '600',
-    color: colors.contentPrimary,
-  },
-  actionButtonDanger: {
-    flex: 1,
-    height: 38,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 56, 60, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionButtonDangerText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.statusError,
+    color: '#242F35',
   },
   emptyVisitCard: {
     backgroundColor: colors.surfaceWhite,

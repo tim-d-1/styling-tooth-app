@@ -5,7 +5,8 @@ export type BookingStage =
   | 'datetime'
   | 'remarks'
   | 'confirmation'
-  | 'payment';
+  | 'payment'
+  | 'completed';
 
 export interface PetOption {
   id: string;
