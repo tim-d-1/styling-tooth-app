@@ -285,4 +285,49 @@ describe('BookingScreen', () => {
     fireEvent.click(screen.getByTestId('go-home-button'));
     expect(onComplete).toHaveBeenCalledTimes(2);
   });
+
+  it('renders bottom bar tied to bottom across stages 1 to 5, and hides on confirmation and payment', () => {
+    const { rerender } = render(<BookingScreen initialStage="pet" initialPets={DEMO_PETS} />);
+
+    expect(screen.getByTestId('booking-bottom-bar')).toBeInTheDocument();
+    expect(screen.getByTestId('next-step-button')).toBeInTheDocument();
+    expect(screen.getByTestId('booking-progress-bar')).toBeInTheDocument();
+
+    rerender(<BookingScreen initialStage="procedure" initialPets={DEMO_PETS} />);
+    expect(screen.getByTestId('booking-bottom-bar')).toBeInTheDocument();
+
+    rerender(<BookingScreen initialStage="master" initialPets={DEMO_PETS} />);
+    expect(screen.getByTestId('booking-bottom-bar')).toBeInTheDocument();
+
+    rerender(<BookingScreen initialStage="datetime" initialPets={DEMO_PETS} />);
+    expect(screen.getByTestId('booking-bottom-bar')).toBeInTheDocument();
+
+    rerender(<BookingScreen initialStage="remarks" initialPets={DEMO_PETS} />);
+    expect(screen.getByTestId('booking-bottom-bar')).toBeInTheDocument();
+
+    rerender(<BookingScreen initialStage="confirmation" initialPets={DEMO_PETS} />);
+    expect(screen.queryByTestId('booking-bottom-bar')).not.toBeInTheDocument();
+
+    rerender(<BookingScreen initialStage="payment" initialPets={DEMO_PETS} />);
+    expect(screen.queryByTestId('booking-bottom-bar')).not.toBeInTheDocument();
+  });
+
+  it('does not render procedure description on 2nd page, keeping it only in modal window', async () => {
+    render(<BookingScreen initialStage="procedure" initialPets={DEMO_PETS} />);
+
+    expect(screen.getByTestId('step-procedure')).toBeInTheDocument();
+    expect(screen.getByTestId('procedure-detail-card')).toBeInTheDocument();
+
+    const procedureCard = await screen.findByTestId(
+      'procedure-option-50000000-0000-0000-0000-000000000001',
+    );
+    expect(screen.queryByText('Швидкий догляд')).not.toBeInTheDocument();
+
+    fireEvent.click(procedureCard);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('procedure-modal-sheet')).toBeInTheDocument();
+      expect(screen.getByText('Швидкий догляд')).toBeInTheDocument();
+    });
+  });
 });

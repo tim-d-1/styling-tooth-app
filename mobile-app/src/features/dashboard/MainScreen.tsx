@@ -210,11 +210,18 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           />
         </View>
       ) : activeTab === 'booking' ? (
-        <View style={styles.petsTabContainer} testID="booking-tab-content">
+        <View
+          style={[
+            styles.petsTabContainer,
+            { paddingBottom: Math.max(insets.bottom, 10) + 54 },
+          ]}
+          testID="booking-tab-content"
+        >
           <BookingScreen
             onBack={() => setActiveTab('home')}
             onComplete={() => setActiveTab('home')}
             onNavigateAddPet={onNavigateAddPet}
+            bottomInset={8}
           />
         </View>
       ) : activeTab === 'profile' ? (

@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Modal,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radii } from '../../theme/tokens';
@@ -59,6 +60,7 @@ export interface BookingScreenProps {
   initialPetId?: string;
   initialPets?: PetOption[];
   initialMasters?: MasterProfile[];
+  bottomInset?: number;
 }
 
 const UK_MONTH_NAMES = [
@@ -101,9 +103,16 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   initialPetId,
   initialPets,
   initialMasters,
+  bottomInset,
 }) => {
   const insets = useSafeAreaInsets();
   const [stage, setStage] = useState<BookingStage>(initialStage);
+
+  useEffect(() => {
+    if (initialStage) {
+      setStage(initialStage);
+    }
+  }, [initialStage]);
   const [returnToConfirmation, setReturnToConfirmation] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
@@ -480,8 +489,60 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   const monthName =
     UK_MONTH_NAMES[new Date(midDay.fullDate + 'T00:00:00Z').getUTCMonth()];
 
+  const isStepWithBottomBar =
+    stage === 'pet' ||
+    stage === 'procedure' ||
+    stage === 'master' ||
+    stage === 'datetime' ||
+    stage === 'remarks';
+
+  const getStepNumber = (): number => {
+    switch (stage) {
+      case 'pet':
+        return 1;
+      case 'procedure':
+        return 2;
+      case 'master':
+        return 3;
+      case 'datetime':
+        return 4;
+      case 'remarks':
+        return 5;
+      default:
+        return 1;
+    }
+  };
+
+  const isNextDisabled =
+    (stage === 'pet' && (!bookingState.petId || isLoadingPets)) ||
+    (stage === 'procedure' && !bookingState.procedureId);
+
+  const handleNextPress = () => {
+    switch (stage) {
+      case 'pet':
+        handleNextFromStep('procedure');
+        break;
+      case 'procedure':
+        handleNextFromStep('master');
+        break;
+      case 'master':
+        handleNextFromStep('datetime');
+        break;
+      case 'datetime':
+        handleNextFromStep('remarks');
+        break;
+      case 'remarks':
+        handleNextFromStep('confirmation');
+        break;
+    }
+  };
+
   return (
-    <View style={styles.container} testID="booking-screen">
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      testID="booking-screen"
+    >
       <View
         style={[
           styles.headerBar,
@@ -508,10 +569,14 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       )}
 
       <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom, 20) + 40 },
+          isStepWithBottomBar
+            ? { paddingBottom: 24 }
+            : { paddingBottom: Math.max(insets.bottom, 20) + 40 },
         ]}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {stage === 'pet' && (
@@ -585,20 +650,6 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             >
               <Text style={styles.outlineAddPetText}>Додати нового улюбленця</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                (!bookingState.petId || isLoadingPets) && styles.buttonDisabled,
-              ]}
-              disabled={!bookingState.petId || isLoadingPets}
-              onPress={() => handleNextFromStep('procedure')}
-              testID="next-step-button"
-            >
-              <Text style={styles.primaryButtonText}>Далі</Text>
-            </TouchableOpacity>
-
-            <BookingProgressBar currentStep={1} />
           </View>
         )}
 
@@ -657,10 +708,6 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                   </View>
                 </View>
 
-                <Text style={styles.procedureDetailDescription}>
-                  {selectedProcedure.description}
-                </Text>
-
                 <View style={styles.procedureDetailFooter}>
                   <Text style={styles.procedureDetailFooterLabel}>
                     Вартість послуги
@@ -671,20 +718,6 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                 </View>
               </View>
             )}
-
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                !bookingState.procedureId && styles.buttonDisabled,
-              ]}
-              disabled={!bookingState.procedureId}
-              onPress={() => handleNextFromStep('master')}
-              testID="next-step-button"
-            >
-              <Text style={styles.primaryButtonText}>Далі</Text>
-            </TouchableOpacity>
-
-            <BookingProgressBar currentStep={2} />
 
             <Modal
               visible={modalProcedure !== null}
@@ -876,16 +909,6 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                 Будь-який вільний майстер
               </Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={() => handleNextFromStep('datetime')}
-              testID="next-step-button"
-            >
-              <Text style={styles.primaryButtonText}>Далі</Text>
-            </TouchableOpacity>
-
-            <BookingProgressBar currentStep={3} />
           </View>
         )}
 
@@ -991,16 +1014,6 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                 );
               })}
             </View>
-
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={() => handleNextFromStep('remarks')}
-              testID="next-step-button"
-            >
-              <Text style={styles.primaryButtonText}>Далі</Text>
-            </TouchableOpacity>
-
-            <BookingProgressBar currentStep={4} />
           </View>
         )}
 
@@ -1078,16 +1091,6 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                 testID="remarks-behavior-input"
               />
             </View>
-
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={() => handleNextFromStep('confirmation')}
-              testID="next-step-button"
-            >
-              <Text style={styles.primaryButtonText}>Далі</Text>
-            </TouchableOpacity>
-
-            <BookingProgressBar currentStep={5} />
           </View>
         )}
 
@@ -1497,7 +1500,39 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           </View>
         )}
       </ScrollView>
-    </View>
+
+      {isStepWithBottomBar && (
+        <View
+          style={[
+            styles.bottomBarContainer,
+            {
+              paddingBottom:
+                bottomInset !== undefined ? bottomInset : Math.max(insets.bottom, 12),
+            },
+          ]}
+          testID="booking-bottom-bar"
+        >
+          <TouchableOpacity
+            style={[
+              styles.primaryButton,
+              isNextDisabled && styles.buttonDisabled,
+            ]}
+            disabled={isNextDisabled}
+            onPress={handleNextPress}
+            accessibilityRole="button"
+            accessibilityLabel="Далі"
+            testID="next-step-button"
+          >
+            <Text style={styles.primaryButtonText}>Далі</Text>
+          </TouchableOpacity>
+
+          <BookingProgressBar
+            currentStep={getStepNumber()}
+            style={styles.bottomBarProgressBar}
+          />
+        </View>
+      )}
+    </KeyboardAvoidingView>
   );
 };
 
@@ -1505,6 +1540,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surfaceCream,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  bottomBarContainer: {
+    backgroundColor: colors.surfaceCream,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.visitGray,
+  },
+  bottomBarProgressBar: {
+    marginTop: 12,
+    marginBottom: 4,
   },
   headerBar: {
     flexDirection: 'row',

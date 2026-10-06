@@ -131,4 +131,46 @@ describe('Mobile Booking Parity Eval Suite', () => {
       expect(onComplete).toHaveBeenCalled();
     });
   });
+
+  it('Eval 6: Docked Bottom Bar Contract with Next CTA and Stage Indicator', () => {
+    const { rerender } = render(<BookingScreen initialStage="pet" initialPets={DEMO_PETS} />);
+
+    const bottomBar = screen.getByTestId('booking-bottom-bar');
+    expect(bottomBar).toBeInTheDocument();
+
+    const nextBtn = screen.getByTestId('next-step-button');
+    expect(nextBtn).toBeInTheDocument();
+    expect(nextBtn).toHaveTextContent('Далі');
+
+    const progressBar = screen.getByTestId('booking-progress-bar');
+    expect(progressBar).toBeInTheDocument();
+
+    const stages: Array<{ stage: 'pet' | 'procedure' | 'master' | 'datetime' | 'remarks'; expectedDot: number }> = [
+      { stage: 'pet', expectedDot: 1 },
+      { stage: 'procedure', expectedDot: 2 },
+      { stage: 'master', expectedDot: 3 },
+      { stage: 'datetime', expectedDot: 4 },
+      { stage: 'remarks', expectedDot: 5 },
+    ];
+
+    stages.forEach(({ stage, expectedDot }) => {
+      rerender(<BookingScreen initialStage={stage} initialPets={DEMO_PETS} />);
+      expect(screen.getByTestId('booking-bottom-bar')).toBeInTheDocument();
+      expect(screen.getByTestId(`progress-dot-${expectedDot}`)).toBeInTheDocument();
+    });
+
+    rerender(<BookingScreen initialStage="confirmation" initialPets={DEMO_PETS} />);
+    expect(screen.queryByTestId('booking-bottom-bar')).not.toBeInTheDocument();
+  });
+
+  it('Eval 7: Procedure Description Excluded from 2nd Page (Modal Window Isolation)', () => {
+    render(<BookingScreen initialStage="procedure" initialPets={DEMO_PETS} />);
+
+    expect(screen.getByTestId('step-procedure')).toBeInTheDocument();
+    expect(screen.getByTestId('procedure-detail-card')).toBeInTheDocument();
+
+    PROCEDURES_CATALOG.forEach((proc) => {
+      expect(screen.queryByText(proc.description)).not.toBeInTheDocument();
+    });
+  });
 });

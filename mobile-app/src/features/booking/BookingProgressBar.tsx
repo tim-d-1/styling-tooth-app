@@ -1,19 +1,21 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { colors } from '../../theme/tokens';
 
 export interface BookingProgressBarProps {
   currentStep: number;
   totalSteps?: number;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const BookingProgressBar: React.FC<BookingProgressBarProps> = ({
   currentStep,
   totalSteps = 5,
+  style,
 }) => {
   return (
     <View
-      style={styles.container}
+      style={[styles.container, style]}
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 1, max: totalSteps, now: currentStep }}
       testID="booking-progress-bar"
