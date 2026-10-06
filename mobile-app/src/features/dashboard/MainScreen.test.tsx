@@ -139,6 +139,10 @@ describe('MainScreen (Головна)', () => {
 
     fireEvent.click(screen.getByTestId('tab-booking'));
     expect(screen.getByTestId('booking-tab-content')).toBeInTheDocument();
+    expect(screen.getByTestId('quick-schedule-screen')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('quick-book-button'));
+    expect(screen.getByTestId('booking-screen')).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('tab-profile'));
     expect(screen.getByTestId('profile-tab-content')).toBeInTheDocument();

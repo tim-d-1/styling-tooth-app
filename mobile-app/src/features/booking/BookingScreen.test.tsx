@@ -118,7 +118,7 @@ describe('BookingScreen', () => {
 
     expect(screen.getByTestId('step-procedure')).toBeInTheDocument();
     expect(screen.getByText('Обери процедуру')).toBeInTheDocument();
-    expect(screen.getByTestId('procedure-detail-card')).toBeInTheDocument();
+    expect(screen.queryByTestId('procedure-detail-card')).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId('next-step-button'));
 
     expect(screen.getByTestId('step-master')).toBeInTheDocument();
@@ -316,7 +316,7 @@ describe('BookingScreen', () => {
     render(<BookingScreen initialStage="procedure" initialPets={DEMO_PETS} />);
 
     expect(screen.getByTestId('step-procedure')).toBeInTheDocument();
-    expect(screen.getByTestId('procedure-detail-card')).toBeInTheDocument();
+    expect(screen.queryByTestId('procedure-detail-card')).not.toBeInTheDocument();
 
     const procedureCard = await screen.findByTestId(
       'procedure-option-50000000-0000-0000-0000-000000000001',
