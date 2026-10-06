@@ -109,6 +109,9 @@ describe('Mobile Auth & Onboarding Eval Suite: Generalization, Edge Cases, and C
     const dateMatrix = [
       { input: '2022-05-15', expectedDate: '2022-05-15', expectedError: null },
       { input: '16.03.2023', expectedDate: '2023-03-16', expectedError: null },
+      { input: '2', expectedDate: '2024-10-01', expectedError: null },
+      { input: '2 роки', expectedDate: '2024-10-01', expectedError: null },
+      { input: '6 місяців', expectedDate: '2026-04-01', expectedError: null },
       { input: '2030-01-01', expectedDate: null, expectedError: 'Дата народження не може бути в майбутньому' },
       { input: 'invalid', expectedDate: null, expectedError: 'Вкажіть коректну дату народження або вік (наприклад, 16.03.2023)' },
       { input: '', expectedDate: null, expectedError: null },

@@ -40,9 +40,7 @@ export const PetOnboardingScreen: React.FC<PetOnboardingScreenProps> = ({
   const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
   const [species, setSpecies] = useState<PetSpecies>('dog');
-  const [birthDay, setBirthDay] = useState('');
-  const [birthMonth, setBirthMonth] = useState('');
-  const [birthYear, setBirthYear] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [medicalNotes, setMedicalNotes] = useState('');
   const [behaviorNotes, setBehaviorNotes] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -77,26 +75,14 @@ export const PetOnboardingScreen: React.FC<PetOnboardingScreenProps> = ({
     }
   };
 
-  const getCombinedBirthDate = (): string => {
-    const d = birthDay.trim();
-    const m = birthMonth.trim();
-    const y = birthYear.trim();
-    if (!d && !m && !y) return '';
-    if (d && m && y) {
-      const pad = (val: string) => (val.length === 1 ? `0${val}` : val);
-      return `${pad(d)}.${pad(m)}.${y}`;
-    }
-    return [d, m, y].filter(Boolean).join('.');
-  };
-
   const handleSubmit = async () => {
     setErrorMessage(null);
 
-    const combinedDate = getCombinedBirthDate();
+    const trimmedBirthDate = birthDate.trim();
     const validation = validatePetRegisterForm({
       name,
       species,
-      birthDate: combinedDate,
+      birthDate: trimmedBirthDate,
       medicalNotes,
       behaviorNotes,
       photoUri,
@@ -119,7 +105,7 @@ export const PetOnboardingScreen: React.FC<PetOnboardingScreenProps> = ({
       }
 
       const { dateString: normalizedBirthDate } =
-        parsePetBirthDateInput(combinedDate);
+        parsePetBirthDateInput(trimmedBirthDate);
 
       const { data: insertedPet, error: insertError } = await supabase
         .from('pets')
@@ -276,43 +262,16 @@ export const PetOnboardingScreen: React.FC<PetOnboardingScreenProps> = ({
               <View style={styles.inputLine} />
             </View>
 
-            <View style={styles.birthDateGroup}>
-              <Text style={styles.inputLabel}>ДАТА НАРОДЖЕННЯ</Text>
-              <View style={styles.birthDateRow}>
-                <View style={styles.birthDateBoxSmall}>
-                  <TextInput
-                    style={styles.birthDateInput}
-                    value={birthDay}
-                    onChangeText={setBirthDay}
-                    keyboardType="number-pad"
-                    maxLength={2}
-                    testID="birth-day-input"
-                    accessibilityLabel="День народження"
-                  />
-                </View>
-
-                <View style={styles.birthDateBoxMedium}>
-                  <TextInput
-                    style={styles.birthDateInput}
-                    value={birthMonth}
-                    onChangeText={setBirthMonth}
-                    testID="birth-month-input"
-                    accessibilityLabel="Місяць народження"
-                  />
-                </View>
-
-                <View style={styles.birthDateBoxSmall}>
-                  <TextInput
-                    style={styles.birthDateInput}
-                    value={birthYear}
-                    onChangeText={setBirthYear}
-                    keyboardType="number-pad"
-                    maxLength={4}
-                    testID="birth-year-input"
-                    accessibilityLabel="Рік народження"
-                  />
-                </View>
-              </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>ДАТА НАРОДЖЕННЯ / ВІК</Text>
+              <TextInput
+                style={styles.input}
+                value={birthDate}
+                onChangeText={setBirthDate}
+                testID="pet-age-input"
+                accessibilityLabel="Дата народження / Вік"
+              />
+              <View style={styles.inputLine} />
             </View>
 
             <View style={styles.inputGroup}>
@@ -533,42 +492,6 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: colors.textMuted,
     marginTop: 2,
-  },
-  birthDateGroup: {
-    marginBottom: 4,
-  },
-  birthDateRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 6,
-  },
-  birthDateBoxSmall: {
-    width: 60,
-    height: 44,
-    borderWidth: 1,
-    borderColor: colors.textMuted,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceWhite,
-  },
-  birthDateBoxMedium: {
-    flex: 1,
-    height: 44,
-    borderWidth: 1,
-    borderColor: colors.textMuted,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceWhite,
-  },
-  birthDateInput: {
-    width: '100%',
-    height: '100%',
-    textAlign: 'center',
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.contentPrimary,
   },
   avatarGroup: {
     marginTop: 8,
