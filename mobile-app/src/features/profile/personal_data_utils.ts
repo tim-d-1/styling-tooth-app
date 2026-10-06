@@ -98,6 +98,9 @@ export function formatPhoneDisplay(phone?: string | null): string {
   if (digits.length === 10 && digits.startsWith('0')) {
     return `+380 (${digits.slice(1, 3)}) ${digits.slice(3, 6)} ${digits.slice(6, 8)} ${digits.slice(8, 10)}`;
   }
+  if (digits.length === 9) {
+    return `+380 (${digits.slice(0, 2)}) ${digits.slice(2, 5)} ${digits.slice(5, 7)} ${digits.slice(7, 9)}`;
+  }
   return phone;
 }
 

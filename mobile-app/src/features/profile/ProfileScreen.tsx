@@ -271,19 +271,19 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const renderIcon = (name: ProfileSettingItem['iconName']) => {
     switch (name) {
       case 'comment-user':
-        return <CommentUserIcon color={colors.contentDark} size={20} />;
+        return <CommentUserIcon color={colors.terracotta} size={20} />;
       case 'map-marker':
-        return <MarkerIcon color={colors.contentDark} size={20} />;
+        return <MarkerIcon color={colors.terracotta} size={20} />;
       case 'credit-card':
-        return <CreditCardIcon color={colors.contentDark} size={20} />;
+        return <CreditCardIcon color={colors.terracotta} size={20} />;
       case 'bell-ring':
-        return <BellRingIcon color={colors.contentDark} size={20} />;
+        return <BellRingIcon color={colors.terracotta} size={20} />;
       case 'comments':
-        return <CommentsIcon color={colors.contentDark} size={20} />;
+        return <CommentsIcon color={colors.terracotta} size={20} />;
       case 'interrogation':
-        return <InterrogationIcon color={colors.contentDark} size={20} />;
+        return <InterrogationIcon color={colors.terracotta} size={20} />;
       case 'lock':
-        return <LockIcon color={colors.contentDark} size={20} />;
+        return <LockIcon color={colors.terracotta} size={20} />;
       default:
         return null;
     }

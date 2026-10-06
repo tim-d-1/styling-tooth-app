@@ -16,6 +16,7 @@ import * as Linking from 'expo-linking';
 import { supabase } from '../../lib/supabase';
 import { colors } from '../../theme/tokens';
 import { generateTelegramLink } from './telegram_service';
+import { normalizePhoneNumber } from '../auth/login_utils';
 import {
   ArrowLeftIcon,
   BellIcon,
@@ -112,9 +113,11 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
             : null;
 
         const isPhoneConfirmed = Boolean(
-          profile?.phone_confirmed ||
-          userMeta?.phone_confirmed ||
-          (profile?.phone && profile?.telegram_chat_id)
+          resolvedPhone && (
+            profile?.phone_confirmed ||
+            userMeta?.phone_confirmed ||
+            profile?.telegram_chat_id
+          )
         );
 
         const isEmailConfirmed = Boolean(
@@ -145,7 +148,10 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
             fullName: resolvedName || prev.fullName,
             email: resolvedEmail || prev.email,
             phone: resolvedPhone || prev.phone,
-            isPhoneVerified: isPhoneConfirmed || prev.isPhoneVerified,
+            isPhoneVerified: Boolean(
+              (resolvedPhone || prev.phone) &&
+              (isPhoneConfirmed || prev.isPhoneVerified)
+            ),
             isEmailVerified: isEmailConfirmed || prev.isEmailVerified,
             avatarUrl: resolvedAvatar || prev.avatarUrl,
             birthDate: resolvedBirthDate || prev.birthDate,
@@ -174,8 +180,56 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
     }
   };
 
+  const handleToggleEditPhone = async () => {
+    if (isEditingPhone) {
+      const raw = formData.phone.trim();
+      const normalized = raw ? (normalizePhoneNumber(raw) || raw) : '';
+      setFormData((prev) => ({
+        ...prev,
+        phone: normalized,
+        isPhoneVerified: Boolean(normalized && prev.isPhoneVerified),
+      }));
+      setIsEditingPhone(false);
+      if (normalized) {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const currentUserId = sessionData?.session?.user?.id;
+          if (currentUserId) {
+            await supabase
+              .from('profiles')
+              .update({
+                phone: normalized,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', currentUserId);
+          }
+        } catch {
+          // Fallback to saving when user presses full Save button
+        }
+      }
+    } else {
+      setIsEditingPhone(true);
+    }
+  };
+
   const handleVerifyPhoneViaTelegram = async () => {
     try {
+      const raw = formData.phone.trim();
+      const normalized = raw ? (normalizePhoneNumber(raw) || raw) : '';
+      if (normalized) {
+        setFormData((prev) => ({ ...prev, phone: normalized }));
+        const { data: sessionData } = await supabase.auth.getSession();
+        const currentUserId = sessionData?.session?.user?.id;
+        if (currentUserId) {
+          await supabase
+            .from('profiles')
+            .update({
+              phone: normalized,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', currentUserId);
+        }
+      }
       const linkInfo = await generateTelegramLink();
       await Linking.openURL(linkInfo.linkUrl);
       showFeedback('Відкриваємо Telegram бота для підтвердження');
@@ -226,13 +280,16 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
       const { data: sessionData } = await supabase.auth.getSession();
       const currentUserId = sessionData?.session?.user?.id;
 
+      const rawPhone = formData.phone.trim();
+      const normalizedPhone = rawPhone ? (normalizePhoneNumber(rawPhone) || rawPhone) : '';
+
       if (currentUserId) {
         await supabase
           .from('profiles')
           .update({
             full_name: formData.fullName,
             email: formData.email,
-            phone: formData.phone,
+            phone: normalizedPhone || null,
             avatar_url: formData.avatarUrl,
             updated_at: new Date().toISOString(),
           })
@@ -246,8 +303,15 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
         });
       }
 
+      const updatedForm: PersonalDataForm = {
+        ...formData,
+        phone: normalizedPhone,
+        isPhoneVerified: Boolean(normalizedPhone && formData.isPhoneVerified),
+      };
+      setFormData(updatedForm);
+
       if (onSave) {
-        onSave(formData);
+        onSave(updatedForm);
       }
 
       setIsEditingName(false);
@@ -278,7 +342,7 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
           accessibilityLabel="Назад"
           testID="personal-data-back-button"
         >
-          <ArrowLeftIcon color={colors.contentPrimary} size={24} />
+          <ArrowLeftIcon color={colors.terracotta} size={22} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle} testID="personal-data-title">
@@ -292,7 +356,7 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
           accessibilityLabel="Сповіщення"
           testID="personal-data-bell-button"
         >
-          <BellIcon color={colors.contentPrimary} size={20} />
+          <BellIcon color={colors.terracotta} size={20} />
         </TouchableOpacity>
       </View>
 
@@ -332,7 +396,7 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
         <View style={styles.formCard} testID="personal-data-card">
           <View style={styles.formRow} testID="fullname-row">
             <View style={styles.rowIconContainer}>
-              <UserIcon color={colors.contentPrimary} size={20} />
+              <UserIcon color={colors.terracotta} size={20} />
             </View>
             <View style={styles.rowContent}>
               <Text style={styles.rowLabel}>Ім'я та Прізвище</Text>
@@ -370,7 +434,7 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
               {isEditingName ? (
                 <CheckIcon color={colors.terracotta} size={16} />
               ) : (
-                <PencilIcon color={colors.contentPrimary} size={18} />
+                <PencilIcon color={colors.terracotta} size={18} />
               )}
             </TouchableOpacity>
           </View>
@@ -379,7 +443,7 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
 
           <View style={styles.formRow} testID="phone-row">
             <View style={styles.rowIconContainer}>
-              <TabletIcon color={colors.contentPrimary} size={20} />
+              <TabletIcon color={colors.terracotta} size={20} />
             </View>
             <View style={styles.rowContent}>
               <Text style={styles.rowLabel}>Номер телефону</Text>
@@ -407,26 +471,26 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
                   {formatPhoneDisplay(formData.phone) || 'Не вказано'}
                 </Text>
               )}
+              {formData.isPhoneVerified && formData.phone && !isEditingPhone ? (
+                <View style={styles.inlineVerifiedBadge} testID="phone-verified-badge">
+                  <CheckIcon color="#16A34A" size={12} />
+                  <Text style={styles.verifiedBadgeText}>Підтверджено</Text>
+                </View>
+              ) : !isEditingPhone && formData.phone ? (
+                <TouchableOpacity
+                  style={styles.inlineVerifyButton}
+                  onPress={handleVerifyPhoneViaTelegram}
+                  accessibilityRole="button"
+                  accessibilityLabel="Підтвердити через Telegram"
+                  testID="verify-phone-telegram-button"
+                >
+                  <Text style={styles.verifyButtonText}>Telegram</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
-            {formData.isPhoneVerified && !isEditingPhone ? (
-              <View style={styles.verifiedBadge} testID="phone-verified-badge">
-                <CheckIcon color="#16A34A" size={12} />
-                <Text style={styles.verifiedBadgeText}>Підтверджено</Text>
-              </View>
-            ) : !isEditingPhone && formData.phone ? (
-              <TouchableOpacity
-                style={styles.verifyButton}
-                onPress={handleVerifyPhoneViaTelegram}
-                accessibilityRole="button"
-                accessibilityLabel="Підтвердити через Telegram"
-                testID="verify-phone-telegram-button"
-              >
-                <Text style={styles.verifyButtonText}>Telegram</Text>
-              </TouchableOpacity>
-            ) : null}
             <TouchableOpacity
               style={styles.rowActionButton}
-              onPress={() => setIsEditingPhone(!isEditingPhone)}
+              onPress={handleToggleEditPhone}
               accessibilityRole="button"
               accessibilityLabel="Редагувати телефон"
               testID="edit-phone-button"
@@ -434,7 +498,7 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
               {isEditingPhone ? (
                 <CheckIcon color={colors.terracotta} size={16} />
               ) : (
-                <PencilIcon color={colors.contentPrimary} size={18} />
+                <PencilIcon color={colors.terracotta} size={18} />
               )}
             </TouchableOpacity>
           </View>
@@ -443,7 +507,7 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
 
           <View style={styles.formRow} testID="email-row">
             <View style={styles.rowIconContainer}>
-              <EnvelopeIcon color={colors.contentPrimary} size={20} />
+              <EnvelopeIcon color={colors.terracotta} size={20} />
             </View>
             <View style={styles.rowContent}>
               <Text style={styles.rowLabel}>Електронна пошта</Text>
@@ -468,27 +532,29 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
                     !formData.email && styles.rowValuePlaceholder,
                   ]}
                   testID="email-display-value"
+                  numberOfLines={1}
+                  ellipsizeMode="middle"
                 >
                   {formData.email || 'Не вказано'}
                 </Text>
               )}
+              {formData.isEmailVerified && !isEditingEmail ? (
+                <View style={styles.inlineVerifiedBadge} testID="email-verified-badge">
+                  <CheckIcon color="#16A34A" size={12} />
+                  <Text style={styles.verifiedBadgeText}>Підтверджено</Text>
+                </View>
+              ) : !isEditingEmail && formData.email ? (
+                <TouchableOpacity
+                  style={styles.inlineVerifyButton}
+                  onPress={handleVerifyEmail}
+                  accessibilityRole="button"
+                  accessibilityLabel="Підтвердити пошту"
+                  testID="verify-email-button"
+                >
+                  <Text style={styles.verifyButtonText}>Підтвердити</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
-            {formData.isEmailVerified && !isEditingEmail ? (
-              <View style={styles.verifiedBadge} testID="email-verified-badge">
-                <CheckIcon color="#16A34A" size={12} />
-                <Text style={styles.verifiedBadgeText}>Підтверджено</Text>
-              </View>
-            ) : !isEditingEmail && formData.email ? (
-              <TouchableOpacity
-                style={styles.verifyButton}
-                onPress={handleVerifyEmail}
-                accessibilityRole="button"
-                accessibilityLabel="Підтвердити пошту"
-                testID="verify-email-button"
-              >
-                <Text style={styles.verifyButtonText}>Підтвердити</Text>
-              </TouchableOpacity>
-            ) : null}
             <TouchableOpacity
               style={styles.rowActionButton}
               onPress={() => setIsEditingEmail(!isEditingEmail)}
@@ -499,7 +565,7 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
               {isEditingEmail ? (
                 <CheckIcon color={colors.terracotta} size={16} />
               ) : (
-                <PencilIcon color={colors.contentPrimary} size={18} />
+                <PencilIcon color={colors.terracotta} size={18} />
               )}
             </TouchableOpacity>
           </View>
@@ -508,7 +574,7 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
 
           <View style={styles.formRow} testID="birthdate-row">
             <View style={styles.rowIconContainer}>
-              <CalendarIcon color={colors.contentPrimary} size={20} />
+              <CalendarIcon color={colors.terracotta} size={20} />
             </View>
             <View style={styles.rowContent}>
               <Text style={styles.rowLabel}>Дата народження</Text>
@@ -546,7 +612,7 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
               {isEditingBirthDate ? (
                 <CheckIcon color={colors.terracotta} size={16} />
               ) : (
-                <PencilIcon color={colors.contentPrimary} size={18} />
+                <PencilIcon color={colors.terracotta} size={18} />
               )}
             </TouchableOpacity>
           </View>
@@ -554,7 +620,7 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
 
         <View style={styles.securityCard} testID="security-guarantee-note">
           <View style={styles.securityIconContainer}>
-            <ShieldCheckIcon color={colors.contentPrimary} size={22} />
+            <ShieldCheckIcon color={colors.terracotta} size={22} />
           </View>
           <Text style={styles.securityText}>
             Ваші контактні дані використовуються для підтвердження бронювань та
@@ -600,6 +666,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    backgroundColor: colors.visitGray,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -673,8 +740,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   rowIconContainer: {
-    width: 32,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.visitGray,
     alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
   },
   rowContent: {
@@ -704,6 +775,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
+    backgroundColor: colors.visitGray,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
@@ -711,6 +783,24 @@ const styles = StyleSheet.create({
   rowDivider: {
     height: 1,
     backgroundColor: '#F0F2F5',
+  },
+  inlineVerifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginTop: 4,
+    alignSelf: 'flex-start',
+  },
+  inlineVerifyButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: '#EFF6FF',
+    marginTop: 4,
+    alignSelf: 'flex-start',
   },
   verifiedBadge: {
     flexDirection: 'row',
@@ -746,11 +836,16 @@ const styles = StyleSheet.create({
     marginTop: 12,
     padding: 12,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   securityIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surfaceWhite,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
-    marginTop: 2,
   },
   securityText: {
     flex: 1,

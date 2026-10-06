@@ -17,6 +17,7 @@ describe('login_utils', () => {
   });
 
   it('normalizes local and international phone numbers', () => {
+    expect(normalizePhoneNumber('981234567')).toBe('+380981234567');
     expect(normalizePhoneNumber('0981234567')).toBe('+380981234567');
     expect(normalizePhoneNumber('380981234567')).toBe('+380981234567');
     expect(normalizePhoneNumber('+380981234567')).toBe('+380981234567');

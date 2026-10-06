@@ -9,6 +9,9 @@ export function isPhoneIdentifier(identifier: string): boolean {
 
 export function normalizePhoneNumber(identifier: string): string | null {
   const cleaned = identifier.trim().replace(/[\s\-()]/g, '');
+  if (/^\d{9}$/.test(cleaned)) {
+    return `+380${cleaned}`;
+  }
   if (/^0\d{9}$/.test(cleaned)) {
     return `+38${cleaned}`;
   }
