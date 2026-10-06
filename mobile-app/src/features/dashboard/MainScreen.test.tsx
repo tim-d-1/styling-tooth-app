@@ -29,6 +29,7 @@ describe('MainScreen (Головна)', () => {
     (supabase.from as any).mockImplementation((_table: string) => ({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
+      neq: vi.fn().mockReturnThis(),
       in: vi.fn().mockReturnThis(),
       gte: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
@@ -166,5 +167,54 @@ describe('MainScreen (Головна)', () => {
     fireEvent.click(screen.getByTestId('tab-pets'));
     expect(screen.getByTestId('pets-tab-container')).toBeInTheDocument();
     expect(screen.getByTestId('pets-tab-content')).toBeInTheDocument();
+  });
+
+  it('renders profile tab in dedicated container outside outer ScrollView', () => {
+    render(<MainScreen initialVisit={null} userEmail="maria@example.com" />);
+
+    fireEvent.click(screen.getByTestId('tab-profile'));
+    expect(screen.getByTestId('profile-tab-wrapper')).toBeInTheDocument();
+    expect(screen.getByTestId('profile-tab-content')).toBeInTheDocument();
+  });
+
+  it('loads upcoming appointment from database with explicit foreign key relation and displays visit details', async () => {
+    const mockDbVisit = {
+      id: 'db-visit-1',
+      starts_at: '2026-10-10T11:00:00.000Z',
+      status: 'confirmed',
+      pet: { name: 'Чарлі' },
+      service: { name: 'Стрижка кота' },
+    };
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'appointments') {
+        return {
+          select: vi.fn().mockImplementation((queryStr: string) => {
+            expect(queryStr).toContain('service:services!appointments_service_id_fkey(name)');
+            return {
+              eq: vi.fn().mockReturnThis(),
+              neq: vi.fn().mockReturnThis(),
+              gte: vi.fn().mockReturnThis(),
+              order: vi.fn().mockReturnThis(),
+              limit: vi.fn().mockReturnThis(),
+              maybeSingle: vi.fn().mockResolvedValue({ data: mockDbVisit, error: null }),
+            };
+          }),
+        };
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+    });
+
+    render(<MainScreen />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('visit-card')).toBeInTheDocument();
+      expect(screen.getByText('Тваринка: Чарлі')).toBeInTheDocument();
+      expect(screen.getByText('Стрижка кота')).toBeInTheDocument();
+    });
   });
 });

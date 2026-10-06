@@ -17,7 +17,7 @@ describe('Personal Data Mobile Eval Suite (Figma Frame 680:3482 & Web Parity)', 
   });
 
   describe('Eval 1: Figma Frame 680:3482 Design Contract Verification', () => {
-    it('evaluates structural elements: header, avatar section, 5 form rows, security note, and save button', () => {
+    it('evaluates structural elements: header, avatar section, 4 form rows, security note, and save button', () => {
       render(<PersonalDataScreen />);
 
       expect(screen.getByTestId('personal-data-screen')).toBeInTheDocument();
@@ -30,7 +30,7 @@ describe('Personal Data Mobile Eval Suite (Figma Frame 680:3482 & Web Parity)', 
 
       expect(screen.getByTestId('personal-data-card')).toBeInTheDocument();
       expect(screen.getByTestId('fullname-row')).toBeInTheDocument();
-      expect(screen.getByTestId('gender-row')).toBeInTheDocument();
+      expect(screen.queryByTestId('gender-row')).not.toBeInTheDocument();
       expect(screen.getByTestId('phone-row')).toBeInTheDocument();
       expect(screen.getByTestId('email-row')).toBeInTheDocument();
       expect(screen.getByTestId('birthdate-row')).toBeInTheDocument();
@@ -47,11 +47,11 @@ describe('Personal Data Mobile Eval Suite (Figma Frame 680:3482 & Web Parity)', 
       expect(saveButton).toHaveTextContent('Зберегти зміни');
     });
 
-    it('evaluates field labels match Ukrainian Figma layout specifications', () => {
+    it('evaluates field labels match Ukrainian specifications without gender', () => {
       render(<PersonalDataScreen />);
 
       expect(screen.getByText("Ім'я та Прізвище")).toBeInTheDocument();
-      expect(screen.getByText('Стать')).toBeInTheDocument();
+      expect(screen.queryByText('Стать')).not.toBeInTheDocument();
       expect(screen.getByText('Номер телефону')).toBeInTheDocument();
       expect(screen.getByText('Електронна пошта')).toBeInTheDocument();
       expect(screen.getByText('Дата народження')).toBeInTheDocument();
@@ -168,7 +168,6 @@ describe('Personal Data Mobile Eval Suite (Figma Frame 680:3482 & Web Parity)', 
         expect(supabase.auth.updateUser).toHaveBeenCalledWith({
           data: expect.objectContaining({
             full_name: 'Єва Шевченко',
-            gender: 'female',
           }),
         });
       });

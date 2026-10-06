@@ -68,7 +68,6 @@ describe('PersonalDataScreen', () => {
     );
 
     expect(screen.getByTestId('fullname-display-value')).toHaveTextContent("Вкажіть ваше ім'я");
-    expect(screen.getByTestId('gender-display-value')).toHaveTextContent('Не вказано');
     expect(screen.getByTestId('phone-display-value')).toHaveTextContent('Не вказано');
     expect(screen.getByTestId('email-display-value')).toHaveTextContent('Не вказано');
     expect(screen.getByTestId('birthdate-display-value')).toHaveTextContent('Не вказано');
@@ -79,7 +78,6 @@ describe('PersonalDataScreen', () => {
       <PersonalDataScreen
         initialData={{
           fullName: 'Марія Коваль',
-          gender: 'female',
           phone: '+380501234567',
           isPhoneVerified: true,
           email: 'maria@example.com',
@@ -89,7 +87,6 @@ describe('PersonalDataScreen', () => {
     );
 
     expect(screen.getByTestId('fullname-display-value')).toHaveTextContent('Марія Коваль');
-    expect(screen.getByTestId('gender-display-value')).toHaveTextContent('Жіноча');
     expect(screen.getByTestId('phone-display-value')).toHaveTextContent('+380 (50) 123 45 67');
     expect(screen.getByTestId('phone-verified-badge')).toBeInTheDocument();
     expect(screen.getByTestId('email-display-value')).toHaveTextContent('maria@example.com');
@@ -127,23 +124,9 @@ describe('PersonalDataScreen', () => {
     });
   });
 
-  it('allows selecting gender via gender options', async () => {
-    render(
-      <PersonalDataScreen
-        initialData={{
-          gender: '',
-        }}
-      />
-    );
-
-    fireEvent.click(screen.getByTestId('edit-gender-button'));
-
-    expect(screen.getByTestId('gender-option-female')).toBeInTheDocument();
-    expect(screen.getByTestId('gender-option-male')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByTestId('gender-option-female'));
-
-    expect(screen.getByTestId('gender-display-value')).toHaveTextContent('Жіноча');
+  it('does not render gender field on mobile', () => {
+    render(<PersonalDataScreen />);
+    expect(screen.queryByTestId('gender-row')).not.toBeInTheDocument();
   });
 
   it('renders security guarantee information banner', () => {
@@ -224,5 +207,36 @@ describe('PersonalDataScreen', () => {
     );
 
     expect(screen.getByTestId('email-verified-badge')).toBeInTheDocument();
+  });
+
+  it('syncs email confirmation from getUser when auth user has email_confirmed_at', async () => {
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: {
+            id: 'usr-confirmed-id',
+            email: 'live-confirmed@example.com',
+          },
+        },
+      },
+      error: null,
+    } as never);
+
+    vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
+      data: {
+        user: {
+          id: 'usr-confirmed-id',
+          email: 'live-confirmed@example.com',
+          email_confirmed_at: '2026-10-05T12:00:00Z',
+        },
+      },
+      error: null,
+    } as never);
+
+    render(<PersonalDataScreen />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('email-verified-badge')).toBeInTheDocument();
+    });
   });
 });

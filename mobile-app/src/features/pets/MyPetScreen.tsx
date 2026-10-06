@@ -180,7 +180,7 @@ export const MyPetScreen: React.FC<MyPetScreenProps> = ({
               starts_at,
               price,
               status,
-              service:services(name),
+              service:services!appointments_service_id_fkey(name),
               master:masters(display_name)
             `)
             .eq('pet_id', currentPet.id)

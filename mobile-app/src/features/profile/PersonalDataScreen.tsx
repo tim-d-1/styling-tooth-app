@@ -20,7 +20,6 @@ import {
   ArrowLeftIcon,
   BellIcon,
   UserIcon,
-  VenusMarsIcon,
   TabletIcon,
   EnvelopeIcon,
   CalendarIcon,
@@ -32,8 +31,6 @@ import {
 import {
   PersonalDataForm,
   formatUkrainianDate,
-  formatGender,
-  parseGender,
   formatPhoneDisplay,
   sanitizePersonalData,
 } from './personal_data_utils';
@@ -60,7 +57,6 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
   );
 
   const [isEditingName, setIsEditingName] = useState(false);
-  const [isEditingGender, setIsEditingGender] = useState(false);
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [isEditingBirthDate, setIsEditingBirthDate] = useState(false);
@@ -77,6 +73,16 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
 
         if (!currentUserId || !isMounted) return;
 
+        let liveUser = sessionUser;
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          if (userData?.user) {
+            liveUser = userData.user;
+          }
+        } catch {
+          // fallback to session user
+        }
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -85,9 +91,9 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
 
         if (!isMounted) return;
 
-        const userMeta = sessionUser?.user_metadata;
+        const userMeta = liveUser?.user_metadata || sessionUser?.user_metadata;
         const resolvedName = profile?.full_name || userMeta?.full_name || '';
-        const rawEmail = profile?.email || sessionUser?.email || '';
+        const rawEmail = profile?.email || liveUser?.email || sessionUser?.email || '';
         const resolvedEmail = rawEmail.endsWith('@phone.stylingtooth.app') ? '' : rawEmail;
         const resolvedPhone = profile?.phone || userMeta?.phone || '';
         const rawAvatar =
@@ -113,10 +119,24 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
 
         const isEmailConfirmed = Boolean(
           profile?.email_confirmed ||
+          liveUser?.email_confirmed_at ||
           sessionUser?.email_confirmed_at
         );
 
-        const resolvedGender = parseGender(profile?.gender || userMeta?.gender || '');
+        if (
+          (liveUser?.email_confirmed_at || sessionUser?.email_confirmed_at) &&
+          !profile?.email_confirmed
+        ) {
+          try {
+            await supabase
+              .from('profiles')
+              .update({ email_confirmed: true })
+              .eq('id', currentUserId);
+          } catch {
+            // Ignore background sync failure
+          }
+        }
+
         const resolvedBirthDate = profile?.birth_date || userMeta?.birth_date || '';
 
         setFormData((prev) =>
@@ -125,7 +145,6 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
             fullName: resolvedName || prev.fullName,
             email: resolvedEmail || prev.email,
             phone: resolvedPhone || prev.phone,
-            gender: resolvedGender || prev.gender,
             isPhoneVerified: isPhoneConfirmed || prev.isPhoneVerified,
             isEmailVerified: isEmailConfirmed || prev.isEmailVerified,
             avatarUrl: resolvedAvatar || prev.avatarUrl,
@@ -223,7 +242,6 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
           data: {
             full_name: formData.fullName,
             birth_date: formData.birthDate,
-            gender: formData.gender,
           },
         });
       }
@@ -233,7 +251,6 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
       }
 
       setIsEditingName(false);
-      setIsEditingGender(false);
       setIsEditingPhone(false);
       setIsEditingEmail(false);
       setIsEditingBirthDate(false);
@@ -251,7 +268,7 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
       <View
         style={[
           styles.header,
-          { paddingTop: Math.max(insets.top + 8, 20) },
+          { paddingTop: Math.max(insets.top, 12) },
         ]}
       >
         <TouchableOpacity
@@ -282,7 +299,7 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom + 24, 40) },
+          { paddingBottom: Math.max(insets.bottom + 20, 36) + 40 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -351,106 +368,6 @@ export const PersonalDataScreen: React.FC<PersonalDataScreenProps> = ({
               testID="edit-fullname-button"
             >
               {isEditingName ? (
-                <CheckIcon color={colors.terracotta} size={16} />
-              ) : (
-                <PencilIcon color={colors.contentPrimary} size={18} />
-              )}
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          <View style={styles.formRow} testID="gender-row">
-            <View style={styles.rowIconContainer}>
-              <VenusMarsIcon color={colors.contentPrimary} size={20} />
-            </View>
-            <View style={styles.rowContent}>
-              <Text style={styles.rowLabel}>Стать</Text>
-              {isEditingGender ? (
-                <View style={styles.genderOptionsContainer}>
-                  <TouchableOpacity
-                    style={[
-                      styles.genderChip,
-                      formData.gender === 'female' && styles.genderChipActive,
-                    ]}
-                    onPress={() => {
-                      setFormData((prev) => ({ ...prev, gender: 'female' }));
-                      setIsEditingGender(false);
-                    }}
-                    testID="gender-option-female"
-                  >
-                    <Text
-                      style={[
-                        styles.genderChipText,
-                        formData.gender === 'female' &&
-                          styles.genderChipTextActive,
-                      ]}
-                    >
-                      Жіноча
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.genderChip,
-                      formData.gender === 'male' && styles.genderChipActive,
-                    ]}
-                    onPress={() => {
-                      setFormData((prev) => ({ ...prev, gender: 'male' }));
-                      setIsEditingGender(false);
-                    }}
-                    testID="gender-option-male"
-                  >
-                    <Text
-                      style={[
-                        styles.genderChipText,
-                        formData.gender === 'male' && styles.genderChipTextActive,
-                      ]}
-                    >
-                      Чоловіча
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.genderChip,
-                      formData.gender === 'other' && styles.genderChipActive,
-                    ]}
-                    onPress={() => {
-                      setFormData((prev) => ({ ...prev, gender: 'other' }));
-                      setIsEditingGender(false);
-                    }}
-                    testID="gender-option-other"
-                  >
-                    <Text
-                      style={[
-                        styles.genderChipText,
-                        formData.gender === 'other' &&
-                          styles.genderChipTextActive,
-                      ]}
-                    >
-                      Інше
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <Text
-                  style={[
-                    styles.rowValue,
-                    !formData.gender && styles.rowValuePlaceholder,
-                  ]}
-                  testID="gender-display-value"
-                >
-                  {formatGender(formData.gender)}
-                </Text>
-              )}
-            </View>
-            <TouchableOpacity
-              style={styles.rowActionButton}
-              onPress={() => setIsEditingGender(!isEditingGender)}
-              accessibilityRole="button"
-              accessibilityLabel="Редагувати стать"
-              testID="edit-gender-button"
-            >
-              {isEditingGender ? (
                 <CheckIcon color={colors.terracotta} size={16} />
               ) : (
                 <PencilIcon color={colors.contentPrimary} size={18} />
@@ -696,7 +613,7 @@ const styles = StyleSheet.create({
   },
   avatarSection: {
     alignItems: 'center',
-    marginVertical: 16,
+    marginVertical: 12,
   },
   avatarRing: {
     width: 100,
@@ -743,7 +660,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginHorizontal: 16,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 6,
     shadowColor: colors.navyDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
@@ -822,35 +739,12 @@ const styles = StyleSheet.create({
     color: '#2563EB',
     fontWeight: '600',
   },
-  genderOptionsContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 4,
-  },
-  genderChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#F3F4F6',
-  },
-  genderChipActive: {
-    backgroundColor: colors.terracotta,
-  },
-  genderChipText: {
-    fontSize: 13,
-    color: colors.contentPrimary,
-    fontWeight: '500',
-  },
-  genderChipTextActive: {
-    color: colors.surfaceWhite,
-    fontWeight: '600',
-  },
   securityCard: {
     backgroundColor: colors.visitGray,
     borderRadius: 16,
     marginHorizontal: 16,
-    marginTop: 16,
-    padding: 16,
+    marginTop: 12,
+    padding: 12,
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
@@ -869,7 +763,7 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 12,
     marginHorizontal: 16,
-    marginTop: 20,
+    marginTop: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -102,7 +102,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
-  const [pets, setPets] = useState<PetOption[]>(initialPets || DEMO_PETS);
+  const [pets, setPets] = useState<PetOption[]>(initialPets || []);
+  const [isLoadingPets, setIsLoadingPets] = useState(!initialPets);
   const [procedures, setProcedures] = useState<ProcedureOption[]>(PROCEDURES_CATALOG);
   const [masters, setMasters] = useState<MasterProfile[]>(initialMasters || []);
   const [currentMasterIndex, setCurrentMasterIndex] = useState(0);
@@ -112,7 +113,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     : { date: '2026-08-11', dateFormatted: '11.08.2026', weekStartDate: '2026-08-09' };
 
   const [bookingState, setBookingState] = useState<BookingState>(() => {
-    const defaultPet = (initialPets && initialPets[0]) || DEMO_PETS[0];
+    const defaultPet = (initialPets && initialPets[0]) || null;
     return {
       petId: defaultPet?.id || '',
       petName: defaultPet?.name || '',
@@ -160,6 +161,9 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
+      if (!initialPets) {
+        setIsLoadingPets(true);
+      }
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const userId = sessionData?.session?.user?.id;
@@ -172,28 +176,32 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             .eq('is_active', true)
             .order('created_at', { ascending: false });
 
-          if (isMounted && userPets && userPets.length > 0) {
-            const petIds = userPets.map((p) => p.id);
-            const avatarMap = await fetchPetsAvatarMap(petIds);
+          if (isMounted) {
+            if (userPets && userPets.length > 0) {
+              const petIds = userPets.map((p) => p.id);
+              const avatarMap = await fetchPetsAvatarMap(petIds);
 
-            const mappedPets: PetOption[] = userPets.map((p) => ({
-              id: p.id,
-              name: p.name,
-              species: p.species === 'dog' ? 'Собака' : p.species === 'cat' ? 'Кіт' : p.species,
-              breed: p.breed || undefined,
-              avatar_url: avatarMap[p.id] || null,
-            }));
-            setPets(mappedPets);
-            const selectedPet =
-              mappedPets.find((p) => p.id === initialPetId) || mappedPets[0];
-            setBookingState((prev) => ({
-              ...prev,
-              petId: selectedPet.id,
-              petName: selectedPet.name,
-              petSpecies: selectedPet.species,
-              petBreed: selectedPet.breed,
-              petAvatarUrl: selectedPet.avatar_url || null,
-            }));
+              const mappedPets: PetOption[] = userPets.map((p) => ({
+                id: p.id,
+                name: p.name,
+                species: p.species === 'dog' ? 'Собака' : p.species === 'cat' ? 'Кіт' : p.species,
+                breed: p.breed || undefined,
+                avatar_url: avatarMap[p.id] || null,
+              }));
+              setPets(mappedPets);
+              const selectedPet =
+                mappedPets.find((p) => p.id === initialPetId) || mappedPets[0];
+              setBookingState((prev) => ({
+                ...prev,
+                petId: selectedPet.id,
+                petName: selectedPet.name,
+                petSpecies: selectedPet.species,
+                petBreed: selectedPet.breed,
+                petAvatarUrl: selectedPet.avatar_url || null,
+              }));
+            } else {
+              setPets([]);
+            }
           }
         }
 
@@ -238,13 +246,17 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
         }
       } catch {
         // Fallbacks already in place
+      } finally {
+        if (isMounted && !initialPets) {
+          setIsLoadingPets(false);
+        }
       }
     }
     loadData();
     return () => {
       isMounted = false;
     };
-  }, [initialPets, initialMasters]);
+  }, [initialPets, initialMasters, initialPetId]);
 
   const handleBack = () => {
     if (stage === 'pet') {
@@ -476,63 +488,69 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                 <Text style={styles.addPetText}>Додати нового улюбленця</Text>
               </TouchableOpacity>
 
-              {pets.map((pet) => {
-                const isSelected = pet.id === bookingState.petId;
-                return (
-                  <TouchableOpacity
-                    key={pet.id}
-                    style={[
-                      styles.petCard,
-                      isSelected && styles.petCardSelected,
-                    ]}
-                    onPress={() =>
-                      setBookingState((prev) => ({
-                        ...prev,
-                        petId: pet.id,
-                        petName: pet.name,
-                        petSpecies: pet.species,
-                        petBreed: pet.breed,
-                        petAvatarUrl: pet.avatar_url,
-                      }))
-                    }
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: isSelected }}
-                    testID={`pet-card-${pet.id}`}
-                  >
-                    <View style={styles.petCardImageArea}>
-                      {pet.avatar_url && !failedPetImages[pet.id] ? (
-                        <Image
-                          source={{ uri: pet.avatar_url }}
-                          style={styles.petCardImage}
-                          onError={() =>
-                            setFailedPetImages((prev) => ({ ...prev, [pet.id]: true }))
-                          }
-                        />
-                      ) : (
-                        <View style={styles.petCardPlaceholder}>
-                          <PawIcon color={colors.terracotta} size={28} />
-                        </View>
-                      )}
-                    </View>
-                    <View style={styles.petCardFooter}>
-                      <Text style={styles.petCardName} numberOfLines={1}>
-                        {pet.name}
-                      </Text>
-                      <Text style={styles.petCardBreed} numberOfLines={1}>
-                        {pet.breed || pet.species}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
+              {isLoadingPets ? (
+                <View style={styles.loadingPetsCard} testID="loading-pets-indicator">
+                  <ActivityIndicator size="small" color={colors.terracotta} />
+                </View>
+              ) : (
+                pets.map((pet) => {
+                  const isSelected = pet.id === bookingState.petId;
+                  return (
+                    <TouchableOpacity
+                      key={pet.id}
+                      style={[
+                        styles.petCard,
+                        isSelected && styles.petCardSelected,
+                      ]}
+                      onPress={() =>
+                        setBookingState((prev) => ({
+                          ...prev,
+                          petId: pet.id,
+                          petName: pet.name,
+                          petSpecies: pet.species,
+                          petBreed: pet.breed,
+                          petAvatarUrl: pet.avatar_url,
+                        }))
+                      }
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: isSelected }}
+                      testID={`pet-card-${pet.id}`}
+                    >
+                      <View style={styles.petCardImageArea}>
+                        {pet.avatar_url && !failedPetImages[pet.id] ? (
+                          <Image
+                            source={{ uri: pet.avatar_url }}
+                            style={styles.petCardImage}
+                            onError={() =>
+                              setFailedPetImages((prev) => ({ ...prev, [pet.id]: true }))
+                            }
+                          />
+                        ) : (
+                          <View style={styles.petCardPlaceholder}>
+                            <PawIcon color={colors.terracotta} size={28} />
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.petCardFooter}>
+                        <Text style={styles.petCardName} numberOfLines={1}>
+                          {pet.name}
+                        </Text>
+                        <Text style={styles.petCardBreed} numberOfLines={1}>
+                          {pet.breed || pet.species}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
             </View>
 
             <TouchableOpacity
               style={[
                 styles.primaryButton,
-                !bookingState.petId && styles.buttonDisabled,
+                (!bookingState.petId || isLoadingPets) && styles.buttonDisabled,
               ]}
-              disabled={!bookingState.petId}
+              disabled={!bookingState.petId || isLoadingPets}
               onPress={() => handleNextFromStep('procedure')}
               testID="next-step-button"
             >
@@ -1277,6 +1295,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.contentDark,
     textAlign: 'center',
+  },
+  loadingPetsCard: {
+    width: '48%',
+    aspectRatio: 1,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceWhite,
   },
   petCard: {
     width: '48%',

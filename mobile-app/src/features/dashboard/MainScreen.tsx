@@ -120,10 +120,10 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               status,
               price,
               pet:pets(name, species),
-              service:services(name)
+              service:services!appointments_service_id_fkey(name)
             `)
             .eq('client_id', currentUserId)
-            .in('status', ['new', 'confirmed', 'in_progress'])
+            .neq('status', 'cancelled')
             .gte('starts_at', new Date().toISOString())
             .order('starts_at', { ascending: true })
             .limit(1)
@@ -212,6 +212,39 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             onNavigateAddPet={onNavigateAddPet}
           />
         </View>
+      ) : activeTab === 'profile' ? (
+        <View style={styles.petsTabContainer} testID="profile-tab-wrapper">
+          {profileSubScreen === 'personal_data' ? (
+            <PersonalDataScreen
+              onBack={() => setProfileSubScreen('main')}
+            />
+          ) : profileSubScreen === 'addresses' ? (
+            <MyAddressesScreen
+              onBack={() => setProfileSubScreen('main')}
+              initialAddress={initialAddress}
+            />
+          ) : (
+            <ScrollView
+              contentContainerStyle={[
+                styles.scrollContent,
+                {
+                  paddingTop: Math.max(insets.top, 16) + 8,
+                  paddingBottom: Math.max(insets.bottom, 20) + 70,
+                },
+              ]}
+              showsVerticalScrollIndicator={false}
+            >
+              <ProfileScreen
+                userEmail={userEmail}
+                onLogout={onLogout}
+                onNavigateBooking={onNavigateBooking}
+                onNavigateAddPet={onNavigateAddPet}
+                onPersonalInfoPress={() => setProfileSubScreen('personal_data')}
+                onAddressesPress={() => setProfileSubScreen('addresses')}
+              />
+            </ScrollView>
+          )}
+        </View>
       ) : (
         <ScrollView
           contentContainerStyle={[
@@ -222,7 +255,6 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             },
           ]}
         >
-          {activeTab !== 'profile' && (
           <View style={styles.topHeader}>
             <View style={styles.locationContainer} testID="location-indicator">
               <MarkerIcon color={colors.terracotta} size={18} />
@@ -238,7 +270,6 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               <BellIcon color={colors.contentPrimary} size={20} />
             </TouchableOpacity>
           </View>
-        )}
 
         {activeTab === 'home' && (
           <>
@@ -467,29 +498,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             </ScrollView>
           </>
         )}
-
-        {activeTab === 'profile' &&
-          (profileSubScreen === 'personal_data' ? (
-            <PersonalDataScreen
-              onBack={() => setProfileSubScreen('main')}
-            />
-          ) : profileSubScreen === 'addresses' ? (
-            <MyAddressesScreen
-              onBack={() => setProfileSubScreen('main')}
-              initialAddress={initialAddress}
-            />
-          ) : (
-            <ProfileScreen
-              userEmail={userEmail}
-              onLogout={onLogout}
-              onNavigateBooking={onNavigateBooking}
-              onNavigateAddPet={onNavigateAddPet}
-              onPersonalInfoPress={() => setProfileSubScreen('personal_data')}
-              onAddressesPress={() => setProfileSubScreen('addresses')}
-            />
-          ))}
       </ScrollView>
-      )}
+    )}
 
       <View
         style={[
