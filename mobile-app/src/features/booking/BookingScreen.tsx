@@ -694,6 +694,31 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
               })}
             </View>
 
+            {selectedProcedure && (
+              <View style={styles.procedureDetailCard} testID="procedure-detail-card">
+                <View style={styles.procedureDetailHeader}>
+                  <Text style={styles.procedureDetailTitle}>
+                    {selectedProcedure.name}
+                  </Text>
+                  <View style={styles.durationBadge}>
+                    <ClockIcon color={colors.terracotta} size={14} />
+                    <Text style={styles.durationBadgeText}>
+                      {selectedProcedure.duration}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.procedureDetailFooter}>
+                  <Text style={styles.procedureDetailFooterLabel}>
+                    Вартість послуги
+                  </Text>
+                  <Text style={styles.procedureDetailPrice}>
+                    {selectedProcedure.priceFormatted}
+                  </Text>
+                </View>
+              </View>
+            )}
+
             <Modal
               visible={modalProcedure !== null}
               transparent
