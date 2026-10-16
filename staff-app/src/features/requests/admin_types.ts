@@ -3,7 +3,9 @@ export type RequestStatus =
   | 'in_progress'
   | 'confirmed'
   | 'completed'
-  | 'cancelled';
+  | 'cancelled'
+  | 'late'
+  | 'no_show';
 
 export interface RequestClient {
   id: string;
@@ -44,6 +46,8 @@ export interface AppointmentRequest {
   service: RequestService;
   master: RequestMaster | null;
   clientNote?: string | null;
+  adminNote?: string | null;
+  isExpired?: boolean;
   createdAt: string;
 }
 
@@ -61,4 +65,9 @@ export interface MasterRosterItem {
   avatarUrl?: string | null;
 }
 
-export type RequestFilter = 'all' | 'new' | 'in_progress' | 'completed';
+export type RequestFilter =
+  | 'all'
+  | 'new'
+  | 'in_progress'
+  | 'completed'
+  | 'archive';

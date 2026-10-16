@@ -10,8 +10,12 @@ import {
   fetchMasterRoster,
   calculateMetrics,
   confirmAppointment,
+  startAppointment,
+  completeAppointment,
+  markNoShow,
   rejectAppointment,
 } from './admin_service';
+import { isAppointmentPast } from './admin_date_utils';
 import type {
   AppointmentRequest,
   DashboardMetrics,
@@ -35,10 +39,11 @@ export interface RequestProcessingPageProps {
 }
 
 const FILTER_ITEMS: { id: RequestFilter; label: string }[] = [
-  { id: 'all', label: 'Всі' },
+  { id: 'all', label: 'Всі активні' },
   { id: 'new', label: 'Нові' },
   { id: 'in_progress', label: 'В обробці' },
   { id: 'completed', label: 'Завершені' },
+  { id: 'archive', label: 'Архів' },
 ];
 
 export const RequestProcessingPage: FC<RequestProcessingPageProps> = ({
@@ -57,7 +62,8 @@ export const RequestProcessingPage: FC<RequestProcessingPageProps> = ({
     initialMasters || []
   );
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
-    initialSelectedRequestId || (initialRequests && initialRequests.length > 0 ? initialRequests[0].id : null)
+    initialSelectedRequestId ||
+      (initialRequests && initialRequests.length > 0 ? initialRequests[0].id : null)
   );
   const [activeFilter, setActiveFilter] = useState<RequestFilter>('all');
   const [isLoading, setIsLoading] = useState(
@@ -117,11 +123,32 @@ export const RequestProcessingPage: FC<RequestProcessingPageProps> = ({
 
   const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
-      if (activeFilter === 'all') return req.status !== 'cancelled';
-      if (activeFilter === 'new') return req.status === 'new';
-      if (activeFilter === 'in_progress')
+      const isPast = isAppointmentPast(req.startsAt);
+      const isExpired = req.isExpired || (req.status === 'new' && isPast);
+
+      if (activeFilter === 'all') {
+        return (
+          req.status !== 'cancelled' &&
+          req.status !== 'no_show' &&
+          !isExpired
+        );
+      }
+      if (activeFilter === 'new') {
+        return req.status === 'new' && !isExpired;
+      }
+      if (activeFilter === 'in_progress') {
         return req.status === 'in_progress' || req.status === 'confirmed';
-      if (activeFilter === 'completed') return req.status === 'completed';
+      }
+      if (activeFilter === 'completed') {
+        return req.status === 'completed';
+      }
+      if (activeFilter === 'archive') {
+        return (
+          req.status === 'cancelled' ||
+          req.status === 'no_show' ||
+          isExpired
+        );
+      }
       return true;
     });
   }, [requests, activeFilter]);
@@ -160,6 +187,7 @@ export const RequestProcessingPage: FC<RequestProcessingPageProps> = ({
               return {
                 ...r,
                 status: 'confirmed',
+                isExpired: false,
                 master: matchedMaster
                   ? {
                       id: matchedMaster.id,
@@ -176,6 +204,69 @@ export const RequestProcessingPage: FC<RequestProcessingPageProps> = ({
         onToast?.('Заявку підтверджено та клієнта сповіщено!');
       } else {
         onToast?.(result.error || 'Не вдалося підтвердити заявку');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleStartVisit = async (appointmentId: string) => {
+    setIsSubmitting(true);
+    try {
+      const result = await startAppointment(appointmentId);
+      if (result.success) {
+        setRequests((prev) =>
+          prev.map((r) =>
+            r.id === appointmentId ? { ...r, status: 'in_progress' } : r
+          )
+        );
+        onToast?.('Процедуру розпочато');
+      } else {
+        onToast?.(result.error || 'Не вдалося розпочати візит');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCompleteVisit = async (appointmentId: string) => {
+    setIsSubmitting(true);
+    try {
+      const result = await completeAppointment(appointmentId);
+      if (result.success) {
+        setRequests((prev) =>
+          prev.map((r) =>
+            r.id === appointmentId ? { ...r, status: 'completed' } : r
+          )
+        );
+        onToast?.('Візит успішно завершено!');
+      } else {
+        onToast?.(result.error || 'Не вдалося завершити візит');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleMarkNoShow = async (appointmentId: string) => {
+    setIsSubmitting(true);
+    try {
+      const result = await markNoShow(appointmentId);
+      if (result.success) {
+        setRequests((prev) =>
+          prev.map((r) =>
+            r.id === appointmentId
+              ? {
+                  ...r,
+                  status: 'no_show',
+                  adminNote: 'Клієнт не зʼявився на процедуру',
+                }
+              : r
+          )
+        );
+        onToast?.('Зафіксовано неявку клієнта');
+      } else {
+        onToast?.(result.error || 'Не вдалося оновити статус');
       }
     } finally {
       setIsSubmitting(false);
@@ -205,7 +296,11 @@ export const RequestProcessingPage: FC<RequestProcessingPageProps> = ({
     <div className="min-h-screen bg-surface-cream flex flex-col font-primary text-content-dark selection:bg-brand-coral/20">
       <StaffHeader
         activeTab="requests"
-        onNavigateTab={(tab) => onNavigateTab ? onNavigateTab(tab) : onNavClick?.(tab === 'requests' ? 'admin/requests' : 'admin/support')}
+        onNavigateTab={(tab) =>
+          onNavigateTab
+            ? onNavigateTab(tab)
+            : onNavClick?.(tab === 'requests' ? 'admin/requests' : 'admin/support')
+        }
         onLogout={onLogout || (() => {})}
       />
 
@@ -252,13 +347,14 @@ export const RequestProcessingPage: FC<RequestProcessingPageProps> = ({
                 return (
                   <button
                     key={filter.id}
+                    type="button"
                     role="tab"
                     aria-selected={isActive}
                     onClick={() => setActiveFilter(filter.id)}
-                    className={`px-4 py-2 rounded-full font-primary text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-[#96B3E2] text-white shadow-xs'
-                        : 'bg-visit-gray text-content-dark/70 hover:bg-visit-gray/80 hover:text-content-dark'
+                        ? 'bg-[#EB6D48] text-white shadow-xs'
+                        : 'bg-visit-gray/50 text-content-dark/70 hover:bg-visit-gray hover:text-content-dark'
                     }`}
                   >
                     {filter.label}
@@ -267,44 +363,64 @@ export const RequestProcessingPage: FC<RequestProcessingPageProps> = ({
               })}
             </div>
 
-            <div className="flex flex-col gap-3 min-h-[16rem]">
-              {isLoading && requests.length === 0 ? (
-                <div className="py-16 text-center text-content-dark/40 font-primary text-sm flex flex-col items-center gap-3">
-                  <Icon name="fi-rr-spinner" size={24} className="animate-spin" />
-                  <span>Завантаження заявок...</span>
+            {isLoading && (
+              <div
+                role="status"
+                aria-label="Завантаження заявок"
+                className="py-16 flex flex-col items-center justify-center gap-3 text-content-dark/60"
+              >
+                <Icon name="fi-rr-refresh" size={24} className="animate-spin text-[#EB6D48]" />
+                <span className="text-sm font-medium">Завантаження заявок...</span>
+              </div>
+            )}
+
+            {!isLoading && filteredRequests.length === 0 && (
+              <div className="py-16 flex flex-col items-center justify-center text-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-visit-gray flex items-center justify-center text-content-dark/40">
+                  <Icon name="fi-rr-inbox" size={22} />
                 </div>
-              ) : filteredRequests.length === 0 ? (
-                <div className="py-16 text-center text-content-dark/50 font-primary text-sm flex flex-col items-center gap-2 bg-[#FFFBF6] rounded-2xl border border-visit-gray/40">
-                  <Icon name="fi-rr-inbox" size={28} className="text-content-dark/30" />
-                  <span className="font-semibold text-content-dark">
-                    Немає заявок
-                  </span>
-                  <span className="text-xs text-content-dark/60">
-                    У цій вкладці наразі немає жодних заявок
-                  </span>
-                </div>
-              ) : (
-                filteredRequests.map((req) => (
+                <h3 className="font-accented font-bold text-base text-content-dark">
+                  Немає заявок у цій категорії
+                </h3>
+                <p className="font-primary text-xs text-content-dark/60 max-w-xs">
+                  {activeFilter === 'new'
+                    ? 'Усі нові заявки опрацьовано. Нові бронювання зʼявляться тут автоматично.'
+                    : activeFilter === 'archive'
+                    ? 'Архів скасованих та протермінованих заявок порожній.'
+                    : 'За вказаним фільтром заявок не знайдено.'}
+                </p>
+              </div>
+            )}
+
+            {!isLoading && filteredRequests.length > 0 && (
+              <div className="flex flex-col gap-3">
+                {filteredRequests.map((request) => (
                   <RequestCard
-                    key={req.id}
-                    request={req}
-                    isSelected={req.id === selectedRequestId}
-                    onSelect={(selected) => setSelectedRequestId(selected.id)}
+                    key={request.id}
+                    request={request}
+                    isSelected={request.id === selectedRequestId}
+                    onSelect={(req) => setSelectedRequestId(req.id)}
                   />
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </section>
 
-          <div className="lg:col-span-5 lg:sticky lg:top-24">
+          <section
+            aria-label="Панель деталей"
+            className="lg:col-span-5 sticky top-24"
+          >
             <RequestDetailsInspector
               request={selectedRequest}
               masters={masters}
               isSubmitting={isSubmitting}
               onConfirm={handleConfirm}
+              onStartVisit={handleStartVisit}
+              onCompleteVisit={handleCompleteVisit}
+              onMarkNoShow={handleMarkNoShow}
               onReject={handleReject}
             />
-          </div>
+          </section>
         </div>
       </main>
 

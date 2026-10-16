@@ -323,6 +323,24 @@ describe('BookingPage', () => {
     const mockRpc = vi.fn().mockResolvedValue({ data: { id: 'appt-123' }, error: null });
     vi.spyOn(supabase, 'rpc').mockImplementation(mockRpc as never);
 
+    vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
+      if (table === 'pets') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({
+            data: [{ id: 'pet-uuid-1', name: 'Барон' }],
+            error: null,
+          }),
+        };
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      };
+    }) as never);
+
     renderBooking({
       initialStage: 'payment',
       onComplete: handleComplete,

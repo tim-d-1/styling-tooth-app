@@ -5,6 +5,11 @@ import type {
   MasterRosterItem,
   RequestStatus,
 } from './admin_types';
+import {
+  isAppointmentPast,
+  isAppointmentToday,
+  toKyivISOString,
+} from './admin_date_utils';
 
 export function cleanClientPhone(phone?: string | null): string {
   if (!phone) return '';
@@ -23,12 +28,24 @@ export function cleanClientPhone(phone?: string | null): string {
 function formatShortNumber(uuid: string): string {
   const clean = uuid.replace(/-/g, '');
   const sub = clean.slice(0, 4);
-  const num = parseInt(sub, 16) % 9000 + 1000;
+  const num = (parseInt(sub, 16) % 9000) + 1000;
   return `#${num}`;
+}
+
+export async function syncPastAppointments(): Promise<void> {
+  try {
+    if (typeof supabase.rpc === 'function') {
+      await supabase.rpc('sync_past_appointment_statuses');
+    }
+  } catch {
+    // If RPC is unavailable, client-side guards will handle expired requests
+  }
 }
 
 export async function fetchAppointmentRequests(): Promise<AppointmentRequest[]> {
   try {
+    await syncPastAppointments();
+
     const { data, error } = await supabase
       .from('appointments')
       .select(
@@ -39,6 +56,7 @@ export async function fetchAppointmentRequests(): Promise<AppointmentRequest[]> 
         ends_at,
         price,
         client_note,
+        admin_note,
         created_at,
         client:profiles!client_id (
           id,
@@ -76,13 +94,19 @@ export async function fetchAppointmentRequests(): Promise<AppointmentRequest[]> 
       const service = Array.isArray(row.service) ? row.service[0] : row.service;
       const master = Array.isArray(row.master) ? row.master[0] : row.master;
 
+      const rawStatus = (row.status as RequestStatus) || 'new';
+      const isPast = isAppointmentPast(row.starts_at);
+      const isExpired = rawStatus === 'new' && isPast;
+
       return {
         id: row.id,
         appointmentNumber: formatShortNumber(row.id),
-        status: (row.status as RequestStatus) || 'new',
+        status: rawStatus,
         startsAt: row.starts_at,
         endsAt: row.ends_at,
         price: Number(row.price) || 0,
+        isExpired,
+        adminNote: row.admin_note || null,
         client: {
           id: client?.id || '',
           fullName: client?.full_name || 'Невідомий клієнт',
@@ -140,29 +164,32 @@ export async function fetchMasterRoster(): Promise<MasterRosterItem[]> {
 }
 
 export function calculateMetrics(
-  requests: AppointmentRequest[]
+  requests: AppointmentRequest[],
+  baseDate?: Date
 ): DashboardMetrics {
-  const todayStr = new Date().toISOString().slice(0, 10);
-
   let newCount = 0;
   let inProgressCount = 0;
   let completedCount = 0;
   let todayRevenue = 0;
 
   for (const req of requests) {
+    const isPast = isAppointmentPast(req.startsAt, baseDate);
+    const isToday = isAppointmentToday(req.startsAt, baseDate);
+    const isExpired = req.isExpired || (req.status === 'new' && isPast);
+
     if (req.status === 'new') {
-      newCount += 1;
+      if (!isExpired) {
+        newCount += 1;
+      }
     } else if (req.status === 'in_progress' || req.status === 'confirmed') {
       inProgressCount += 1;
     } else if (req.status === 'completed') {
-      completedCount += 1;
+      if (isToday) {
+        completedCount += 1;
+      }
     }
 
-    const reqDate = req.startsAt ? req.startsAt.slice(0, 10) : '';
-    if (
-      reqDate === todayStr &&
-      (req.status === 'completed' || req.status === 'confirmed')
-    ) {
+    if (isToday && (req.status === 'completed' || req.status === 'confirmed')) {
       todayRevenue += req.price;
     }
   }
@@ -189,7 +216,7 @@ export async function confirmAppointment(
       payload.master_id = masterId;
     }
     if (startsAt) {
-      payload.starts_at = startsAt;
+      payload.starts_at = toKyivISOString(startsAt);
     }
 
     const { error } = await supabase
@@ -206,13 +233,78 @@ export async function confirmAppointment(
   }
 }
 
-export async function rejectAppointment(
+export async function startAppointment(
   appointmentId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { error } = await supabase
       .from('appointments')
-      .update({ status: 'cancelled' })
+      .update({ status: 'in_progress' })
+      .eq('id', appointmentId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Помилка початку візиту' };
+  }
+}
+
+export async function completeAppointment(
+  appointmentId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: 'completed' })
+      .eq('id', appointmentId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Помилка завершення візиту' };
+  }
+}
+
+export async function markNoShow(
+  appointmentId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase
+      .from('appointments')
+      .update({
+        status: 'no_show',
+        admin_note: 'Клієнт не зʼявився на процедуру',
+      })
+      .eq('id', appointmentId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Помилка оновлення статусу' };
+  }
+}
+
+export async function rejectAppointment(
+  appointmentId: string,
+  reason?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const payload: Record<string, any> = {
+      status: 'cancelled',
+    };
+    if (reason) {
+      payload.admin_note = reason;
+    }
+
+    const { error } = await supabase
+      .from('appointments')
+      .update(payload)
       .eq('id', appointmentId);
 
     if (error) {

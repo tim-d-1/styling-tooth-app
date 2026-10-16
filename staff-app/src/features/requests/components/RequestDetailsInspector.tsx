@@ -6,6 +6,11 @@ import type {
   RequestStatus,
 } from '../admin_types';
 import { cleanClientPhone } from '../admin_service';
+import {
+  formatUkrainianDate,
+  formatInputDateTime,
+  isAppointmentPast,
+} from '../admin_date_utils';
 
 export interface RequestDetailsInspectorProps {
   request: AppointmentRequest | null;
@@ -16,61 +21,22 @@ export interface RequestDetailsInspectorProps {
     masterId: string,
     proposedTime: string
   ) => void | Promise<void>;
+  onStartVisit?: (appointmentId: string) => void | Promise<void>;
+  onCompleteVisit?: (appointmentId: string) => void | Promise<void>;
+  onMarkNoShow?: (appointmentId: string) => void | Promise<void>;
   onReject?: (appointmentId: string) => void | Promise<void>;
   className?: string;
 }
 
 const STATUS_LABELS: Record<RequestStatus, string> = {
   new: 'Нова',
-  in_progress: 'В обробці',
+  in_progress: 'В процесі',
   confirmed: 'Підтверджено',
   completed: 'Завершена',
   cancelled: 'Скасована',
+  no_show: 'Не зʼявився',
+  late: 'Запізнення',
 };
-
-function formatUkrainianDate(dateString: string): string {
-  try {
-    const d = new Date(dateString);
-    if (isNaN(d.getTime())) return dateString;
-    const months = [
-      'січня',
-      'лютого',
-      'березня',
-      'квітня',
-      'травня',
-      'червня',
-      'липня',
-      'серпня',
-      'вересня',
-      'жовтня',
-      'листопада',
-      'грудня',
-    ];
-    const day = d.getDate();
-    const month = months[d.getMonth()];
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    return `${day} ${month}, ${hours}:${minutes}`;
-  } catch {
-    return dateString;
-  }
-}
-
-function formatInputDateTime(dateString: string): string {
-  try {
-    const d = new Date(dateString);
-    if (isNaN(d.getTime())) return '';
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const year = d.getFullYear();
-    const month = pad(d.getMonth() + 1);
-    const day = pad(d.getDate());
-    const hours = pad(d.getHours());
-    const minutes = pad(d.getMinutes());
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  } catch {
-    return '';
-  }
-}
 
 function formatPrice(amount: number): string {
   return `${amount.toLocaleString('uk-UA')} ₴`;
@@ -81,11 +47,15 @@ export const RequestDetailsInspector: FC<RequestDetailsInspectorProps> = ({
   masters,
   isSubmitting = false,
   onConfirm,
+  onStartVisit,
+  onCompleteVisit,
+  onMarkNoShow,
   onReject,
   className = '',
 }) => {
   const [selectedMasterId, setSelectedMasterId] = useState<string>('');
   const [proposedDateTime, setProposedDateTime] = useState<string>('');
+  const [timeError, setTimeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (request) {
@@ -93,6 +63,7 @@ export const RequestDetailsInspector: FC<RequestDetailsInspectorProps> = ({
         request.master?.id || (masters.length > 0 ? masters[0].id : '')
       );
       setProposedDateTime(formatInputDateTime(request.startsAt));
+      setTimeError(null);
     }
   }, [request, masters]);
 
@@ -115,11 +86,26 @@ export const RequestDetailsInspector: FC<RequestDetailsInspectorProps> = ({
     );
   }
 
-  const statusLabel = STATUS_LABELS[request.status] || request.status;
+  const isPast = isAppointmentPast(request.startsAt);
+  const isExpired = request.isExpired || (request.status === 'new' && isPast);
+
+  const statusLabel = isExpired
+    ? 'Протерміновано'
+    : STATUS_LABELS[request.status] || request.status;
 
   const handleConfirm = () => {
     if (!onConfirm) return;
-    onConfirm(request.id, selectedMasterId, proposedDateTime || request.startsAt);
+    const finalTime = proposedDateTime || formatInputDateTime(request.startsAt);
+
+    if (isAppointmentPast(finalTime)) {
+      setTimeError(
+        'Час візиту не може бути в минулому. Будь ласка, вкажіть новий актуальний час.'
+      );
+      return;
+    }
+
+    setTimeError(null);
+    onConfirm(request.id, selectedMasterId, finalTime);
   };
 
   const handleReject = () => {
@@ -136,10 +122,42 @@ export const RequestDetailsInspector: FC<RequestDetailsInspectorProps> = ({
         <h2 className="font-accented font-bold text-lg text-content-dark">
           Заявка {request.appointmentNumber}
         </h2>
-        <span className="font-primary text-xs font-semibold text-[#EB6D48] bg-[#EB6D48]/10 px-3 py-1 rounded-full">
+        <span
+          className={`font-primary text-xs font-semibold px-3 py-1 rounded-full ${
+            isExpired
+              ? 'text-status-error bg-red-50 border border-red-200'
+              : request.status === 'completed'
+              ? 'text-[#34C759] bg-[#34C759]/10'
+              : request.status === 'confirmed'
+              ? 'text-[#3B82F6] bg-[#3B82F6]/10'
+              : request.status === 'cancelled' || request.status === 'no_show'
+              ? 'text-content-dark/50 bg-visit-gray'
+              : 'text-[#EB6D48] bg-[#EB6D48]/10'
+          }`}
+        >
           {statusLabel}
         </span>
       </div>
+
+      {isExpired && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs text-red-800">
+          <Icon name="fi-rr-clock" size={16} className="text-red-500 shrink-0 mt-0.5" />
+          <div className="flex flex-col gap-0.5">
+            <span className="font-semibold">Запланований час минув</span>
+            <span>
+              Запис був призначений на {formatUkrainianDate(request.startsAt)}.
+              Щоб підтвердити візит, вкажіть актуальний новий час нижче.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {request.adminNote && (
+        <div className="bg-visit-gray/40 border border-visit-gray rounded-xl p-3 text-xs text-content-dark/80">
+          <span className="font-semibold text-content-dark">Примітка: </span>
+          <span>{request.adminNote}</span>
+        </div>
+      )}
 
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-full overflow-hidden bg-visit-gray border border-visit-gray flex items-center justify-center shrink-0">
@@ -203,7 +221,7 @@ export const RequestDetailsInspector: FC<RequestDetailsInspectorProps> = ({
 
       <div className="flex flex-col gap-2 text-xs font-primary py-2 border-y border-visit-gray/40">
         <div className="flex items-center justify-between text-content-dark/80">
-          <span className="text-content-dark/60">Дата:</span>
+          <span className="text-content-dark/60">Дата візиту:</span>
           <span className="font-medium text-content-dark">
             {formatUkrainianDate(request.startsAt)}
           </span>
@@ -240,75 +258,179 @@ export const RequestDetailsInspector: FC<RequestDetailsInspectorProps> = ({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3.5 pt-1">
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="master-select"
-            className="font-primary text-xs font-semibold text-content-dark/70"
-          >
-            Призначити майстра
-          </label>
-          <div className="relative">
-            <select
-              id="master-select"
-              aria-label="Призначити майстра"
-              value={selectedMasterId}
-              onChange={(e) => setSelectedMasterId(e.target.value)}
-              className="w-full bg-[#FFFBF6] border border-visit-gray/80 rounded-xl px-3.5 py-2.5 font-primary text-xs text-content-dark appearance-none pr-9 focus:outline-none focus:border-[#EB6D48] transition-colors"
+      {request.status === 'new' && (
+        <div className="flex flex-col gap-3.5 pt-1">
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="master-select"
+              className="font-primary text-xs font-semibold text-content-dark/70"
             >
-              {masters.length === 0 ? (
-                <option value="">Немає доступних майстрів</option>
-              ) : (
-                masters.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.displayName}
-                    {m.specialization ? ` (${m.specialization})` : ''}
-                  </option>
-                ))
-              )}
-            </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-content-dark/50">
-              <Icon name="fi-rr-angle-small-down" size={16} />
+              Призначити майстра
+            </label>
+            <div className="relative">
+              <select
+                id="master-select"
+                aria-label="Призначити майстра"
+                value={selectedMasterId}
+                onChange={(e) => setSelectedMasterId(e.target.value)}
+                className="w-full bg-[#FFFBF6] border border-visit-gray/80 rounded-xl px-3.5 py-2.5 font-primary text-xs text-content-dark appearance-none pr-9 focus:outline-none focus:border-[#EB6D48] transition-colors"
+              >
+                {masters.length === 0 ? (
+                  <option value="">Немає доступних майстрів</option>
+                ) : (
+                  masters.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.displayName}
+                      {m.specialization ? ` (${m.specialization})` : ''}
+                    </option>
+                  ))
+                )}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-content-dark/50">
+                <Icon name="fi-rr-angle-small-down" size={16} />
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="visit-time-input"
-            className="font-primary text-xs font-semibold text-content-dark/70"
-          >
-            Час візиту (запропонований)
-          </label>
-          <input
-            id="visit-time-input"
-            aria-label="Час візиту"
-            type="datetime-local"
-            value={proposedDateTime}
-            onChange={(e) => setProposedDateTime(e.target.value)}
-            className="w-full bg-[#FFFBF6] border border-visit-gray/80 rounded-xl px-3.5 py-2.5 font-primary text-xs text-content-dark focus:outline-none focus:border-[#EB6D48] transition-colors"
-          />
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="visit-time-input"
+              className="font-primary text-xs font-semibold text-content-dark/70"
+            >
+              Час візиту (запропонований)
+            </label>
+            <input
+              id="visit-time-input"
+              aria-label="Час візиту"
+              type="datetime-local"
+              value={proposedDateTime}
+              onChange={(e) => {
+                setProposedDateTime(e.target.value);
+                setTimeError(null);
+              }}
+              className={`w-full bg-[#FFFBF6] border rounded-xl px-3.5 py-2.5 font-primary text-xs text-content-dark focus:outline-none focus:border-[#EB6D48] transition-colors ${
+                timeError ? 'border-red-400 bg-red-50/30' : 'border-visit-gray/80'
+              }`}
+            />
+            {timeError && (
+              <span className="text-[11px] text-red-600 font-medium">
+                {timeError}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex flex-col gap-2 pt-2">
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={handleConfirm}
-          className="w-full py-3.5 px-4 rounded-xl bg-[#EB6D48] hover:bg-[#EB6D48]/90 text-white font-accented font-bold text-sm shadow-md transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
-        >
-          {isSubmitting ? 'Збереження...' : 'Підтвердити та сповістити'}
-        </button>
+        {request.status === 'new' && (
+          <>
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={handleConfirm}
+              className="w-full py-3.5 px-4 rounded-xl bg-[#EB6D48] hover:bg-[#EB6D48]/90 text-white font-accented font-bold text-sm shadow-md transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+            >
+              {isSubmitting ? 'Збереження...' : 'Підтвердити та сповістити'}
+            </button>
 
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={handleReject}
-          className="w-full py-2 text-center font-primary font-semibold text-xs text-[#EB6D48] hover:text-[#EB6D48]/80 transition-colors cursor-pointer disabled:opacity-50"
-        >
-          Відхилити заявку
-        </button>
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={handleReject}
+              className="w-full py-2 text-center font-primary font-semibold text-xs text-[#EB6D48] hover:text-[#EB6D48]/80 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              Відхилити заявку
+            </button>
+          </>
+        )}
+
+        {request.status === 'confirmed' && (
+          <>
+            {onStartVisit && (
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => onStartVisit(request.id)}
+                className="w-full py-3 px-4 rounded-xl bg-[#96B3E2] hover:bg-[#96B3E2]/90 text-white font-accented font-bold text-sm shadow-md transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+              >
+                Почати процедуру
+              </button>
+            )}
+
+            {onCompleteVisit && (
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => onCompleteVisit(request.id)}
+                className="w-full py-3 px-4 rounded-xl bg-[#34C759] hover:bg-[#34C759]/90 text-white font-accented font-bold text-sm shadow-md transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+              >
+                Позначити завершеним
+              </button>
+            )}
+
+            {onMarkNoShow && (
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => onMarkNoShow(request.id)}
+                className="w-full py-2 text-center font-primary font-semibold text-xs text-red-600 hover:text-red-700 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Клієнт не зʼявився (No-show)
+              </button>
+            )}
+
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={handleReject}
+              className="w-full py-1 text-center font-primary font-semibold text-xs text-content-dark/50 hover:text-content-dark/70 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              Скасувати запис
+            </button>
+          </>
+        )}
+
+        {request.status === 'in_progress' && (
+          <>
+            {onCompleteVisit && (
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => onCompleteVisit(request.id)}
+                className="w-full py-3.5 px-4 rounded-xl bg-[#34C759] hover:bg-[#34C759]/90 text-white font-accented font-bold text-sm shadow-md transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+              >
+                Завершити візит
+              </button>
+            )}
+
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={handleReject}
+              className="w-full py-2 text-center font-primary font-semibold text-xs text-[#EB6D48] hover:text-[#EB6D48]/80 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              Скасувати запис
+            </button>
+          </>
+        )}
+
+        {request.status === 'completed' && (
+          <div className="w-full py-3 rounded-xl bg-[#34C759]/10 text-[#34C759] text-center font-primary font-semibold text-xs flex items-center justify-center gap-2">
+            <Icon name="fi-rr-check" size={16} />
+            <span>Візит успішно завершено</span>
+          </div>
+        )}
+
+        {(request.status === 'cancelled' || request.status === 'no_show') && (
+          <div className="w-full py-3 rounded-xl bg-visit-gray text-content-dark/60 text-center font-primary font-semibold text-xs flex items-center justify-center gap-2">
+            <Icon name="fi-rr-cross" size={14} />
+            <span>
+              {request.status === 'no_show'
+                ? 'Клієнт не зʼявився'
+                : 'Заявку скасовано'}
+            </span>
+          </div>
+        )}
       </div>
     </aside>
   );

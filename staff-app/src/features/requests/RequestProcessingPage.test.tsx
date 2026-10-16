@@ -4,6 +4,23 @@ import { RequestProcessingPage } from './RequestProcessingPage';
 import * as adminService from './admin_service';
 import type { AppointmentRequest, MasterRosterItem } from './admin_types';
 
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    channel: vi.fn().mockReturnValue({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn().mockReturnThis(),
+    }),
+    removeChannel: vi.fn(),
+    from: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockResolvedValue({ error: null }),
+      order: vi.fn().mockResolvedValue({ data: [], error: null }),
+    }),
+    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+  },
+}));
+
 const mockMasters: MasterRosterItem[] = [
   {
     id: 'm-1',
@@ -17,13 +34,16 @@ const mockMasters: MasterRosterItem[] = [
   },
 ];
 
+const tomorrowDate = new Date(Date.now() + 86400000).toISOString();
+const dayAfterDate = new Date(Date.now() + 2 * 86400000).toISOString();
+
 const mockRequests: AppointmentRequest[] = [
   {
     id: 'req-1',
     appointmentNumber: '#1084',
     status: 'new',
-    startsAt: '2026-08-22T14:00:00Z',
-    endsAt: '2026-08-22T15:30:00Z',
+    startsAt: tomorrowDate,
+    endsAt: tomorrowDate,
     price: 1200,
     client: {
       id: 'c-1',
@@ -42,14 +62,14 @@ const mockRequests: AppointmentRequest[] = [
       price: 1200,
     },
     master: null,
-    createdAt: '2026-08-22T10:00:00Z',
+    createdAt: new Date().toISOString(),
   },
   {
     id: 'req-2',
     appointmentNumber: '#1083',
     status: 'new',
-    startsAt: '2026-08-22T16:00:00Z',
-    endsAt: '2026-08-22T17:00:00Z',
+    startsAt: dayAfterDate,
+    endsAt: dayAfterDate,
     price: 800,
     client: {
       id: 'c-2',
@@ -68,14 +88,14 @@ const mockRequests: AppointmentRequest[] = [
       price: 800,
     },
     master: null,
-    createdAt: '2026-08-22T09:30:00Z',
+    createdAt: new Date().toISOString(),
   },
   {
     id: 'req-3',
     appointmentNumber: '#1082',
     status: 'in_progress',
-    startsAt: '2026-08-22T12:00:00Z',
-    endsAt: '2026-08-22T13:30:00Z',
+    startsAt: tomorrowDate,
+    endsAt: tomorrowDate,
     price: 1500,
     client: {
       id: 'c-3',
@@ -97,14 +117,14 @@ const mockRequests: AppointmentRequest[] = [
       id: 'm-1',
       displayName: 'Олена',
     },
-    createdAt: '2026-08-22T08:00:00Z',
+    createdAt: new Date().toISOString(),
   },
   {
     id: 'req-4',
     appointmentNumber: '#1081',
     status: 'completed',
-    startsAt: '2026-08-22T09:00:00Z',
-    endsAt: '2026-08-22T10:30:00Z',
+    startsAt: tomorrowDate,
+    endsAt: tomorrowDate,
     price: 1000,
     client: {
       id: 'c-4',
@@ -126,7 +146,34 @@ const mockRequests: AppointmentRequest[] = [
       id: 'm-2',
       displayName: 'Анна',
     },
-    createdAt: '2026-08-21T18:00:00Z',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'req-past',
+    appointmentNumber: '#1000',
+    status: 'new',
+    startsAt: '2026-10-06T09:00:00Z',
+    endsAt: '2026-10-06T10:00:00Z',
+    price: 650,
+    isExpired: true,
+    client: {
+      id: 'c-old',
+      fullName: 'Старий Клієнт',
+      phone: '+380509998877',
+    },
+    pet: {
+      id: 'p-old',
+      name: 'Шарик',
+      breed: 'Двортерʼєр',
+      species: 'dog',
+    },
+    service: {
+      id: 's-old',
+      name: 'Озонотерапія',
+      price: 650,
+    },
+    master: null,
+    createdAt: '2026-10-06T09:30:00Z',
   },
 ];
 
@@ -135,7 +182,7 @@ describe('RequestProcessingPage', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders heading, metrics bar, and request cards list', () => {
+  it('renders heading, metrics bar, and active request cards list', () => {
     render(
       <RequestProcessingPage
         initialRequests={mockRequests}
@@ -156,7 +203,24 @@ describe('RequestProcessingPage', () => {
     expect(screen.getByText('#1084')).toBeDefined();
     expect(screen.getByText('#1083')).toBeDefined();
     expect(screen.getByText('#1082')).toBeDefined();
-    expect(screen.getByText('#1081')).toBeDefined();
+    expect(screen.queryByText('#1000')).toBeNull();
+  });
+
+  it('excludes past expired appointment from active queue and displays it in archive', () => {
+    render(
+      <RequestProcessingPage
+        initialRequests={mockRequests}
+        initialMasters={mockMasters}
+      />
+    );
+
+    expect(screen.queryByText('#1000')).toBeNull();
+
+    const archiveTab = screen.getByRole('tab', { name: 'Архів' });
+    fireEvent.click(archiveTab);
+
+    expect(screen.getByText('#1000')).toBeDefined();
+    expect(screen.getAllByText('Протерміновано').length).toBeGreaterThan(0);
   });
 
   it('shows request inspector with client, pet, and controls for selected request', () => {
@@ -278,6 +342,38 @@ describe('RequestProcessingPage', () => {
     });
   });
 
+  it('supports completing visit when appointment is confirmed', async () => {
+    const completeSpy = vi
+      .spyOn(adminService, 'completeAppointment')
+      .mockResolvedValue({ success: true });
+    const toastSpy = vi.fn();
+
+    const confirmedAppt: AppointmentRequest = {
+      ...mockRequests[0],
+      id: 'req-confirmed',
+      status: 'confirmed',
+    };
+
+    render(
+      <RequestProcessingPage
+        initialRequests={[confirmedAppt]}
+        initialMasters={mockMasters}
+        initialSelectedRequestId="req-confirmed"
+        onToast={toastSpy}
+      />
+    );
+
+    const completeBtn = screen.getByRole('button', {
+      name: 'Позначити завершеним',
+    });
+    fireEvent.click(completeBtn);
+
+    await waitFor(() => {
+      expect(completeSpy).toHaveBeenCalledWith('req-confirmed');
+      expect(toastSpy).toHaveBeenCalledWith('Візит успішно завершено!');
+    });
+  });
+
   it('calls rejectAppointment and fires toast on reject click', async () => {
     const rejectSpy = vi
       .spyOn(adminService, 'rejectAppointment')
@@ -316,10 +412,7 @@ describe('RequestProcessingPage', () => {
     const completedTab = screen.getByRole('tab', { name: 'Завершені' });
     fireEvent.click(completedTab);
 
-    expect(screen.getByText('Немає заявок')).toBeDefined();
-    expect(
-      screen.getByText('У цій вкладці наразі немає жодних заявок')
-    ).toBeDefined();
+    expect(screen.getByText('Немає заявок у цій категорії')).toBeDefined();
   });
 
   it('displays "Номер телефону не вказано" when request client phone is empty', () => {
@@ -370,4 +463,3 @@ describe('RequestProcessingPage', () => {
     expect(screen.queryByText('+380000000')).toBeNull();
   });
 });
-

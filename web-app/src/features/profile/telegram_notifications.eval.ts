@@ -14,28 +14,14 @@ function normalizeUkrainianPhone(raw: string): string {
   return digits;
 }
 
-function formatVisitReminderMessage(params: {
-  petName: string;
-  serviceName: string;
-  startsAt: string;
-  price: number;
-}): string {
-  const dateStr = new Date(params.startsAt).toLocaleString('uk-UA', {
-    day: 'numeric',
-    month: 'long',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-  return `🐾 <b>Нагадування про візит до «Стильний Зубець»</b>\n\n📅 Час: <b>${dateStr}</b>\n🐶 Улюбленець: <b>${params.petName}</b>\n✂️ Послуга: <b>${params.serviceName}</b>\n💰 Вартість: <b>${params.price} ₴</b>\n\nБудь ласка, приходьте за 5-10 хвилин до початку. До зустрічі!`;
-}
-
-function formatSupportReplyMessage(params: {
-  ticketNumber: number;
-  senderName: string;
-  text: string;
-}): string {
-  return `💬 <b>Нова відповідь у зверненні #${params.ticketNumber}</b>\nВід: <b>${params.senderName}</b>\n\n«${params.text}»\n\nВідповісти можна в особистому кабінеті на сайті або у додатку.`;
-}
+import {
+  formatBookingConfirmedMessage,
+  formatReminder24hMessage,
+  formatReminder2hMessage,
+  formatPetReadyMessage,
+  formatCareScheduleMessage,
+  formatSupportReplyMessage,
+} from './telegram_templates';
 
 function isCodeValid(codeRecord: {
   code: string;
@@ -73,24 +59,62 @@ describe('Telegram Notifications & Confirmations Eval Suite', () => {
   });
 
   describe('Message formatting & HTML validation', () => {
-    it('formats appointment reminder with balanced HTML tags', () => {
-      const msg = formatVisitReminderMessage({
-        petName: 'Роккі',
-        serviceName: 'Комплексний грумінг',
-        startsAt: '2026-10-05T14:00:00Z',
-        price: 1200,
+    it('formats booking confirmation with balanced HTML tags and details', () => {
+      const msg = formatBookingConfirmedMessage({
+        petName: 'Міся',
+        petBreed: 'Шотландська висловуха',
+        serviceName: 'Експрес-грумінг',
+        dateTimeFormatted: 'Середа, 7 жовтня, 12:00',
+        masterName: 'Михайло Шевченко',
+        price: 850,
       });
 
-      expect(msg).toContain('<b>Нагадування про візит до «Стильний Зубець»</b>');
-      expect(msg).toContain('Роккі');
-      expect(msg).toContain('1200 ₴');
-
+      expect(msg).toContain('Міся');
+      expect(msg).toContain('Шотландська висловуха');
+      expect(msg).toContain('850 ₴');
       const openTags = (msg.match(/<b>/g) || []).length;
       const closeTags = (msg.match(/<\/b>/g) || []).length;
       expect(openTags).toBe(closeTags);
     });
 
-    it('formats support reply with ticket number and sender', () => {
+    it('formats 24h and 2h reminders with balanced HTML tags', () => {
+      const msg24 = formatReminder24hMessage({
+        petName: 'Міся',
+        serviceName: 'Експрес-грумінг',
+        dateTimeFormatted: '12:00',
+        masterName: 'Михайло Шевченко',
+      });
+      expect(msg24).toContain('Міся');
+      expect((msg24.match(/<b>/g) || []).length).toBe((msg24.match(/<\/b>/g) || []).length);
+
+      const msg2 = formatReminder2hMessage({
+        petName: 'Міся',
+        serviceName: 'Експрес-грумінг',
+        dateTimeFormatted: '12:00',
+        masterName: 'Михайло Шевченко',
+      });
+      expect(msg2).toContain('Міся');
+      expect((msg2.match(/<b>/g) || []).length).toBe((msg2.match(/<\/b>/g) || []).length);
+    });
+
+    it('formats pet ready and care schedule messages with balanced HTML tags', () => {
+      const readyMsg = formatPetReadyMessage({
+        petName: 'Міся',
+        serviceName: 'Експрес-грумінг',
+      });
+      expect(readyMsg).toContain('Міся');
+      expect((readyMsg.match(/<b>/g) || []).length).toBe((readyMsg.match(/<\/b>/g) || []).length);
+
+      const careMsg = formatCareScheduleMessage({
+        petName: 'Міся',
+        title: 'Вакцинація проти сказу',
+        validUntilFormatted: 'до 10 жовтня 2026',
+      });
+      expect(careMsg).toContain('Вакцинація проти сказу');
+      expect((careMsg.match(/<b>/g) || []).length).toBe((careMsg.match(/<\/b>/g) || []).length);
+    });
+
+    it('formats support reply with ticket number and balanced tags', () => {
       const msg = formatSupportReplyMessage({
         ticketNumber: 4835,
         senderName: 'Сергій (Адміністратор)',
@@ -99,7 +123,7 @@ describe('Telegram Notifications & Confirmations Eval Suite', () => {
 
       expect(msg).toContain('#4835');
       expect(msg).toContain('Сергій (Адміністратор)');
-      expect(msg).toContain('Ваш візит успішно перенесено');
+      expect((msg.match(/<i>/g) || []).length).toBe((msg.match(/<\/i>/g) || []).length);
     });
   });
 

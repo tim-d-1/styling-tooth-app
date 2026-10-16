@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import Icon from '@/components/ui/Icon';
 import type { AppointmentRequest, RequestStatus } from '../admin_types';
+import { formatCardDate } from '../admin_date_utils';
 
 export interface RequestCardProps {
   request: AppointmentRequest;
@@ -10,10 +11,12 @@ export interface RequestCardProps {
 
 const STATUS_LABELS: Record<RequestStatus, string> = {
   new: 'Нова',
-  in_progress: 'В обробці',
+  in_progress: 'В процесі',
   confirmed: 'Підтверджено',
   completed: 'Завершена',
   cancelled: 'Скасована',
+  no_show: 'Не зʼявився',
+  late: 'Запізнення',
 };
 
 const STATUS_CLASSES: Record<RequestStatus, string> = {
@@ -22,6 +25,8 @@ const STATUS_CLASSES: Record<RequestStatus, string> = {
   confirmed: 'text-[#3B82F6] bg-[#3B82F6]/10',
   completed: 'text-[#34C759] bg-[#34C759]/10',
   cancelled: 'text-content-dark/50 bg-visit-gray',
+  no_show: 'text-status-error bg-red-50 border border-red-100',
+  late: 'text-amber-700 bg-amber-50',
 };
 
 function formatClientShortName(fullName: string): string {
@@ -41,8 +46,17 @@ export const RequestCard: FC<RequestCardProps> = ({
   isSelected = false,
   onSelect,
 }) => {
-  const statusLabel = STATUS_LABELS[request.status] || request.status;
-  const statusClass = STATUS_CLASSES[request.status] || 'text-content-dark/60 bg-visit-gray';
+  const dateInfo = formatCardDate(request.startsAt);
+  const isExpired = request.isExpired || (request.status === 'new' && dateInfo.isPast);
+
+  const statusLabel = isExpired
+    ? 'Протерміновано'
+    : STATUS_LABELS[request.status] || request.status;
+
+  const statusClass = isExpired
+    ? 'text-status-error bg-red-50 border border-red-200'
+    : STATUS_CLASSES[request.status] || 'text-content-dark/60 bg-visit-gray';
+
   const clientShort = formatClientShortName(request.client.fullName);
 
   return (
@@ -65,9 +79,24 @@ export const RequestCard: FC<RequestCardProps> = ({
       }`.trim()}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="font-accented font-bold text-sm text-content-dark/80">
-          {request.appointmentNumber}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="font-accented font-bold text-sm text-content-dark/80">
+            {request.appointmentNumber}
+          </span>
+          <span
+            className={`flex items-center gap-1 text-[11px] font-primary font-medium px-2 py-0.5 rounded-md ${
+              dateInfo.isPast
+                ? 'text-red-700 bg-red-50'
+                : dateInfo.isToday
+                ? 'text-terracotta bg-terracotta/10 font-semibold'
+                : 'text-content-dark/60 bg-visit-gray/50'
+            }`}
+          >
+            <Icon name="fi-rr-clock" size={11} />
+            <span>{dateInfo.label}</span>
+          </span>
+        </div>
+
         <span
           className={`font-primary text-xs font-semibold px-2.5 py-0.5 rounded-full ${statusClass}`}
         >
