@@ -123,7 +123,7 @@ describe('BookingPage', () => {
     expect(screen.getByRole('radio', { name: PROCEDURES_CATALOG[1].name })).toBeDefined();
 
     fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[1].name }));
-    fireEvent.click(screen.getByRole('button', { name: 'Далі' }));
+    fireEvent.click(screen.getByRole('button', { name: /Записатись/i }));
 
     expect(screen.getByRole('heading', { level: 2, name: mockTestMasters[0].name })).toBeDefined();
     expect(screen.getByRole('progressbar', { name: 'Крок 3 з 5' })).toBeDefined();
@@ -138,6 +138,11 @@ describe('BookingPage', () => {
       expect(screen.getByText(proc.duration)).toBeDefined();
       expect(screen.getByText(proc.description)).toBeDefined();
       expect(screen.getByText(proc.priceFormatted)).toBeDefined();
+      expect(screen.getByRole('button', { name: /Записатись/i })).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Додати ще процедуру' })).toBeDefined();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Додати ще процедуру' }));
+      expect(screen.queryByRole('dialog')).toBeNull();
     }
   });
 
@@ -242,7 +247,8 @@ describe('BookingPage', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Обери процедуру' })).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Далі' }));
+    fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[0].name }));
+    fireEvent.click(screen.getByRole('button', { name: /Записатись/i }));
 
     expect(screen.getByRole('heading', { level: 1, name: 'Деталі запису' })).toBeDefined();
   });
@@ -738,9 +744,9 @@ describe('BookingPage', () => {
 
     // 3. Click second procedure to add it
     fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[1].name }));
-    // Modal opens for 2nd procedure, click "Записатися" to advance
+    // Modal opens for 2nd procedure, click "Записатись" to advance
     expect(screen.getByRole('dialog')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Записатися' }));
+    fireEvent.click(screen.getByRole('button', { name: /Записатись/i }));
 
     // Stage 3: Master selection -> click "Будь-який вільний майстер"
     expect(screen.getByRole('heading', { level: 2, name: mockTestMasters[0].name })).toBeDefined();
