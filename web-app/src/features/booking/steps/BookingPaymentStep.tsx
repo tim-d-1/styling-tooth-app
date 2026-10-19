@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 export interface BookingPaymentStepProps {
   totalAmount: number;
   onPay: (paymentData: {
-    method: 'card' | 'new_card';
+    method: 'card' | 'new_card' | 'cash';
     cardDetails?: {
       cardNumber: string;
       expiry: string;
@@ -26,7 +26,7 @@ export const BookingPaymentStep: FC<BookingPaymentStepProps> = ({
   const [savedCards, setSavedCards] = useState<Array<{ id: string; last4: string; expiry: string }>>(
     () => initialSavedCards || []
   );
-  const [selectedMethod, setSelectedMethod] = useState<'saved_card' | 'new_card'>(
+  const [selectedMethod, setSelectedMethod] = useState<'saved_card' | 'new_card' | 'cash'>(
     () => (initialSavedCards && initialSavedCards.length > 0 ? 'saved_card' : 'new_card')
   );
   const [selectedCardId, setSelectedCardId] = useState<string | null>(
@@ -121,6 +121,11 @@ export const BookingPaymentStep: FC<BookingPaymentStepProps> = ({
 
   const handlePayClick = (e: FormEvent) => {
     e.preventDefault();
+    if (selectedMethod === 'cash') {
+      onPay({ method: 'cash' });
+      return;
+    }
+
     if (selectedMethod === 'saved_card' && savedCards.length > 0) {
       onPay({ method: 'card' });
       return;
@@ -138,6 +143,7 @@ export const BookingPaymentStep: FC<BookingPaymentStepProps> = ({
   };
 
   const isFormValid = () => {
+    if (selectedMethod === 'cash') return true;
     if (selectedMethod === 'saved_card' && savedCards.length > 0) return true;
     if (!cardNumber && !expiry && !cvv) return true;
     return (
@@ -252,6 +258,46 @@ export const BookingPaymentStep: FC<BookingPaymentStepProps> = ({
               )}
             </div>
           </div>
+
+          <div
+            role="radio"
+            aria-checked={selectedMethod === 'cash'}
+            tabIndex={0}
+            onClick={() => setSelectedMethod('cash')}
+            className={[
+              'flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer outline-none bg-white',
+              selectedMethod === 'cash'
+                ? 'border-terracotta ring-1 ring-terracotta shadow-xs'
+                : 'border-[#ECEEF1] hover:border-gray-300',
+            ].join(' ')}
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-full bg-visit-gray flex items-center justify-center shrink-0">
+                <Icon name="fi-rr-shop" size={20} color="#242F35" />
+              </div>
+              <div>
+                <div className="font-accented font-semibold text-sm sm:text-base text-content-dark">
+                  Оплата в салоні
+                </div>
+                <div className="font-primary text-xs text-text-muted">
+                  Готівкою або карткою на ресепшені після візиту
+                </div>
+              </div>
+            </div>
+
+            <div
+              className={[
+                'w-5 h-5 rounded-full border-2 flex items-center justify-center',
+                selectedMethod === 'cash'
+                  ? 'border-terracotta'
+                  : 'border-gray-300',
+              ].join(' ')}
+            >
+              {selectedMethod === 'cash' && (
+                <div className="w-2.5 h-2.5 rounded-full bg-terracotta" />
+              )}
+            </div>
+          </div>
         </div>
 
         {selectedMethod === 'new_card' && (
@@ -356,7 +402,11 @@ export const BookingPaymentStep: FC<BookingPaymentStepProps> = ({
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed',
             ].join(' ')}
           >
-            {isProcessing ? 'Обробка платежу...' : `Оплатити ${totalAmount.toLocaleString('uk-UA')} ₴`}
+            {isProcessing
+              ? 'Обробка запису...'
+              : selectedMethod === 'cash'
+              ? `Записатися та оплатити в салоні (${totalAmount.toLocaleString('uk-UA')} ₴)`
+              : `Оплатити ${totalAmount.toLocaleString('uk-UA')} ₴`}
           </button>
         </div>
       </form>

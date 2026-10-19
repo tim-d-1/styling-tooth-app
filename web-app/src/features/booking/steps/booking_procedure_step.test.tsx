@@ -60,4 +60,61 @@ describe('BookingProcedureStep (Figma Node 539:2046 Procedure Modal)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Закрити' }));
     expect(screen.queryByRole('dialog')).toBeNull();
   });
+
+  it('renders summary box when multiple procedures are selected and allows removing items', () => {
+    const handleRemove = vi.fn();
+    const handleNext = vi.fn();
+
+    render(
+      <BookingProcedureStep
+        procedures={PROCEDURES_CATALOG}
+        selectedProcedureIds={[PROCEDURES_CATALOG[0].id, PROCEDURES_CATALOG[1].id]}
+        onSelectProcedure={vi.fn()}
+        onRemoveProcedure={handleRemove}
+        onNext={handleNext}
+      />
+    );
+
+    expect(screen.getByText('Обрано послуг: 2')).toBeDefined();
+    // 850 + 700 = 1550, 75 + 60 = 135
+    expect(screen.getByText('1 550 ₴ • 135 хв')).toBeDefined();
+
+    const removeBtn = screen.getByRole('button', {
+      name: `Видалити послугу ${PROCEDURES_CATALOG[0].name}`,
+    });
+    fireEvent.click(removeBtn);
+    expect(handleRemove).toHaveBeenCalledWith(PROCEDURES_CATALOG[0].id);
+
+    const nextBtn = screen.getByRole('button', { name: 'Далі' });
+    expect(nextBtn.hasAttribute('disabled')).toBe(false);
+    fireEvent.click(nextBtn);
+    expect(handleNext).toHaveBeenCalledTimes(1);
+  });
+
+  it('switches to multi-mode after clicking Додати ще процедуру and invokes onAddProcedure on subsequent procedure click', () => {
+    const handleSelect = vi.fn();
+    const handleAdd = vi.fn();
+
+    render(
+      <BookingProcedureStep
+        procedures={PROCEDURES_CATALOG}
+        selectedProcedureIds={[PROCEDURES_CATALOG[0].id]}
+        onSelectProcedure={handleSelect}
+        onAddProcedure={handleAdd}
+        onNext={vi.fn()}
+      />
+    );
+
+    // Open first procedure modal
+    fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[0].name }));
+    expect(screen.getByRole('dialog')).toBeDefined();
+
+    // Click "Додати ще процедуру" to enter multi-mode
+    fireEvent.click(screen.getByRole('button', { name: 'Додати ще процедуру' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    // Now click second procedure
+    fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[1].name }));
+    expect(handleAdd).toHaveBeenCalledWith(PROCEDURES_CATALOG[1]);
+  });
 });

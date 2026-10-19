@@ -11,6 +11,7 @@ import BookingPaymentStep from './steps/BookingPaymentStep';
 import {
   DEMO_PETS,
   PROCEDURES_CATALOG,
+  resolveServiceId,
   type BookingStage,
   type BookingState,
   type PetOption,
@@ -85,6 +86,8 @@ export const BookingPage: FC<BookingPageProps> = ({
       procedureName: PROCEDURES_CATALOG[0].name,
       procedurePrice: PROCEDURES_CATALOG[0].price,
       procedureDurationMin: PROCEDURES_CATALOG[0].durationMin,
+      selectedProcedureIds: [PROCEDURES_CATALOG[0].id],
+      selectedProcedures: [PROCEDURES_CATALOG[0]],
 
       masterId: (initialMasters && initialMasters[0]?.id) || 'any',
       masterName: (initialMasters && initialMasters[0]?.name) || 'Будь-який вільний майстер',
@@ -132,18 +135,38 @@ export const BookingPage: FC<BookingPageProps> = ({
           }));
           setProcedures(mapped);
           setBookingState((prev) => {
-            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(prev.procedureId);
-            if (!isUUID) {
-              const matched = mapped.find((m) => m.name === prev.procedureName) || mapped[0];
-              return {
-                ...prev,
-                procedureId: matched.id,
-                procedureName: matched.name,
-                procedurePrice: matched.price,
-                procedureDurationMin: matched.durationMin,
-              };
-            }
-            return prev;
+            const currentIds =
+              prev.selectedProcedureIds && prev.selectedProcedureIds.length > 0
+                ? prev.selectedProcedureIds
+                : [prev.procedureId];
+
+            const nextProcs = currentIds.map((id) => {
+              const resolvedUuid = resolveServiceId(id);
+              return (
+                mapped.find((m) => m.id === id) ||
+                mapped.find((m) => m.id === resolvedUuid) ||
+                mapped.find((m) => m.name === id) ||
+                mapped[0]
+              );
+            });
+
+            const nextIds = nextProcs.map((p) => p.id);
+            const totalPrice = nextProcs.reduce((sum, p) => sum + (p.price || 0), 0);
+            const totalDuration = nextProcs.reduce(
+              (sum, p) => sum + (p.durationMin || 0),
+              0
+            );
+            const combinedNames = nextProcs.map((p) => p.name).join(', ');
+
+            return {
+              ...prev,
+              procedureId: nextIds[0],
+              procedureName: combinedNames,
+              procedurePrice: totalPrice,
+              procedureDurationMin: totalDuration,
+              selectedProcedureIds: nextIds,
+              selectedProcedures: nextProcs,
+            };
           });
         }
       } catch {
@@ -341,7 +364,69 @@ export const BookingPage: FC<BookingPageProps> = ({
       procedureName: procedure.name,
       procedurePrice: procedure.price,
       procedureDurationMin: procedure.durationMin,
+      selectedProcedureIds: [procedure.id],
+      selectedProcedures: [procedure],
     }));
+  };
+
+  const handleAddProcedure = (procedure: ProcedureOption) => {
+    setBookingState((prev) => {
+      const currentIds = prev.selectedProcedureIds || [prev.procedureId];
+      const currentProcs =
+        prev.selectedProcedures ||
+        procedures.filter((p) => currentIds.includes(p.id));
+
+      if (currentIds.includes(procedure.id)) return prev;
+
+      const nextIds = [...currentIds, procedure.id];
+      const nextProcs = [...currentProcs, procedure];
+      const totalPrice = nextProcs.reduce((sum, p) => sum + (p.price || 0), 0);
+      const totalDuration = nextProcs.reduce(
+        (sum, p) => sum + (p.durationMin || 0),
+        0
+      );
+      const combinedNames = nextProcs.map((p) => p.name).join(', ');
+
+      return {
+        ...prev,
+        procedureId: nextIds[0],
+        procedureName: combinedNames,
+        procedurePrice: totalPrice,
+        procedureDurationMin: totalDuration,
+        selectedProcedureIds: nextIds,
+        selectedProcedures: nextProcs,
+      };
+    });
+  };
+
+  const handleRemoveProcedure = (procedureId: string) => {
+    setBookingState((prev) => {
+      const currentIds = prev.selectedProcedureIds || [prev.procedureId];
+      if (currentIds.length <= 1) return prev;
+
+      const nextIds = currentIds.filter((id) => id !== procedureId);
+      const nextProcs = (
+        prev.selectedProcedures ||
+        procedures.filter((p) => currentIds.includes(p.id))
+      ).filter((p) => p.id !== procedureId);
+
+      const totalPrice = nextProcs.reduce((sum, p) => sum + (p.price || 0), 0);
+      const totalDuration = nextProcs.reduce(
+        (sum, p) => sum + (p.durationMin || 0),
+        0
+      );
+      const combinedNames = nextProcs.map((p) => p.name).join(', ');
+
+      return {
+        ...prev,
+        procedureId: nextIds[0],
+        procedureName: combinedNames,
+        procedurePrice: totalPrice,
+        procedureDurationMin: totalDuration,
+        selectedProcedureIds: nextIds,
+        selectedProcedures: nextProcs,
+      };
+    });
   };
 
   const handleSelectMaster = (
@@ -385,7 +470,7 @@ export const BookingPage: FC<BookingPageProps> = ({
   };
 
   const handleProcessPayment = async (paymentData?: {
-    method: 'card' | 'new_card';
+    method: 'card' | 'new_card' | 'cash';
     cardDetails?: {
       cardNumber: string;
       expiry: string;
@@ -469,18 +554,11 @@ export const BookingPage: FC<BookingPageProps> = ({
         }
       }
 
-      const SERVICE_SLUG_MAP: Record<string, string> = {
-        'express-grooming': '50000000-0000-0000-0000-000000000001',
-        'spa-complex': '50000000-0000-0000-0000-000000000002',
-        'ozone-therapy': '50000000-0000-0000-0000-000000000003',
-        'hygiene-care': '50000000-0000-0000-0000-000000000004',
-        'combing': '50000000-0000-0000-0000-000000000005',
-        'breed-haircut': '50000000-0000-0000-0000-000000000006',
-        'nail-trimming': '50000000-0000-0000-0000-000000000007',
-      };
-      const resolvedServiceId = isUUID(bookingState.procedureId)
-        ? bookingState.procedureId
-        : SERVICE_SLUG_MAP[bookingState.procedureId] || '50000000-0000-0000-0000-000000000001';
+      const effectiveServiceIds =
+        bookingState.selectedProcedureIds && bookingState.selectedProcedureIds.length > 0
+          ? bookingState.selectedProcedureIds.map(resolveServiceId)
+          : [resolveServiceId(bookingState.procedureId)];
+      const resolvedServiceId = effectiveServiceIds[0];
 
       const resolvedMasterId = isUUID(bookingState.masterId)
         ? bookingState.masterId
@@ -502,18 +580,40 @@ export const BookingPage: FC<BookingPageProps> = ({
 
       if (typeof supabase.rpc === 'function') {
         try {
-          const { data: rpcData, error: rpcError } = await supabase.rpc('create_appointment', {
-            p_pet_id: isUUID(resolvedPetId) ? resolvedPetId : null,
-            p_master_id: resolvedMasterId,
-            p_service_id: resolvedServiceId,
-            p_starts_at: startsAt,
-            p_client_note: clientNoteParts || null,
-            p_source: 'web',
-          });
+          if (effectiveServiceIds.length > 1) {
+            const { data: rpcData, error: rpcError } = await supabase.rpc(
+              'create_multi_service_appointment',
+              {
+                p_pet_id: isUUID(resolvedPetId) ? resolvedPetId : null,
+                p_master_id: resolvedMasterId,
+                p_service_ids: effectiveServiceIds,
+                p_starts_at: startsAt,
+                p_client_note: clientNoteParts || null,
+                p_source: 'web',
+              }
+            );
 
-          if (!rpcError && rpcData) {
-            appointmentCreated = true;
-            createdAppointmentId = (rpcData as any)?.id;
+            if (!rpcError && rpcData) {
+              appointmentCreated = true;
+              createdAppointmentId = (rpcData as any)?.id;
+            }
+          } else {
+            const { data: rpcData, error: rpcError } = await supabase.rpc(
+              'create_appointment',
+              {
+                p_pet_id: isUUID(resolvedPetId) ? resolvedPetId : null,
+                p_master_id: resolvedMasterId,
+                p_service_id: resolvedServiceId,
+                p_starts_at: startsAt,
+                p_client_note: clientNoteParts || null,
+                p_source: 'web',
+              }
+            );
+
+            if (!rpcError && rpcData) {
+              appointmentCreated = true;
+              createdAppointmentId = (rpcData as any)?.id;
+            }
           }
         } catch {
           // Fall through to direct insert
@@ -559,10 +659,26 @@ export const BookingPage: FC<BookingPageProps> = ({
         }
       }
 
+      const paymentProvider: 'monobank' | 'cash' =
+        paymentData?.method === 'cash' || bookingState.paymentMethod === 'cash'
+          ? 'cash'
+          : 'monobank';
+
+      if (createdAppointmentId && typeof supabase.rpc === 'function') {
+        try {
+          await supabase.rpc('create_payment_attempt', {
+            p_appointment_id: createdAppointmentId,
+            p_provider: paymentProvider,
+          });
+        } catch {
+          // Non-blocking fallback if RPC is unmocked
+        }
+      }
+
       try {
         const payTable = supabase.from('payments');
         if (payTable && typeof payTable.insert === 'function') {
-          const { data: paymentRecord } = await payTable
+          await payTable
             .insert({
               appointment_id: createdAppointmentId || undefined,
               client_id: currentUserId,
@@ -570,20 +686,13 @@ export const BookingPage: FC<BookingPageProps> = ({
                 bookingState.procedurePrice +
                 (bookingState.transferEnabled ? bookingState.transferPrice : 0),
               currency: 'UAH',
-              status: 'successful',
-              provider: 'monobank',
-              invoice_id: `inv_mono_${Date.now()}`,
-              page_url: `https://pay.mbnk.biz/inv_mono_${Date.now()}`,
+              status: 'pending',
+              provider: paymentProvider,
+              invoice_id: paymentProvider === 'monobank' ? `inv_mono_${Date.now()}` : null,
+              page_url: paymentProvider === 'monobank' ? `https://pay.mbnk.biz/inv_mono_${Date.now()}` : null,
             })
             .select('id')
             .maybeSingle();
-
-          if (paymentRecord?.id && createdAppointmentId) {
-            await supabase
-              .from('appointments')
-              .update({ payment_id: paymentRecord.id, status: 'confirmed' })
-              .eq('id', createdAppointmentId);
-          }
         }
       } catch {
         // Non-blocking payment audit
@@ -638,7 +747,10 @@ export const BookingPage: FC<BookingPageProps> = ({
         <BookingProcedureStep
           procedures={procedures}
           selectedProcedureId={bookingState.procedureId}
+          selectedProcedureIds={bookingState.selectedProcedureIds}
           onSelectProcedure={handleSelectProcedure}
+          onAddProcedure={handleAddProcedure}
+          onRemoveProcedure={handleRemoveProcedure}
           onNext={() => handleNextFromStep('master')}
         />
       )}
@@ -661,6 +773,7 @@ export const BookingPage: FC<BookingPageProps> = ({
           selectedTimeSlot={bookingState.timeSlot}
           masterId={bookingState.masterId}
           procedureId={bookingState.procedureId}
+          procedureIds={bookingState.selectedProcedureIds}
           onSelectDateTime={handleSelectDateTime}
           onNext={() => handleNextFromStep('remarks')}
           onBack={handleBack}

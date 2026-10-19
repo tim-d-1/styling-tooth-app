@@ -13,18 +13,14 @@ import { supabase } from '@/lib/supabase';
 
 describe('Main Page Components', () => {
   describe('Header', () => {
-    it('renders guest state with login and register triggers', () => {
+    it('renders guest state without authenticated user controls', () => {
       const handleLogin = vi.fn();
       const handleRegister = vi.fn();
       render(<Header isLoggedIn={false} onLoginClick={handleLogin} onRegisterClick={handleRegister} />);
 
-      const loginBtn = screen.getByRole('button', { name: /Вхід \/ Реєстрація/i });
-      fireEvent.click(loginBtn);
-      expect(handleLogin).toHaveBeenCalled();
-
-      const registerBtn = screen.getByRole('button', { name: /Зареєструватися/i });
-      fireEvent.click(registerBtn);
-      expect(handleRegister).toHaveBeenCalled();
+      expect(screen.queryByRole('button', { name: /Вхід \/ Реєстрація/i })).toBeNull();
+      expect(screen.queryByRole('button', { name: /Зареєструватися/i })).toBeNull();
+      expect(screen.queryByRole('button', { name: /Особистий профіль користувача/i })).toBeNull();
     });
 
     it('renders authenticated state with user avatar, notifications and device trigger', () => {

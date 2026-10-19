@@ -7,29 +7,87 @@ import { PROCEDURES_CATALOG, type ProcedureOption } from '../booking_types';
 export interface BookingProcedureStepProps {
   procedures?: ProcedureOption[];
   selectedProcedureId?: string;
+  selectedProcedureIds?: string[];
   onSelectProcedure: (procedure: ProcedureOption) => void;
+  onAddProcedure?: (procedure: ProcedureOption) => void;
+  onRemoveProcedure?: (procedureId: string) => void;
   onNext: () => void;
 }
 
 export const BookingProcedureStep: FC<BookingProcedureStepProps> = ({
   procedures = PROCEDURES_CATALOG,
   selectedProcedureId,
+  selectedProcedureIds,
   onSelectProcedure,
+  onAddProcedure,
+  onRemoveProcedure,
   onNext,
 }) => {
-  const selectedProcedure = procedures.find((p) => p.id === selectedProcedureId);
+  const effectiveSelectedIds =
+    selectedProcedureIds && selectedProcedureIds.length > 0
+      ? selectedProcedureIds
+      : selectedProcedureId
+      ? [selectedProcedureId]
+      : [];
+
+  const selectedProceduresList = procedures.filter((p) =>
+    effectiveSelectedIds.includes(p.id)
+  );
+  const selectedProcedure = selectedProceduresList[0];
   const [modalProcedure, setModalProcedure] = useState<ProcedureOption | null>(null);
+  const [isMultiMode, setIsMultiMode] = useState<boolean>(
+    () => effectiveSelectedIds.length > 1
+  );
+
+  const totalSelectedPrice = selectedProceduresList.reduce(
+    (sum, p) => sum + (p.price || 0),
+    0
+  );
+  const totalSelectedDuration = selectedProceduresList.reduce(
+    (sum, p) => sum + (p.durationMin || 0),
+    0
+  );
 
   const handleProcedureClick = (proc: ProcedureOption) => {
-    onSelectProcedure(proc);
+    if (isMultiMode || effectiveSelectedIds.length > 1) {
+      if (!effectiveSelectedIds.includes(proc.id)) {
+        if (onAddProcedure) {
+          onAddProcedure(proc);
+        } else {
+          onSelectProcedure(proc);
+        }
+      }
+    } else {
+      onSelectProcedure(proc);
+    }
     setModalProcedure(proc);
   };
 
   const handleBookFromModal = () => {
     if (modalProcedure) {
-      onSelectProcedure(modalProcedure);
+      if (!effectiveSelectedIds.includes(modalProcedure.id)) {
+        if (isMultiMode && onAddProcedure) {
+          onAddProcedure(modalProcedure);
+        } else {
+          onSelectProcedure(modalProcedure);
+        }
+      }
       setModalProcedure(null);
       onNext();
+    }
+  };
+
+  const handleAddMoreFromModal = () => {
+    if (modalProcedure) {
+      setIsMultiMode(true);
+      if (!effectiveSelectedIds.includes(modalProcedure.id)) {
+        if (onAddProcedure) {
+          onAddProcedure(modalProcedure);
+        } else {
+          onSelectProcedure(modalProcedure);
+        }
+      }
+      setModalProcedure(null);
     }
   };
 
@@ -45,7 +103,7 @@ export const BookingProcedureStep: FC<BookingProcedureStepProps> = ({
         className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-x-6 sm:gap-y-4"
       >
         {procedures.map((proc) => {
-          const isSelected = proc.id === selectedProcedureId;
+          const isSelected = effectiveSelectedIds.includes(proc.id);
           return (
             <button
               key={proc.id}
@@ -54,19 +112,53 @@ export const BookingProcedureStep: FC<BookingProcedureStepProps> = ({
               aria-checked={isSelected}
               onClick={() => handleProcedureClick(proc)}
               className={[
-                'h-12 w-full rounded-[10px] text-base font-accented transition-colors flex items-center justify-center cursor-pointer outline-none',
+                'h-12 w-full rounded-[10px] text-base font-accented transition-colors flex items-center justify-center cursor-pointer outline-none px-3',
                 isSelected
                   ? 'bg-terracotta border border-terracotta text-white font-semibold shadow-xs'
                   : 'bg-white border border-[#242F35] text-content-dark hover:border-terracotta hover:text-terracotta',
               ].join(' ')}
             >
-              {proc.name}
+              <span className="truncate">{proc.name}</span>
             </button>
           );
         })}
       </div>
 
-      {selectedProcedure && !modalProcedure && (
+      {selectedProceduresList.length > 0 && (
+        <div className="mt-6 bg-[#FFFBF6] border border-black/5 rounded-2xl p-4 sm:p-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between text-xs sm:text-sm font-accented font-semibold text-content-dark">
+            <span>Обрано послуг: {selectedProceduresList.length}</span>
+            <span className="text-terracotta font-bold text-sm sm:text-base">
+              {totalSelectedPrice.toLocaleString('uk-UA')} ₴ • {totalSelectedDuration} хв
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {selectedProceduresList.map((p) => (
+              <span
+                key={p.id}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-black/10 text-xs font-accented font-medium text-content-dark shadow-2xs"
+              >
+                <span>{p.name}</span>
+                {selectedProceduresList.length > 1 && onRemoveProcedure && (
+                  <button
+                    type="button"
+                    aria-label={`Видалити послугу ${p.name}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveProcedure(p.id);
+                    }}
+                    className="p-0.5 hover:text-terracotta cursor-pointer border-0 bg-transparent text-content-dark/60 leading-none"
+                  >
+                    <Icon name="fi-rr-cross" size={10} />
+                  </button>
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {selectedProcedure && selectedProceduresList.length === 1 && !modalProcedure && (
         <div className="mt-6">
           <ProcedureDetailCard procedure={selectedProcedure} />
         </div>
@@ -76,10 +168,10 @@ export const BookingProcedureStep: FC<BookingProcedureStepProps> = ({
         <button
           type="button"
           onClick={onNext}
-          disabled={!selectedProcedureId}
+          disabled={effectiveSelectedIds.length === 0}
           className={[
             'w-full h-12 rounded-xl text-base font-accented font-semibold transition-colors flex items-center justify-center border-0 outline-none',
-            selectedProcedureId
+            effectiveSelectedIds.length > 0
               ? 'bg-terracotta hover:bg-terracotta-hover text-white cursor-pointer'
               : 'bg-gray-200 text-gray-400 cursor-not-allowed',
           ].join(' ')}
@@ -148,7 +240,7 @@ export const BookingProcedureStep: FC<BookingProcedureStepProps> = ({
 
             <button
               type="button"
-              onClick={() => setModalProcedure(null)}
+              onClick={handleAddMoreFromModal}
               className="w-full text-center text-sm font-accented font-medium text-content-dark hover:text-terracotta transition-colors mt-3 bg-transparent border-0 cursor-pointer outline-none"
             >
               Додати ще процедуру

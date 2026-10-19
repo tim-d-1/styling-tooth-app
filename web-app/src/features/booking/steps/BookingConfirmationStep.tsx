@@ -28,7 +28,10 @@ export const BookingConfirmationStep: FC<BookingConfirmationStepProps> = ({
     {
       id: 'procedure',
       icon: 'fi-rr-scissors',
-      label: 'Процедура',
+      label:
+        bookingState.selectedProcedures && bookingState.selectedProcedures.length > 1
+          ? 'Обрані процедури'
+          : 'Процедура',
       value: bookingState.procedureName || 'Не обрано',
       stage: 'procedure' as BookingStage,
     },
@@ -109,6 +112,22 @@ export const BookingConfirmationStep: FC<BookingConfirmationStepProps> = ({
           </div>
         ))}
       </div>
+
+      {bookingState.selectedProcedures && bookingState.selectedProcedures.length > 1 && (
+        <div className="mt-4 p-4 rounded-2xl bg-white border border-black/5 flex flex-col gap-2.5">
+          <div className="text-xs font-accented font-semibold text-text-muted">
+            Перелік послуг ({bookingState.selectedProcedures.length}):
+          </div>
+          {bookingState.selectedProcedures.map((p) => (
+            <div key={p.id} className="flex items-center justify-between text-sm font-primary">
+              <span className="text-content-dark font-medium">{p.name}</span>
+              <span className="font-accented font-bold text-content-dark">
+                {p.price.toLocaleString('uk-UA')} ₴
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="mt-8 sm:mt-12">
         <button

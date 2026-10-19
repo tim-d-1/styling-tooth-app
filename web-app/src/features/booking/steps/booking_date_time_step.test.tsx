@@ -141,4 +141,68 @@ describe('BookingDateTimeStep', () => {
       p_date: '2026-08-11',
     });
   });
+
+  it('truthfully renders empty state and disables continue button when no slots are available (no dummy slots fallback)', async () => {
+    vi.spyOn(supabase, 'rpc').mockResolvedValue({
+      data: [],
+      error: null,
+    } as never);
+
+    await act(async () => {
+      render(
+        <BookingDateTimeStep
+          selectedDate="2026-08-11"
+          masterId="11111111-1111-1111-1111-111111111111"
+          procedureId="50000000-0000-0000-0000-000000000001"
+          onSelectDateTime={vi.fn()}
+          onNext={vi.fn()}
+        />
+      );
+    });
+
+    expect(
+      screen.getByRole('status', { name: 'Немає вільних слотів на обрану дату' })
+    ).toBeDefined();
+    expect(
+      screen.getByText('Будь ласка, оберіть інший день або іншого майстра у календарі вище.')
+    ).toBeDefined();
+    expect(screen.queryByRole('radio', { name: '16:00' })).toBeNull();
+
+    const continueBtn = screen.getByRole('button', { name: 'Далі' });
+    expect(continueBtn.hasAttribute('disabled')).toBe(true);
+  });
+
+  it('calls get_available_slots_multi_service when multiple procedureIds are passed', async () => {
+    const rpcSpy = vi.spyOn(supabase, 'rpc').mockResolvedValue({
+      data: [
+        { slot_start: '2026-08-11T09:00:00Z', slot_end: '2026-08-11T11:00:00Z' },
+      ],
+      error: null,
+    } as never);
+
+    await act(async () => {
+      render(
+        <BookingDateTimeStep
+          selectedDate="2026-08-11"
+          masterId="11111111-1111-1111-1111-111111111111"
+          procedureIds={[
+            '50000000-0000-0000-0000-000000000001',
+            '50000000-0000-0000-0000-000000000002',
+          ]}
+          onSelectDateTime={vi.fn()}
+          onNext={vi.fn()}
+        />
+      );
+    });
+
+    expect(rpcSpy).toHaveBeenCalledWith('get_available_slots_multi_service', {
+      p_master_id: '11111111-1111-1111-1111-111111111111',
+      p_service_ids: [
+        '50000000-0000-0000-0000-000000000001',
+        '50000000-0000-0000-0000-000000000002',
+      ],
+      p_date: '2026-08-11',
+      p_step_min: 30,
+    });
+  });
 });

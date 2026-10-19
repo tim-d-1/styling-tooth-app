@@ -18,7 +18,8 @@ describe('DetailCardLayout', () => {
     );
 
     expect(screen.getByTestId('test-content')).toBeDefined();
-    expect(screen.getByRole('button', { name: /Вхід \/ Реєстрація/i })).toBeDefined();
+    expect(screen.getByRole('banner')).toBeDefined();
+    expect(screen.queryByRole('button', { name: /Вхід \/ Реєстрація/i })).toBeNull();
     expect(screen.getByText('© 2026 Стильний зубець. Усі права захищено.')).toBeDefined();
 
     const backButton = screen.getByRole('button', { name: 'Назад' });

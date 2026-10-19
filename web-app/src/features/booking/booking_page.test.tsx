@@ -38,7 +38,24 @@ const mockTestMasters: MasterProfile[] = [
 describe('BookingPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(supabase, 'rpc').mockResolvedValue({ data: null, error: null } as never);
+    vi.spyOn(supabase, 'rpc').mockImplementation(((name: string) => {
+      if (
+        name === 'get_available_slots' ||
+        name === 'get_available_slots_all_masters' ||
+        name === 'get_available_slots_multi_service'
+      ) {
+        return Promise.resolve({
+          data: [
+            { slot_start: '2026-08-11T09:00:00Z', slot_end: '2026-08-11T10:15:00Z' },
+            { slot_start: '2026-08-11T13:00:00Z', slot_end: '2026-08-11T14:15:00Z' },
+            { slot_start: '2026-08-12T09:00:00Z', slot_end: '2026-08-12T10:15:00Z' },
+            { slot_start: '2026-08-12T13:00:00Z', slot_end: '2026-08-12T14:15:00Z' },
+          ],
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    }) as never);
   });
 
   afterEach(() => {
@@ -166,7 +183,7 @@ describe('BookingPage', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Коли вам зручно?' })).toBeDefined();
   });
 
-  it('renders stage 4 datetime selection, selects slot and advances to stage 5', () => {
+  it('renders stage 4 datetime selection, selects slot and advances to stage 5', async () => {
     renderBooking({ initialStage: 'datetime' });
 
     expect(screen.getByRole('heading', { level: 1, name: 'Коли вам зручно?' })).toBeDefined();
@@ -175,7 +192,7 @@ describe('BookingPage', () => {
     const thursdayBtn = screen.getByRole('button', { name: 'Чт12' });
     fireEvent.click(thursdayBtn);
 
-    const slotBtn = screen.getByRole('radio', { name: '12:00' });
+    const slotBtn = await screen.findByRole('radio', { name: '12:00' });
     fireEvent.click(slotBtn);
 
     fireEvent.click(screen.getByRole('button', { name: 'Далі' }));
@@ -639,5 +656,201 @@ describe('BookingPage', () => {
     const addPetBtn = screen.getByRole('button', { name: 'Додати нового улюбленця' });
     fireEvent.click(addPetBtn);
     expect(handleAddPet).toHaveBeenCalledTimes(1);
+  });
+
+  it('handles multi-service booking flow and invokes create_multi_service_appointment RPC', async () => {
+    const handleComplete = vi.fn();
+    const handleToast = vi.fn();
+
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-multi-1', email: 'multi@example.com', user_metadata: {} },
+        },
+      },
+      error: null,
+    } as never);
+
+    const mockRpc = vi.fn().mockImplementation((name: string) => {
+      if (
+        name === 'get_available_slots' ||
+        name === 'get_available_slots_all_masters' ||
+        name === 'get_available_slots_multi_service'
+      ) {
+        return Promise.resolve({
+          data: [
+            { slot_start: '2026-08-11T09:00:00Z', slot_end: '2026-08-11T11:00:00Z' },
+          ],
+          error: null,
+        });
+      }
+      if (name === 'create_multi_service_appointment') {
+        return Promise.resolve({ data: { id: 'multi-appt-123' }, error: null });
+      }
+      if (name === 'create_payment_attempt') {
+        return Promise.resolve({ data: { id: 'pay-attempt-1' }, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+    vi.spyOn(supabase, 'rpc').mockImplementation(mockRpc as never);
+
+    vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
+      if (table === 'masters') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({
+            data: [{ id: '60000000-0000-0000-0000-000000000001' }],
+            error: null,
+          }),
+        };
+      }
+      if (table === 'pets') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({
+            data: [{ id: '70000000-0000-0000-0000-000000000001', name: 'Барон' }],
+            error: null,
+          }),
+        };
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      };
+    }) as never);
+
+    renderBooking({
+      initialStage: 'procedure',
+      onComplete: handleComplete,
+      onToast: handleToast,
+    });
+
+    // 1. Open first procedure modal
+    fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[0].name }));
+    expect(screen.getByRole('dialog')).toBeDefined();
+
+    // 2. Click "Додати ще процедуру" to enter multi-mode
+    fireEvent.click(screen.getByRole('button', { name: 'Додати ще процедуру' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    // 3. Click second procedure to add it
+    fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[1].name }));
+    // Modal opens for 2nd procedure, click "Записатися" to advance
+    expect(screen.getByRole('dialog')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Записатися' }));
+
+    // Stage 3: Master selection -> click "Будь-який вільний майстер"
+    expect(screen.getByRole('heading', { level: 2, name: mockTestMasters[0].name })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Будь-який вільний майстер' }));
+
+    // Stage 4: DateTime selection -> wait for slots and click continue
+    expect(screen.getByRole('heading', { level: 1, name: 'Коли вам зручно?' })).toBeDefined();
+    const slotBtn = await screen.findByRole('radio', { name: '12:00' });
+    fireEvent.click(slotBtn);
+    fireEvent.click(screen.getByRole('button', { name: 'Далі' }));
+
+    // Stage 5: Remarks -> click "Далі"
+    expect(screen.getByRole('heading', { level: 1, name: 'Додаткові побажання' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Далі' }));
+
+    // Stage 6: Confirmation -> verify both procedures are listed
+    expect(screen.getByRole('heading', { level: 1, name: 'Деталі запису' })).toBeDefined();
+    expect(screen.getByText('Обрані процедури')).toBeDefined();
+    expect(screen.getByText('Перелік послуг (2):')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Підтвердити запис' }));
+
+    // Stage 7: Payment -> submit payment
+    expect(screen.getByRole('heading', { level: 1, name: 'Способи оплати' })).toBeDefined();
+    const cardInput = screen.getByLabelText(/Номер картки/i);
+    const expiryInput = screen.getByLabelText(/Термін/i);
+    const cvvInput = screen.getByLabelText(/CVV/i);
+
+    fireEvent.change(cardInput, { target: { value: '4111 2222 3333 4821' } });
+    fireEvent.change(expiryInput, { target: { value: '12/28' } });
+    fireEvent.change(cvvInput, { target: { value: '123' } });
+
+    const payBtn = screen.getByRole('button', { name: /Оплатити/i });
+    await act(async () => {
+      fireEvent.click(payBtn);
+    });
+
+    await waitFor(() => {
+      expect(mockRpc).toHaveBeenCalledWith(
+        'create_multi_service_appointment',
+        expect.objectContaining({
+          p_service_ids: [
+            '50000000-0000-0000-0000-000000000001',
+            '50000000-0000-0000-0000-000000000002',
+          ],
+          p_source: 'web',
+        })
+      );
+      expect(mockRpc).toHaveBeenCalledWith('create_payment_attempt', {
+        p_appointment_id: 'multi-appt-123',
+        p_provider: 'monobank',
+      });
+      expect(handleComplete).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('supports cash / in-salon payment option and creates payment attempt with provider cash', async () => {
+    const handleComplete = vi.fn();
+    const handleToast = vi.fn();
+
+    vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-cash-1', email: 'cash@example.com', user_metadata: {} },
+        },
+      },
+      error: null,
+    } as never);
+
+    const mockRpc = vi.fn().mockImplementation((name: string) => {
+      if (name === 'create_appointment') {
+        return Promise.resolve({ data: { id: 'cash-appt-999' }, error: null });
+      }
+      if (name === 'create_payment_attempt') {
+        return Promise.resolve({ data: { id: 'pay-cash-1' }, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+    vi.spyOn(supabase, 'rpc').mockImplementation(mockRpc as never);
+
+    renderBooking({
+      initialStage: 'payment',
+      onComplete: handleComplete,
+      onToast: handleToast,
+    });
+
+    // Select "Оплата в салоні" option
+    const cashOption = screen.getByText('Оплата в салоні');
+    fireEvent.click(cashOption);
+
+    const submitBtn = screen.getByRole('button', {
+      name: /Записатися та оплатити в салоні/i,
+    });
+    expect(submitBtn).toBeDefined();
+
+    await act(async () => {
+      fireEvent.click(submitBtn);
+    });
+
+    await waitFor(() => {
+      expect(mockRpc).toHaveBeenCalledWith(
+        'create_appointment',
+        expect.objectContaining({
+          p_source: 'web',
+        })
+      );
+      expect(mockRpc).toHaveBeenCalledWith('create_payment_attempt', {
+        p_appointment_id: 'cash-appt-999',
+        p_provider: 'cash',
+      });
+      expect(handleComplete).toHaveBeenCalledTimes(1);
+    });
   });
 });

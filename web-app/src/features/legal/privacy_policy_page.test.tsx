@@ -162,13 +162,9 @@ describe('PrivacyPolicyPage', () => {
       />
     );
 
-    const loginBtn = screen.getByRole('button', { name: 'Вхід / Реєстрація' });
-    fireEvent.click(loginBtn);
-    expect(handleLogin).toHaveBeenCalledTimes(1);
-
-    const registerBtn = screen.getByRole('button', { name: 'Зареєструватися' });
-    fireEvent.click(registerBtn);
-    expect(handleRegister).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('navigation', { name: 'Головна навігація' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Вхід / Реєстрація' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Зареєструватися' })).toBeNull();
   });
 
   it('renders custom data when provided via props', () => {

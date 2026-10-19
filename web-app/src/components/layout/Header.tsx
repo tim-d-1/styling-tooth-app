@@ -1,7 +1,6 @@
 import { useState, useEffect, type FC } from 'react';
 import Logo from '@/components/ui/Logo';
 import Icon from '@/components/ui/Icon';
-import Button from '@/components/ui/Button';
 import { navigateToSection } from '@/lib/section_navigation';
 
 export interface HeaderProps {
@@ -23,8 +22,8 @@ export interface HeaderProps {
 
 export const Header: FC<HeaderProps> = ({
   isLoggedIn = false,
-  onLoginClick,
-  onRegisterClick,
+  onLoginClick: _onLoginClick,
+  onRegisterClick: _onRegisterClick,
   onNavClick,
   activeNav = 'home',
   onProfileClick,
@@ -108,7 +107,7 @@ export const Header: FC<HeaderProps> = ({
       </nav>
 
       <div className="flex items-center gap-3">
-        {isLoggedIn ? (
+        {isLoggedIn && (
           <>
             <button
               type="button"
@@ -150,27 +149,6 @@ export const Header: FC<HeaderProps> = ({
               />
             </button>
           </>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={onLoginClick}
-              aria-label="Вхід / Реєстрація"
-            >
-              Вхід / Реєстрація
-            </Button>
-            {onRegisterClick && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onRegisterClick}
-                aria-label="Зареєструватися"
-              >
-                Реєстрація
-              </Button>
-            )}
-          </div>
         )}
       </div>
     </header>

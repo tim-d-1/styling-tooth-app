@@ -154,13 +154,8 @@ describe('FaqPage', () => {
     fireEvent.click(breadcrumbHome);
     expect(handleHome).toHaveBeenCalledTimes(1);
 
-    const loginBtn = screen.getByRole('button', { name: 'Вхід / Реєстрація' });
-    fireEvent.click(loginBtn);
-    expect(handleLogin).toHaveBeenCalledTimes(1);
-
-    const registerBtn = screen.getByRole('button', { name: 'Зареєструватися' });
-    fireEvent.click(registerBtn);
-    expect(handleRegister).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Вхід / Реєстрація' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Зареєструватися' })).toBeNull();
 
     rerender(
       <MemoryRouter>
