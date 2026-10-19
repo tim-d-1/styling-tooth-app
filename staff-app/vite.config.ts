@@ -11,6 +11,9 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1200,
+  },
   test: {
     environment: 'jsdom',
     globals: true,

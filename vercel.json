@@ -3,15 +3,7 @@
   "services": {
     "staff-app": {
       "root": "staff-app",
-      "framework": "vite",
-      "bindings": [
-        {
-          "type": "service",
-          "service": "web-app",
-          "format": "url",
-          "env": "CLIENT_APP_URL"
-        }
-      ]
+      "framework": "vite"
     },
     "web-app": {
       "root": "web-app",
