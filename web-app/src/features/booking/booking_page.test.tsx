@@ -122,6 +122,10 @@ describe('BookingPage', () => {
     expect(screen.getByRole('radio', { name: PROCEDURES_CATALOG[0].name })).toBeDefined();
     expect(screen.getByRole('radio', { name: PROCEDURES_CATALOG[1].name })).toBeDefined();
 
+    for (const proc of PROCEDURES_CATALOG) {
+      expect(screen.getByRole('radio', { name: proc.name }).getAttribute('aria-checked')).toBe('false');
+    }
+
     fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[1].name }));
     fireEvent.click(screen.getByRole('button', { name: /Записатись/i }));
 
@@ -142,8 +146,25 @@ describe('BookingPage', () => {
       expect(screen.getByRole('button', { name: 'Додати ще процедуру' })).toBeDefined();
 
       fireEvent.click(screen.getByRole('button', { name: 'Додати ще процедуру' }));
-      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(screen.getByRole('heading', { level: 1, name: 'Обери процедуру' })).toBeDefined();
     }
+  });
+
+  it('navigates back from procedure details to procedure selector when clicking back button', () => {
+    renderBooking({ initialStage: 'procedure' });
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Обери процедуру' })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[0].name }));
+    expect(screen.getByRole('heading', { level: 2, name: PROCEDURES_CATALOG[0].name })).toBeDefined();
+
+    // Click top back arrow
+    fireEvent.click(screen.getByRole('button', { name: 'Назад' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Обери процедуру' })).toBeDefined();
+
+    // Clicking back on selector goes back to pet stage
+    fireEvent.click(screen.getByRole('button', { name: 'Назад' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Оберіть улюбленця' })).toBeDefined();
   });
 
   it('renders stage 3 master selection and handles carousel navigation', () => {
@@ -734,18 +755,18 @@ describe('BookingPage', () => {
       onToast: handleToast,
     });
 
-    // 1. Open first procedure modal
+    // 1. Open first procedure details
     fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[0].name }));
-    expect(screen.getByRole('dialog')).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: PROCEDURES_CATALOG[0].name })).toBeDefined();
 
     // 2. Click "Додати ще процедуру" to enter multi-mode
     fireEvent.click(screen.getByRole('button', { name: 'Додати ще процедуру' }));
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: 'Обери процедуру' })).toBeDefined();
 
     // 3. Click second procedure to add it
     fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[1].name }));
-    // Modal opens for 2nd procedure, click "Записатись" to advance
-    expect(screen.getByRole('dialog')).toBeDefined();
+    // Procedure details open for 2nd procedure, click "Записатись" to advance
+    expect(screen.getByRole('heading', { level: 2, name: PROCEDURES_CATALOG[1].name })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /Записатись/i }));
 
     // Stage 3: Master selection -> click "Будь-який вільний майстер"

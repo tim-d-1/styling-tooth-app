@@ -15,19 +15,18 @@ export const ProcedureDetailCard: FC<ProcedureDetailCardProps> = ({
   className,
 }) => {
   return (
-    <article
+    <div
       aria-label={`Деталі процедури: ${procedure.name}`}
       className={[
-        'w-full max-w-[49.5rem] bg-white rounded-[10px] p-6 sm:pt-[3.75rem] sm:pb-[4.375rem] sm:px-12 shadow-[0_4px_20px_0_rgba(36,47,53,0.06)] flex flex-col justify-between',
+        'flex flex-col justify-between w-full min-h-[28rem] sm:min-h-[30rem]',
         className,
       ]
         .filter(Boolean)
         .join(' ')}
-      onClick={(e) => e.stopPropagation()}
     >
       <div className="flex flex-col items-center">
         <h2
-          id="procedure-modal-title"
+          id="procedure-detail-title"
           className="text-2xl sm:text-[1.5rem] font-bold font-accented text-content-dark text-center m-0 leading-tight"
         >
           {procedure.name}
@@ -71,7 +70,7 @@ export const ProcedureDetailCard: FC<ProcedureDetailCardProps> = ({
           )}
         </div>
       )}
-    </article>
+    </div>
   );
 };
 

@@ -11,6 +11,8 @@ export interface BookingProcedureStepProps {
   onAddProcedure?: (procedure: ProcedureOption) => void;
   onRemoveProcedure?: (procedureId: string) => void;
   onNext: () => void;
+  viewingProcedure?: ProcedureOption | null;
+  onViewProcedureChange?: (procedure: ProcedureOption | null) => void;
 }
 
 export const BookingProcedureStep: FC<BookingProcedureStepProps> = ({
@@ -20,46 +22,72 @@ export const BookingProcedureStep: FC<BookingProcedureStepProps> = ({
   onSelectProcedure,
   onAddProcedure,
   onNext,
+  viewingProcedure: controlledViewingProcedure,
+  onViewProcedureChange,
 }) => {
   const effectiveSelectedIds =
-    selectedProcedureIds && selectedProcedureIds.length > 0
+    selectedProcedureIds !== undefined
       ? selectedProcedureIds
       : selectedProcedureId
       ? [selectedProcedureId]
       : [];
 
-  const [modalProcedure, setModalProcedure] = useState<ProcedureOption | null>(null);
+  const [internalViewingProcedure, setInternalViewingProcedure] =
+    useState<ProcedureOption | null>(null);
 
-  const handleProcedureClick = (proc: ProcedureOption) => {
-    setModalProcedure(proc);
+  const activeViewingProcedure =
+    controlledViewingProcedure !== undefined
+      ? controlledViewingProcedure
+      : internalViewingProcedure;
+
+  const setViewingProcedure = (proc: ProcedureOption | null) => {
+    if (onViewProcedureChange) {
+      onViewProcedureChange(proc);
+    } else {
+      setInternalViewingProcedure(proc);
+    }
   };
 
-  const handleBookFromModal = () => {
-    if (modalProcedure) {
-      if (!effectiveSelectedIds.includes(modalProcedure.id)) {
+  const handleProcedureClick = (proc: ProcedureOption) => {
+    setViewingProcedure(proc);
+  };
+
+  const handleBookProcedure = () => {
+    if (activeViewingProcedure) {
+      if (!effectiveSelectedIds.includes(activeViewingProcedure.id)) {
         if (effectiveSelectedIds.length > 0 && onAddProcedure) {
-          onAddProcedure(modalProcedure);
+          onAddProcedure(activeViewingProcedure);
         } else {
-          onSelectProcedure(modalProcedure);
+          onSelectProcedure(activeViewingProcedure);
         }
       }
-      setModalProcedure(null);
+      setViewingProcedure(null);
       onNext();
     }
   };
 
-  const handleAddMoreFromModal = () => {
-    if (modalProcedure) {
-      if (!effectiveSelectedIds.includes(modalProcedure.id)) {
+  const handleAddMoreProcedure = () => {
+    if (activeViewingProcedure) {
+      if (!effectiveSelectedIds.includes(activeViewingProcedure.id)) {
         if (onAddProcedure) {
-          onAddProcedure(modalProcedure);
+          onAddProcedure(activeViewingProcedure);
         } else {
-          onSelectProcedure(modalProcedure);
+          onSelectProcedure(activeViewingProcedure);
         }
       }
-      setModalProcedure(null);
+      setViewingProcedure(null);
     }
   };
+
+  if (activeViewingProcedure) {
+    return (
+      <ProcedureDetailCard
+        procedure={activeViewingProcedure}
+        onBook={handleBookProcedure}
+        onAddMore={handleAddMoreProcedure}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col">
@@ -95,22 +123,6 @@ export const BookingProcedureStep: FC<BookingProcedureStepProps> = ({
       </div>
 
       <BookingProgressBar currentStep={2} />
-
-      {modalProcedure && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="procedure-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#ECEEF1]/85 p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150"
-          onClick={() => setModalProcedure(null)}
-        >
-          <ProcedureDetailCard
-            procedure={modalProcedure}
-            onBook={handleBookFromModal}
-            onAddMore={handleAddMoreFromModal}
-          />
-        </div>
-      )}
     </div>
   );
 };

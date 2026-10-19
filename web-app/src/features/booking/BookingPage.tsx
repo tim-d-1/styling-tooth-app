@@ -82,12 +82,12 @@ export const BookingPage: FC<BookingPageProps> = ({
       petBreed: defaultPet?.breed,
       petAvatarUrl: defaultPet?.avatar_url || null,
 
-      procedureId: PROCEDURES_CATALOG[0].id,
-      procedureName: PROCEDURES_CATALOG[0].name,
-      procedurePrice: PROCEDURES_CATALOG[0].price,
-      procedureDurationMin: PROCEDURES_CATALOG[0].durationMin,
-      selectedProcedureIds: [PROCEDURES_CATALOG[0].id],
-      selectedProcedures: [PROCEDURES_CATALOG[0]],
+      procedureId: '',
+      procedureName: '',
+      procedurePrice: 0,
+      procedureDurationMin: 0,
+      selectedProcedureIds: [],
+      selectedProcedures: [],
 
       masterId: (initialMasters && initialMasters[0]?.id) || 'any',
       masterName: (initialMasters && initialMasters[0]?.name) || 'Будь-який вільний майстер',
@@ -111,6 +111,7 @@ export const BookingPage: FC<BookingPageProps> = ({
   const [masters, setMasters] = useState<MasterProfile[]>(initialMasters || []);
   const [procedures, setProcedures] = useState<ProcedureOption[]>(PROCEDURES_CATALOG);
   const [isLoadingPets, setIsLoadingPets] = useState(!initialPets && isLoggedIn);
+  const [viewingProcedure, setViewingProcedure] = useState<ProcedureOption | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -135,20 +136,34 @@ export const BookingPage: FC<BookingPageProps> = ({
           }));
           setProcedures(mapped);
           setBookingState((prev) => {
+            if (
+              !prev.procedureId &&
+              (!prev.selectedProcedureIds || prev.selectedProcedureIds.length === 0)
+            ) {
+              return prev;
+            }
+
             const currentIds =
               prev.selectedProcedureIds && prev.selectedProcedureIds.length > 0
                 ? prev.selectedProcedureIds
-                : [prev.procedureId];
+                : prev.procedureId
+                ? [prev.procedureId]
+                : [];
 
-            const nextProcs = currentIds.map((id) => {
-              const resolvedUuid = resolveServiceId(id);
-              return (
-                mapped.find((m) => m.id === id) ||
-                mapped.find((m) => m.id === resolvedUuid) ||
-                mapped.find((m) => m.name === id) ||
-                mapped[0]
-              );
-            });
+            if (currentIds.length === 0) return prev;
+
+            const nextProcs = currentIds
+              .map((id) => {
+                const resolvedUuid = resolveServiceId(id);
+                return (
+                  mapped.find((m) => m.id === id) ||
+                  mapped.find((m) => m.id === resolvedUuid) ||
+                  mapped.find((m) => m.name === id)
+                );
+              })
+              .filter(Boolean) as ProcedureOption[];
+
+            if (nextProcs.length === 0) return prev;
 
             const nextIds = nextProcs.map((p) => p.id);
             const totalPrice = nextProcs.reduce((sum, p) => sum + (p.price || 0), 0);
@@ -302,11 +317,16 @@ export const BookingPage: FC<BookingPageProps> = ({
     }
 
     if (stage === 'procedure') {
+      if (viewingProcedure) {
+        setViewingProcedure(null);
+        return;
+      }
       setStage('pet');
       return;
     }
 
     if (stage === 'master') {
+      setViewingProcedure(null);
       setStage('procedure');
       return;
     }
@@ -371,12 +391,19 @@ export const BookingPage: FC<BookingPageProps> = ({
 
   const handleAddProcedure = (procedure: ProcedureOption) => {
     setBookingState((prev) => {
-      const currentIds = prev.selectedProcedureIds || [prev.procedureId];
-      const currentProcs =
-        prev.selectedProcedures ||
-        procedures.filter((p) => currentIds.includes(p.id));
+      const currentIds =
+        prev.selectedProcedureIds && prev.selectedProcedureIds.length > 0
+          ? prev.selectedProcedureIds
+          : prev.procedureId
+          ? [prev.procedureId]
+          : [];
 
       if (currentIds.includes(procedure.id)) return prev;
+
+      const currentProcs =
+        prev.selectedProcedures && prev.selectedProcedures.length > 0
+          ? prev.selectedProcedures
+          : procedures.filter((p) => currentIds.includes(p.id));
 
       const nextIds = [...currentIds, procedure.id];
       const nextProcs = [...currentProcs, procedure];
@@ -401,7 +428,12 @@ export const BookingPage: FC<BookingPageProps> = ({
 
   const handleRemoveProcedure = (procedureId: string) => {
     setBookingState((prev) => {
-      const currentIds = prev.selectedProcedureIds || [prev.procedureId];
+      const currentIds =
+        prev.selectedProcedureIds && prev.selectedProcedureIds.length > 0
+          ? prev.selectedProcedureIds
+          : prev.procedureId
+          ? [prev.procedureId]
+          : [];
       if (currentIds.length <= 1) return prev;
 
       const nextIds = currentIds.filter((id) => id !== procedureId);
@@ -752,6 +784,8 @@ export const BookingPage: FC<BookingPageProps> = ({
           onAddProcedure={handleAddProcedure}
           onRemoveProcedure={handleRemoveProcedure}
           onNext={() => handleNextFromStep('master')}
+          viewingProcedure={viewingProcedure}
+          onViewProcedureChange={setViewingProcedure}
         />
       )}
 

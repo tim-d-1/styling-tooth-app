@@ -4,7 +4,7 @@ import BookingProcedureStep from './BookingProcedureStep';
 import { PROCEDURES_CATALOG } from '../booking_types';
 
 describe('BookingProcedureStep (Figma 1060:4133 & 1060:4180)', () => {
-  it('opens modal on clicking procedure, shows details, and advances on Записатись click', () => {
+  it('switches article content to procedure details on clicking procedure, and advances on Записатись click', () => {
     const handleSelectProcedure = vi.fn();
     const handleNext = vi.fn();
 
@@ -20,8 +20,6 @@ describe('BookingProcedureStep (Figma 1060:4133 & 1060:4180)', () => {
     const procButton = screen.getByRole('radio', { name: targetProc.name });
     fireEvent.click(procButton);
 
-    const dialog = screen.getByRole('dialog');
-    expect(dialog).toBeDefined();
     expect(screen.getByRole('heading', { level: 2, name: targetProc.name })).toBeDefined();
     expect(screen.getByText(targetProc.duration)).toBeDefined();
     expect(screen.getByText(targetProc.description)).toBeDefined();
@@ -32,10 +30,9 @@ describe('BookingProcedureStep (Figma 1060:4133 & 1060:4180)', () => {
 
     expect(handleSelectProcedure).toHaveBeenCalledWith(targetProc);
     expect(handleNext).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('closes modal when clicking Додати ще процедуру and returns to selector screen', () => {
+  it('switches back to selector screen when clicking Додати ще процедуру and invokes onAddProcedure', () => {
     const handleAdd = vi.fn();
     const handleNext = vi.fn();
 
@@ -50,10 +47,11 @@ describe('BookingProcedureStep (Figma 1060:4133 & 1060:4180)', () => {
 
     const targetProc = PROCEDURES_CATALOG[1];
     fireEvent.click(screen.getByRole('radio', { name: targetProc.name }));
-    expect(screen.getByRole('dialog')).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: targetProc.name })).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Додати ще процедуру' }));
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: 'Обери процедуру' })).toBeDefined();
+    expect(screen.getByRole('radiogroup', { name: 'Оберіть процедуру' })).toBeDefined();
     expect(handleNext).not.toHaveBeenCalled();
     expect(handleAdd).toHaveBeenCalledWith(targetProc);
   });
@@ -89,13 +87,13 @@ describe('BookingProcedureStep (Figma 1060:4133 & 1060:4180)', () => {
       />
     );
 
-    // 1. Open first procedure modal and click Додати ще процедуру
+    // 1. Open first procedure details and click Додати ще процедуру
     fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[0].name }));
-    expect(screen.getByRole('dialog')).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: PROCEDURES_CATALOG[0].name })).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Додати ще процедуру' }));
     expect(handleAdd).toHaveBeenCalledWith(PROCEDURES_CATALOG[0]);
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: 'Обери процедуру' })).toBeDefined();
 
     // Re-render with first procedure selected
     rerender(
@@ -108,32 +106,49 @@ describe('BookingProcedureStep (Figma 1060:4133 & 1060:4180)', () => {
       />
     );
 
-    // 2. Open second procedure modal and click Записатись
+    // 2. Open second procedure details and click Записатись
     fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[1].name }));
-    expect(screen.getByRole('dialog')).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: PROCEDURES_CATALOG[1].name })).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: /Записатись/i }));
     expect(handleAdd).toHaveBeenCalledWith(PROCEDURES_CATALOG[1]);
     expect(handleNext).toHaveBeenCalledTimes(1);
   });
 
-  it('closes modal when clicking backdrop without advancing', () => {
-    const handleNext = vi.fn();
+  it('supports controlled viewingProcedure prop', () => {
+    const handleViewChange = vi.fn();
 
     render(
       <BookingProcedureStep
         procedures={PROCEDURES_CATALOG}
         onSelectProcedure={vi.fn()}
-        onNext={handleNext}
+        onNext={vi.fn()}
+        viewingProcedure={PROCEDURES_CATALOG[2]}
+        onViewProcedureChange={handleViewChange}
       />
     );
 
-    fireEvent.click(screen.getByRole('radio', { name: PROCEDURES_CATALOG[0].name }));
-    const dialog = screen.getByRole('dialog');
-    expect(dialog).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: PROCEDURES_CATALOG[2].name })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Додати ще процедуру' }));
+    expect(handleViewChange).toHaveBeenCalledWith(null);
+  });
 
-    fireEvent.click(dialog);
-    expect(screen.queryByRole('dialog')).toBeNull();
-    expect(handleNext).not.toHaveBeenCalled();
+  it('renders all procedure buttons unselected by default when no procedure is selected', () => {
+    render(
+      <BookingProcedureStep
+        procedures={PROCEDURES_CATALOG}
+        selectedProcedureIds={[]}
+        onSelectProcedure={vi.fn()}
+        onNext={vi.fn()}
+      />
+    );
+
+    const radioButtons = screen.getAllByRole('radio');
+    expect(radioButtons).toHaveLength(PROCEDURES_CATALOG.length);
+    for (const radio of radioButtons) {
+      expect(radio.getAttribute('aria-checked')).toBe('false');
+      expect(radio.className).toContain('bg-white');
+      expect(radio.className).not.toContain('bg-terracotta');
+    }
   });
 });
