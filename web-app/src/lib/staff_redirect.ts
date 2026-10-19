@@ -4,7 +4,20 @@ export function getStaffAppUrl(): string {
   if (typeof window !== 'undefined' && (window as any).__STAFF_APP_URL__) {
     return (window as any).__STAFF_APP_URL__;
   }
-  return import.meta.env.VITE_STAFF_APP_URL || 'http://localhost:5174';
+  if (import.meta.env.VITE_STAFF_APP_URL) {
+    return import.meta.env.VITE_STAFF_APP_URL;
+  }
+  if (typeof process !== 'undefined' && process.env?.STAFF_APP_URL) {
+    return process.env.STAFF_APP_URL;
+  }
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname === 'localhost' &&
+    window.location.port === '3000'
+  ) {
+    return 'http://localhost:5174';
+  }
+  return '/staff';
 }
 
 export function isStaffRole(role: string | null | undefined): boolean {

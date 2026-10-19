@@ -109,9 +109,10 @@ export function StaffAppRoutes() {
 }
 
 export default function App() {
+  const basename = import.meta.env.BASE_URL?.replace(/\/$/, '') || '';
   return (
     <StaffAuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <StaffAppRoutes />
       </BrowserRouter>
     </StaffAuthProvider>

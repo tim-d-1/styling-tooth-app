@@ -1,0 +1,49 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "staff-app": {
+      "root": "staff-app",
+      "framework": "vite",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "web-app",
+          "format": "url",
+          "env": "CLIENT_APP_URL"
+        }
+      ]
+    },
+    "web-app": {
+      "root": "web-app",
+      "framework": "vite",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "staff-app",
+          "format": "url",
+          "env": "STAFF_APP_URL"
+        }
+      ]
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/staff/(.*)",
+      "destination": {
+        "service": "staff-app"
+      }
+    },
+    {
+      "source": "/staff",
+      "destination": {
+        "service": "staff-app"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "web-app"
+      }
+    }
+  ]
+}

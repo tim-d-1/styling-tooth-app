@@ -12,7 +12,14 @@ export interface StaffLoginPageProps {
 
 export const StaffLoginPage: FC<StaffLoginPageProps> = ({
   onSuccess,
-  clientAppUrl = import.meta.env.VITE_CLIENT_APP_URL || 'http://localhost:3000',
+  clientAppUrl =
+    import.meta.env.VITE_CLIENT_APP_URL ||
+    (typeof process !== 'undefined' && process.env?.CLIENT_APP_URL) ||
+    (typeof window !== 'undefined' &&
+    window.location.hostname === 'localhost' &&
+    window.location.port === '5174'
+      ? 'http://localhost:3000'
+      : '/'),
 }) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
