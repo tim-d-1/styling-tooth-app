@@ -167,6 +167,35 @@ describe('BookingPage', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Оберіть улюбленця' })).toBeDefined();
   });
 
+  it('allows deselecting already selected procedure on click without showing details and reopening details when unselected', () => {
+    renderBooking({ initialStage: 'procedure' });
+
+    const proc = PROCEDURES_CATALOG[0];
+
+    // 1. Initial click on unselected procedure opens details
+    fireEvent.click(screen.getByRole('radio', { name: proc.name }));
+    expect(screen.getByRole('heading', { level: 2, name: proc.name })).toBeDefined();
+
+    // 2. Click "Додати ще процедуру" to add it and return to selector
+    fireEvent.click(screen.getByRole('button', { name: 'Додати ще процедуру' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Обери процедуру' })).toBeDefined();
+
+    const selectedBtn = screen.getByRole('radio', { name: proc.name });
+    expect(selectedBtn.getAttribute('aria-checked')).toBe('true');
+    expect(selectedBtn.className).toContain('bg-terracotta');
+
+    // 3. Click already selected procedure button -> directly deselects without opening details
+    fireEvent.click(selectedBtn);
+    expect(screen.getByRole('heading', { level: 1, name: 'Обери процедуру' })).toBeDefined();
+    expect(screen.queryByRole('heading', { level: 2, name: proc.name })).toBeNull();
+    expect(selectedBtn.getAttribute('aria-checked')).toBe('false');
+    expect(selectedBtn.className).toContain('bg-white');
+
+    // 4. Click again while unselected -> opens details view
+    fireEvent.click(selectedBtn);
+    expect(screen.getByRole('heading', { level: 2, name: proc.name })).toBeDefined();
+  });
+
   it('renders stage 3 master selection and handles carousel navigation', () => {
     renderBooking({ initialStage: 'master' });
 
@@ -846,6 +875,24 @@ describe('BookingPage', () => {
       return Promise.resolve({ data: null, error: null });
     });
     vi.spyOn(supabase, 'rpc').mockImplementation(mockRpc as never);
+
+    vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
+      if (table === 'pets') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({
+            data: [{ id: 'pet-uuid-cash-1', name: 'Барон' }],
+            error: null,
+          }),
+        };
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      };
+    }) as never);
 
     renderBooking({
       initialStage: 'payment',

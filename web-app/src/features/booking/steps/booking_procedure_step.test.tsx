@@ -151,4 +151,56 @@ describe('BookingProcedureStep (Figma 1060:4133 & 1060:4180)', () => {
       expect(radio.className).not.toContain('bg-terracotta');
     }
   });
+
+  it('deselects already selected procedure without opening procedure details', () => {
+    const handleRemove = vi.fn();
+    const handleSelect = vi.fn();
+    const targetProc = PROCEDURES_CATALOG[0];
+
+    render(
+      <BookingProcedureStep
+        procedures={PROCEDURES_CATALOG}
+        selectedProcedureIds={[targetProc.id]}
+        onSelectProcedure={handleSelect}
+        onRemoveProcedure={handleRemove}
+        onNext={vi.fn()}
+      />
+    );
+
+    const button = screen.getByRole('radio', { name: targetProc.name });
+    expect(button.getAttribute('aria-checked')).toBe('true');
+    expect(button.className).toContain('bg-terracotta');
+
+    fireEvent.click(button);
+
+    // Should invoke onRemoveProcedure and NOT open details
+    expect(handleRemove).toHaveBeenCalledWith(targetProc.id);
+    expect(screen.queryByRole('heading', { level: 2, name: targetProc.name })).toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: 'Обери процедуру' })).toBeDefined();
+  });
+
+  it('opens procedure details when clicking an unselected procedure', () => {
+    const handleRemove = vi.fn();
+    const handleSelect = vi.fn();
+    const firstProc = PROCEDURES_CATALOG[0];
+    const secondProc = PROCEDURES_CATALOG[1];
+
+    render(
+      <BookingProcedureStep
+        procedures={PROCEDURES_CATALOG}
+        selectedProcedureIds={[firstProc.id]}
+        onSelectProcedure={handleSelect}
+        onRemoveProcedure={handleRemove}
+        onNext={vi.fn()}
+      />
+    );
+
+    const unselectedButton = screen.getByRole('radio', { name: secondProc.name });
+    expect(unselectedButton.getAttribute('aria-checked')).toBe('false');
+
+    fireEvent.click(unselectedButton);
+
+    expect(handleRemove).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { level: 2, name: secondProc.name })).toBeDefined();
+  });
 });

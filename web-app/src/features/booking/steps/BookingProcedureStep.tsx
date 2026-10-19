@@ -21,6 +21,7 @@ export const BookingProcedureStep: FC<BookingProcedureStepProps> = ({
   selectedProcedureIds,
   onSelectProcedure,
   onAddProcedure,
+  onRemoveProcedure,
   onNext,
   viewingProcedure: controlledViewingProcedure,
   onViewProcedureChange,
@@ -49,6 +50,12 @@ export const BookingProcedureStep: FC<BookingProcedureStepProps> = ({
   };
 
   const handleProcedureClick = (proc: ProcedureOption) => {
+    if (effectiveSelectedIds.includes(proc.id)) {
+      if (onRemoveProcedure) {
+        onRemoveProcedure(proc.id);
+      }
+      return;
+    }
     setViewingProcedure(proc);
   };
 

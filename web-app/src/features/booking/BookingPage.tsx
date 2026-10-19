@@ -434,7 +434,6 @@ export const BookingPage: FC<BookingPageProps> = ({
           : prev.procedureId
           ? [prev.procedureId]
           : [];
-      if (currentIds.length <= 1) return prev;
 
       const nextIds = currentIds.filter((id) => id !== procedureId);
       const nextProcs = (
@@ -451,7 +450,7 @@ export const BookingPage: FC<BookingPageProps> = ({
 
       return {
         ...prev,
-        procedureId: nextIds[0],
+        procedureId: nextIds[0] || '',
         procedureName: combinedNames,
         procedurePrice: totalPrice,
         procedureDurationMin: totalDuration,
