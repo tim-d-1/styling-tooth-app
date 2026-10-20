@@ -291,7 +291,14 @@ export const MainPage: FC<MainPageProps> = ({
           visit={visit}
           isLoading={isLoadingVisit}
           isCancelling={isCancelling}
-          onBookClick={onBookClick || (() => showToast(''))}
+          onBookClick={
+            onBookClick ||
+            (() => {
+              if (typeof window !== 'undefined' && window.location) {
+                window.location.assign('/booking');
+              }
+            })
+          }
           onReschedule={() => showToast('')}
           onCancel={handleCancelVisit}
         />

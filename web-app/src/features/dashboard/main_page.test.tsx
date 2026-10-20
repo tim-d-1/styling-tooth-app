@@ -636,6 +636,51 @@ describe('Main Page Components', () => {
       });
       expect(handleNavClick).toHaveBeenCalledWith('contacts');
     });
+
+    it('MainPage invokes onBookClick when "Запланувати візит" button is clicked in empty visit card', async () => {
+      const handleBookClick = vi.fn();
+      await act(async () => {
+        render(
+          <MainPage
+            isLoggedIn={true}
+            initialVisit={null}
+            onBookClick={handleBookClick}
+          />
+        );
+      });
+
+      const bookBtn = screen.getByRole('button', { name: /Запланувати візит/i });
+      act(() => {
+        fireEvent.click(bookBtn);
+      });
+      expect(handleBookClick).toHaveBeenCalled();
+    });
+
+    it('MainPage redirects to /booking when onBookClick is omitted and "Запланувати візит" is clicked', async () => {
+      const assignSpy = vi.fn();
+      const originalAssign = window.location.assign;
+      Object.defineProperty(window, 'location', {
+        value: { ...window.location, assign: assignSpy },
+        writable: true,
+      });
+
+      try {
+        await act(async () => {
+          render(<MainPage isLoggedIn={true} initialVisit={null} />);
+        });
+
+        const bookBtn = screen.getByRole('button', { name: /Запланувати візит/i });
+        act(() => {
+          fireEvent.click(bookBtn);
+        });
+        expect(assignSpy).toHaveBeenCalledWith('/booking');
+      } finally {
+        Object.defineProperty(window, 'location', {
+          value: { ...window.location, assign: originalAssign },
+          writable: true,
+        });
+      }
+    });
   });
 });
 

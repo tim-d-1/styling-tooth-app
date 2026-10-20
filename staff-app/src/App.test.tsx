@@ -92,7 +92,8 @@ describe('Staff App Routing & Access Control', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Обробка заявок')).toBeDefined();
-      expect(screen.getByText('Рецепція')).toBeDefined();
+      expect(screen.getByText('Рецепція Головна')).toBeDefined();
+      expect(screen.queryByText('Клієнтський сайт')).toBeNull();
     });
   });
 
@@ -114,7 +115,8 @@ describe('Staff App Routing & Access Control', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Служба підтримки')).toBeDefined();
-      expect(screen.getByText('Адміністратор')).toBeDefined();
+      expect(screen.getByText('Головний Адміністратор')).toBeDefined();
+      expect(screen.queryByText('Клієнтський сайт')).toBeNull();
     });
   });
 

@@ -1364,6 +1364,58 @@ describe('App Root and Auth Gating', () => {
       expect(await screen.findByRole('heading', { level: 1, name: 'Оберіть улюбленця' })).toBeDefined();
     });
 
+    it('navigates to /booking when clicking "Запланувати візит" in VisitSection on root route / when authenticated', async () => {
+      const createChain = () => {
+        const chain: Record<string, unknown> = {};
+        chain.select = vi.fn(() => chain);
+        chain.eq = vi.fn(() => chain);
+        chain.neq = vi.fn(() => chain);
+        chain.gte = vi.fn(() => chain);
+        chain.order = vi.fn(() => chain);
+        chain.limit = vi.fn(() => chain);
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        chain.single = vi.fn().mockResolvedValue({ data: null, error: null });
+        return chain;
+      };
+      vi.spyOn(supabase, 'from').mockImplementation(() => createChain() as never);
+
+      window.history.pushState(null, '', '/');
+      vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({
+        data: {
+          session: {
+            user: { id: 'user-root-book', email: 'rootbook@example.com' },
+          },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
+        data: {
+          user: { id: 'user-root-book', email: 'rootbook@example.com' },
+        },
+        error: null,
+      } as never);
+      vi.spyOn(supabase.auth, 'onAuthStateChange').mockReturnValue({
+        data: {
+          subscription: {
+            id: 'sub-root-book',
+            callback: vi.fn(),
+            unsubscribe: vi.fn(),
+          },
+        },
+      } as never);
+
+      await act(async () => {
+        render(<App />);
+      });
+
+      const bookBtn = await screen.findByRole('button', { name: /Запланувати візит/i });
+      await act(async () => {
+        fireEvent.click(bookBtn);
+      });
+
+      expect(await screen.findByRole('heading', { level: 1, name: 'Оберіть улюбленця' })).toBeDefined();
+    });
+
     it('renders create ticket page via pathname /support/new-ticket', async () => {
       window.history.pushState(null, '', '/support/new-ticket');
       vi.spyOn(supabase.auth, 'getSession').mockResolvedValue({

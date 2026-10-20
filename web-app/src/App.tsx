@@ -402,6 +402,7 @@ export function AppRoutes() {
                 onLoginClick={() => navigate('/login')}
                 onRegisterClick={() => navigate('/register')}
                 onProfileClick={() => navigate('/profile')}
+                onBookClick={() => navigate('/booking')}
                 onArticleClick={(articleId) => navigate(`/articles/${articleId}`)}
                 onPromoClick={(promoId) => navigate(`/promotions/${promoId}`)}
                 onLocationClick={() => navigate('/select-city')}

@@ -10,26 +10,12 @@ export interface StaffHeaderProps {
   clientAppUrl?: string;
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Адміністратор',
-  receptionist: 'Рецепція',
-  master: 'Майстер',
-};
-
 export const StaffHeader: FC<StaffHeaderProps> = ({
   activeTab,
   onNavigateTab,
   onLogout,
-  clientAppUrl =
-    import.meta.env.VITE_CLIENT_APP_URL ||
-    (typeof process !== 'undefined' && process.env?.CLIENT_APP_URL) ||
-    (typeof window !== 'undefined' &&
-    window.location.hostname === 'localhost' &&
-    window.location.port === '5174'
-      ? 'http://localhost:3000'
-      : '/'),
 }) => {
-  const { user, role } = useStaffAuth();
+  const { user } = useStaffAuth();
 
   return (
     <header className="bg-white min-h-[4.5rem] flex items-center justify-between px-6 sm:px-8 py-3 shadow-xs sticky top-0 z-[100] border-b border-gray-100">
@@ -80,13 +66,6 @@ export const StaffHeader: FC<StaffHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4">
-        {role && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-            <span>{ROLE_LABELS[role] || role}</span>
-          </span>
-        )}
-
         <div className="hidden md:flex flex-col text-right">
           <span className="font-primary font-semibold text-xs text-content-dark">
             {user?.fullName || user?.email || 'Співробітник'}
@@ -95,17 +74,6 @@ export const StaffHeader: FC<StaffHeaderProps> = ({
             {user?.email}
           </span>
         </div>
-
-        <a
-          href={clientAppUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Відкрити клієнтський сайт"
-          className="hidden sm:inline-flex items-center gap-1 text-xs text-gray-400 hover:text-terracotta transition-colors px-2 py-1"
-        >
-          <span>Клієнтський сайт</span>
-          <Icon name="fi-rr-arrow-up-right" size={12} />
-        </a>
 
         <button
           type="button"
