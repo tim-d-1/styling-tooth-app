@@ -63,6 +63,8 @@ export interface BookingState {
   procedureName: string;
   procedurePrice: number;
   procedureDurationMin: number;
+  selectedProcedureIds?: string[];
+  selectedProcedures?: ProcedureOption[];
 
   masterId: string;
   masterName: string;
@@ -81,6 +83,23 @@ export interface BookingState {
 
   paymentMethod: 'card' | 'cash';
 }
+
+export const SERVICE_SLUG_MAP: Record<string, string> = {
+  'express-grooming': '50000000-0000-0000-0000-000000000001',
+  'spa-complex': '50000000-0000-0000-0000-000000000002',
+  'ozone-therapy': '50000000-0000-0000-0000-000000000003',
+  'hygiene-care': '50000000-0000-0000-0000-000000000004',
+  'combing': '50000000-0000-0000-0000-000000000005',
+  'breed-haircut': '50000000-0000-0000-0000-000000000006',
+  'nail-trimming': '50000000-0000-0000-0000-000000000007',
+};
+
+export const resolveServiceId = (idOrSlug: string): string => {
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug)) {
+    return idOrSlug;
+  }
+  return SERVICE_SLUG_MAP[idOrSlug] || '50000000-0000-0000-0000-000000000001';
+};
 
 export const PROCEDURES_CATALOG: ProcedureOption[] = [
   {

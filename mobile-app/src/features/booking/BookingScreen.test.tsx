@@ -46,6 +46,13 @@ describe('BookingScreen', () => {
                 price: 850,
                 duration_min: 75,
               },
+              {
+                id: '50000000-0000-0000-0000-000000000002',
+                name: 'SPA-комплекс',
+                description: 'Розслаблюючий догляд',
+                price: 700,
+                duration_min: 60,
+              },
             ],
             error: null,
           }),
@@ -82,9 +89,23 @@ describe('BookingScreen', () => {
     });
 
     if (typeof supabase.rpc === 'function') {
-      (supabase.rpc as any).mockResolvedValue({
-        data: { id: 'appt-1' },
-        error: null,
+      (supabase.rpc as any).mockImplementation((name: string) => {
+        if (name === 'get_available_slots_multi_service' || name === 'get_available_slots') {
+          return Promise.resolve({
+            data: [{ slot_start: '2026-08-11T16:00:00Z', slot_end: '2026-08-11T18:15:00Z' }],
+            error: null,
+          });
+        }
+        if (name === 'create_multi_service_appointment') {
+          return Promise.resolve({
+            data: { id: 'multi-appt-1' },
+            error: null,
+          });
+        }
+        return Promise.resolve({
+          data: { id: 'appt-1' },
+          error: null,
+        });
       });
     }
   });
@@ -328,6 +349,138 @@ describe('BookingScreen', () => {
     await waitFor(() => {
       expect(screen.getByTestId('procedure-modal-sheet')).toBeInTheDocument();
       expect(screen.getByText('Швидкий догляд')).toBeInTheDocument();
+    });
+  });
+
+  it('handles multi-service booking flow and invokes create_multi_service_appointment RPC', async () => {
+    const onComplete = vi.fn();
+    const rpcSpy = vi.spyOn(supabase, 'rpc');
+
+    render(<BookingScreen initialStage="procedure" initialPets={DEMO_PETS} onComplete={onComplete} />);
+
+    expect(screen.getByTestId('step-procedure')).toBeInTheDocument();
+
+    const firstCard = await screen.findByTestId('procedure-option-50000000-0000-0000-0000-000000000001');
+    fireEvent.click(firstCard);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('procedure-modal-sheet')).toBeInTheDocument();
+      expect(screen.getByTestId('modal-add-procedure-button')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('modal-add-procedure-button'));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('procedure-modal-sheet')).not.toBeInTheDocument();
+      expect(screen.getByTestId('step-procedure')).toBeInTheDocument();
+    });
+
+    const secondCard = await screen.findByTestId('procedure-option-50000000-0000-0000-0000-000000000002');
+    fireEvent.click(secondCard);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('procedure-modal-sheet')).toBeInTheDocument();
+      expect(screen.getByTestId('modal-select-procedure-button')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('modal-select-procedure-button'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('step-master')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('choose-any-master'));
+    fireEvent.click(screen.getByTestId('next-step-button'));
+
+    expect(screen.getByTestId('step-datetime')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('time-slot-16:00'));
+    fireEvent.click(screen.getByTestId('next-step-button'));
+
+    expect(screen.getByTestId('step-remarks')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('next-step-button'));
+
+    expect(screen.getByTestId('step-confirmation')).toBeInTheDocument();
+    expect(screen.getByText('Обрані процедури')).toBeInTheDocument();
+    expect(screen.getByTestId('multi-service-summary-list')).toBeInTheDocument();
+    expect(screen.getByText('Перелік послуг (2):')).toBeInTheDocument();
+    expect(screen.getAllByText('1550 ₴').length).toBeGreaterThanOrEqual(1);
+
+    fireEvent.click(screen.getByTestId('confirm-booking-button'));
+
+    expect(screen.getByTestId('step-payment')).toBeInTheDocument();
+    expect(screen.getByText('Вартість послуг')).toBeInTheDocument();
+    expect(screen.getByTestId('submit-payment-button')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('submit-payment-button'));
+
+    await waitFor(() => {
+      expect(rpcSpy).toHaveBeenCalledWith(
+        'create_multi_service_appointment',
+        expect.objectContaining({
+          p_service_ids: [
+            '50000000-0000-0000-0000-000000000001',
+            '50000000-0000-0000-0000-000000000002',
+          ],
+          p_source: 'mobile',
+        }),
+      );
+      expect(onComplete).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('supports deselecting an already selected procedure by clicking its card', async () => {
+    render(<BookingScreen initialStage="procedure" initialPets={DEMO_PETS} />);
+
+    const firstCard = await screen.findByTestId('procedure-option-50000000-0000-0000-0000-000000000001');
+    fireEvent.click(firstCard);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('procedure-modal-sheet')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('modal-add-procedure-button'));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('procedure-modal-sheet')).not.toBeInTheDocument();
+      const card = screen.getByTestId('procedure-option-50000000-0000-0000-0000-000000000001');
+      expect(card.getAttribute('aria-checked')).toBe('true');
+    });
+
+    const cardToDeselect = screen.getByTestId('procedure-option-50000000-0000-0000-0000-000000000001');
+    fireEvent.click(cardToDeselect);
+
+    await waitFor(() => {
+      const card = screen.getByTestId('procedure-option-50000000-0000-0000-0000-000000000001');
+      expect(card.getAttribute('aria-checked')).toBe('false');
+      expect(screen.queryByTestId('procedure-modal-sheet')).not.toBeInTheDocument();
+    });
+  });
+
+  it('disables next button when all procedures are deselected', async () => {
+    render(<BookingScreen initialStage="procedure" initialPets={DEMO_PETS} />);
+
+    const firstCard = await screen.findByTestId('procedure-option-50000000-0000-0000-0000-000000000001');
+    fireEvent.click(firstCard);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('procedure-modal-sheet')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('modal-add-procedure-button'));
+
+    await waitFor(() => {
+      const card = screen.getByTestId('procedure-option-50000000-0000-0000-0000-000000000001');
+      expect(card.getAttribute('aria-checked')).toBe('true');
+    });
+
+    const cardToDeselect = screen.getByTestId('procedure-option-50000000-0000-0000-0000-000000000001');
+    fireEvent.click(cardToDeselect);
+
+    await waitFor(() => {
+      const card = screen.getByTestId('procedure-option-50000000-0000-0000-0000-000000000001');
+      expect(card.getAttribute('aria-checked')).toBe('false');
+      const nextBtn = screen.getByTestId('next-step-button');
+      expect(nextBtn.getAttribute('aria-disabled')).toBe('true');
     });
   });
 });

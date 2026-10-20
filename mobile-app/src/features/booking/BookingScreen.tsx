@@ -46,6 +46,7 @@ import {
   PROCEDURES_CATALOG,
   DEMO_PETS,
   TIME_SLOTS,
+  resolveServiceId,
 } from './booking_types';
 import { getKyivISOString, getInitialBookingDate } from './booking_date_utils';
 import { fetchPetsAvatarMap } from '../pets/pet_media_utils';
@@ -145,6 +146,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       procedureName: PROCEDURES_CATALOG[0].name,
       procedurePrice: PROCEDURES_CATALOG[0].price,
       procedureDurationMin: PROCEDURES_CATALOG[0].durationMin,
+      selectedProcedureIds: [],
+      selectedProcedures: [],
 
       masterId: (initialMasters && initialMasters[0]?.id) || 'any',
       masterName: (initialMasters && initialMasters[0]?.name) || 'Будь-який вільний майстер',
@@ -169,6 +172,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     initialDates.weekStartDate || '2026-08-09'
   );
   const [failedPetImages, setFailedPetImages] = useState<Record<string, boolean>>({});
+  const [availableSlots, setAvailableSlots] = useState<string[]>(TIME_SLOTS);
+  const [isLoadingSlots, setIsLoadingSlots] = useState<boolean>(false);
 
   const showToast = (message: string) => {
     setFeedbackMessage(message);
@@ -242,6 +247,66 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             priceFormatted: `від ${Math.round(Number(s.price))} ₴`,
           }));
           setProcedures(mappedServices);
+          setBookingState((prev) => {
+            if (
+              !prev.procedureId &&
+              (!prev.selectedProcedureIds || prev.selectedProcedureIds.length === 0)
+            ) {
+              return prev;
+            }
+
+            const currentIds =
+              prev.selectedProcedureIds && prev.selectedProcedureIds.length > 0
+                ? prev.selectedProcedureIds
+                : [];
+
+            if (currentIds.length === 0) {
+              const matchingDefault = mappedServices.find(
+                (m) => m.id === prev.procedureId || m.id === resolveServiceId(prev.procedureId)
+              );
+              if (matchingDefault) {
+                return {
+                  ...prev,
+                  procedureId: matchingDefault.id,
+                  procedureName: matchingDefault.name,
+                  procedurePrice: matchingDefault.price,
+                  procedureDurationMin: matchingDefault.durationMin,
+                };
+              }
+              return prev;
+            }
+
+            const nextProcs = currentIds
+              .map((id) => {
+                const resolvedUuid = resolveServiceId(id);
+                return (
+                  mappedServices.find((m) => m.id === id) ||
+                  mappedServices.find((m) => m.id === resolvedUuid) ||
+                  mappedServices.find((m) => m.name === id)
+                );
+              })
+              .filter(Boolean) as ProcedureOption[];
+
+            if (nextProcs.length === 0) return prev;
+
+            const nextIds = nextProcs.map((p) => p.id);
+            const totalPrice = nextProcs.reduce((sum, p) => sum + (p.price || 0), 0);
+            const totalDuration = nextProcs.reduce(
+              (sum, p) => sum + (p.durationMin || 0),
+              0
+            );
+            const combinedNames = nextProcs.map((p) => p.name).join(', ');
+
+            return {
+              ...prev,
+              procedureId: nextIds[0],
+              procedureName: combinedNames,
+              procedurePrice: totalPrice,
+              procedureDurationMin: totalDuration,
+              selectedProcedureIds: nextIds,
+              selectedProcedures: nextProcs,
+            };
+          });
         }
 
         if (!initialMasters) {
@@ -278,12 +343,156 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     };
   }, [initialPets, initialMasters, initialPetId]);
 
+  useEffect(() => {
+    let isMounted = true;
+    async function loadSlots() {
+      const effectiveIds =
+        bookingState.selectedProcedureIds && bookingState.selectedProcedureIds.length > 0
+          ? bookingState.selectedProcedureIds.map(resolveServiceId)
+          : bookingState.procedureId
+          ? [resolveServiceId(bookingState.procedureId)]
+          : [];
+
+      if (effectiveIds.length === 0) {
+        if (isMounted) setAvailableSlots(TIME_SLOTS);
+        return;
+      }
+
+      const isUUID = (v?: string) =>
+        Boolean(v && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v));
+
+      const targetMasterId =
+        bookingState.masterId && isUUID(bookingState.masterId) ? bookingState.masterId : null;
+
+      setIsLoadingSlots(true);
+      try {
+        if (typeof supabase.rpc === 'function') {
+          if (effectiveIds.length > 1) {
+            if (targetMasterId) {
+              const { data, error } = await supabase.rpc('get_available_slots_multi_service', {
+                p_master_id: targetMasterId,
+                p_service_ids: effectiveIds,
+                p_date: bookingState.date,
+                p_step_min: 30,
+              });
+
+              if (isMounted) {
+                setIsLoadingSlots(false);
+                if (!error && Array.isArray(data) && data.length > 0) {
+                  const formatted = data.map((row: { slot_start: string }) => {
+                    const d = new Date(row.slot_start);
+                    return d.toLocaleTimeString('uk-UA', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      timeZone: 'Europe/Kyiv',
+                    });
+                  });
+                  setAvailableSlots(formatted);
+                  if (!formatted.includes(bookingState.timeSlot)) {
+                    setBookingState((prev) => ({ ...prev, timeSlot: formatted[0] || prev.timeSlot }));
+                  }
+                  return;
+                }
+              }
+            } else {
+              const { data: mastersData } = await supabase
+                .from('masters')
+                .select('id')
+                .eq('is_active', true)
+                .order('sort_order');
+
+              const allSlots = new Set<string>();
+              if (Array.isArray(mastersData) && mastersData.length > 0) {
+                for (const m of mastersData) {
+                  const { data } = await supabase.rpc('get_available_slots_multi_service', {
+                    p_master_id: m.id,
+                    p_service_ids: effectiveIds,
+                    p_date: bookingState.date,
+                    p_step_min: 30,
+                  });
+                  if (Array.isArray(data)) {
+                    for (const row of data) {
+                      const d = new Date(row.slot_start);
+                      allSlots.add(
+                        d.toLocaleTimeString('uk-UA', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          timeZone: 'Europe/Kyiv',
+                        })
+                      );
+                    }
+                  }
+                }
+              }
+
+              if (isMounted) {
+                setIsLoadingSlots(false);
+                const sorted = Array.from(allSlots).sort();
+                if (sorted.length > 0) {
+                  setAvailableSlots(sorted);
+                  if (!sorted.includes(bookingState.timeSlot)) {
+                    setBookingState((prev) => ({ ...prev, timeSlot: sorted[0] || prev.timeSlot }));
+                  }
+                  return;
+                }
+              }
+            }
+          } else {
+            const singleServiceId = effectiveIds[0];
+            if (targetMasterId) {
+              const { data, error } = await supabase.rpc('get_available_slots', {
+                p_master_id: targetMasterId,
+                p_service_id: singleServiceId,
+                p_date: bookingState.date,
+              });
+
+              if (isMounted) {
+                setIsLoadingSlots(false);
+                if (!error && Array.isArray(data) && data.length > 0) {
+                  const formatted = data.map((row: { slot_start: string }) => {
+                    const d = new Date(row.slot_start);
+                    return d.toLocaleTimeString('uk-UA', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      timeZone: 'Europe/Kyiv',
+                    });
+                  });
+                  setAvailableSlots(formatted);
+                  if (!formatted.includes(bookingState.timeSlot)) {
+                    setBookingState((prev) => ({ ...prev, timeSlot: formatted[0] || prev.timeSlot }));
+                  }
+                  return;
+                }
+              }
+            }
+          }
+        }
+      } catch {
+      } finally {
+        if (isMounted) {
+          setIsLoadingSlots(false);
+        }
+      }
+    }
+
+    if (stage === 'datetime') {
+      loadSlots();
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [stage, bookingState.date, bookingState.masterId, bookingState.selectedProcedureIds, bookingState.procedureId]);
+
   const handleBack = () => {
     if (stage === 'pet') {
       if (onBack) onBack();
       return;
     }
     if (stage === 'procedure') {
+      if (modalProcedure) {
+        setModalProcedure(null);
+        return;
+      }
       setStage('pet');
       return;
     }
@@ -331,6 +540,89 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     setStage(targetStage);
   };
 
+  const handleSelectProcedure = (procedure: ProcedureOption) => {
+    setBookingState((prev) => ({
+      ...prev,
+      procedureId: procedure.id,
+      procedureName: procedure.name,
+      procedurePrice: procedure.price,
+      procedureDurationMin: procedure.durationMin,
+      selectedProcedureIds: [procedure.id],
+      selectedProcedures: [procedure],
+    }));
+  };
+
+  const handleAddProcedure = (procedure: ProcedureOption) => {
+    setBookingState((prev) => {
+      const currentIds =
+        prev.selectedProcedureIds && prev.selectedProcedureIds.length > 0
+          ? prev.selectedProcedureIds
+          : prev.procedureId
+          ? [prev.procedureId]
+          : [];
+
+      if (currentIds.includes(procedure.id)) return prev;
+
+      const currentProcs =
+        prev.selectedProcedures && prev.selectedProcedures.length > 0
+          ? prev.selectedProcedures
+          : procedures.filter((p) => currentIds.includes(p.id));
+
+      const nextIds = [...currentIds, procedure.id];
+      const nextProcs = [...currentProcs, procedure];
+      const totalPrice = nextProcs.reduce((sum, p) => sum + (p.price || 0), 0);
+      const totalDuration = nextProcs.reduce(
+        (sum, p) => sum + (p.durationMin || 0),
+        0
+      );
+      const combinedNames = nextProcs.map((p) => p.name).join(', ');
+
+      return {
+        ...prev,
+        procedureId: nextIds[0],
+        procedureName: combinedNames,
+        procedurePrice: totalPrice,
+        procedureDurationMin: totalDuration,
+        selectedProcedureIds: nextIds,
+        selectedProcedures: nextProcs,
+      };
+    });
+  };
+
+  const handleRemoveProcedure = (procedureId: string) => {
+    setBookingState((prev) => {
+      const currentIds =
+        prev.selectedProcedureIds && prev.selectedProcedureIds.length > 0
+          ? prev.selectedProcedureIds
+          : prev.procedureId
+          ? [prev.procedureId]
+          : [];
+
+      const nextIds = currentIds.filter((id) => id !== procedureId);
+      const nextProcs = (
+        prev.selectedProcedures ||
+        procedures.filter((p) => currentIds.includes(p.id))
+      ).filter((p) => p.id !== procedureId);
+
+      const totalPrice = nextProcs.reduce((sum, p) => sum + (p.price || 0), 0);
+      const totalDuration = nextProcs.reduce(
+        (sum, p) => sum + (p.durationMin || 0),
+        0
+      );
+      const combinedNames = nextProcs.map((p) => p.name).join(', ');
+
+      return {
+        ...prev,
+        procedureId: nextIds[0] || '',
+        procedureName: combinedNames,
+        procedurePrice: totalPrice,
+        procedureDurationMin: totalDuration,
+        selectedProcedureIds: nextIds,
+        selectedProcedures: nextProcs,
+      };
+    });
+  };
+
   const handlePrevWeek = () => {
     const d = new Date(weekStartDate + 'T00:00:00Z');
     const prev = new Date(d.getTime() - 7 * 86400000);
@@ -373,19 +665,11 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
         }
       }
 
-      const SERVICE_SLUG_MAP: Record<string, string> = {
-        'express-grooming': '50000000-0000-0000-0000-000000000001',
-        'spa-complex': '50000000-0000-0000-0000-000000000002',
-        'ozone-therapy': '50000000-0000-0000-0000-000000000003',
-        'hygiene-care': '50000000-0000-0000-0000-000000000004',
-        'combing': '50000000-0000-0000-0000-000000000005',
-        'breed-haircut': '50000000-0000-0000-0000-000000000006',
-        'nail-trimming': '50000000-0000-0000-0000-000000000007',
-      };
-
-      const resolvedServiceId = isUUID(bookingState.procedureId)
-        ? bookingState.procedureId
-        : SERVICE_SLUG_MAP[bookingState.procedureId] || '50000000-0000-0000-0000-000000000001';
+      const effectiveServiceIds =
+        bookingState.selectedProcedureIds && bookingState.selectedProcedureIds.length > 0
+          ? bookingState.selectedProcedureIds.map(resolveServiceId)
+          : [resolveServiceId(bookingState.procedureId)];
+      const resolvedServiceId = effectiveServiceIds[0];
 
       const resolvedMasterId = isUUID(bookingState.masterId) ? bookingState.masterId : null;
       const startsAt = getKyivISOString(bookingState.date, bookingState.timeSlot);
@@ -402,20 +686,49 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
         .join(' | ');
 
       let appointmentCreated = false;
+      let createdAppointmentId: string | undefined = undefined;
 
       if (typeof supabase.rpc === 'function') {
         try {
-          const { data: rpcData, error: rpcError } = await supabase.rpc('create_appointment', {
-            p_pet_id: isUUID(resolvedPetId) ? resolvedPetId : null,
-            p_master_id: resolvedMasterId,
-            p_service_id: resolvedServiceId,
-            p_starts_at: startsAt,
-            p_client_note: clientNoteParts || null,
-            p_source: 'mobile',
-          });
+          if (effectiveServiceIds.length > 1) {
+            const { data: rpcData, error: rpcError } = await supabase.rpc(
+              'create_multi_service_appointment',
+              {
+                p_pet_id: isUUID(resolvedPetId) ? resolvedPetId : null,
+                p_master_id: resolvedMasterId,
+                p_service_ids: effectiveServiceIds,
+                p_starts_at: startsAt,
+                p_client_note: clientNoteParts || null,
+                p_source: 'mobile',
+              }
+            );
 
-          if (!rpcError && rpcData) {
-            appointmentCreated = true;
+            if (!rpcError && rpcData) {
+              appointmentCreated = true;
+              createdAppointmentId = (rpcData as any)?.id;
+            }
+          } else {
+            const { data: rpcData, error: rpcError } = await supabase.rpc('create_appointment', {
+              p_pet_id: isUUID(resolvedPetId) ? resolvedPetId : null,
+              p_master_id: resolvedMasterId,
+              p_service_id: resolvedServiceId,
+              p_starts_at: startsAt,
+              p_client_note: clientNoteParts || null,
+              p_source: 'mobile',
+            });
+
+            if (!rpcError && rpcData) {
+              appointmentCreated = true;
+              createdAppointmentId = (rpcData as any)?.id;
+            }
+          }
+
+          if (createdAppointmentId) {
+            const provider = bookingState.paymentMethod === 'cash' ? 'cash' : 'monobank';
+            await supabase.rpc('create_payment_attempt', {
+              p_appointment_id: createdAppointmentId,
+              p_provider: provider,
+            });
           }
         } catch {
           // Fall through
@@ -513,9 +826,20 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     }
   };
 
+  const hasSelectedProcedures =
+    (bookingState.selectedProcedureIds && bookingState.selectedProcedureIds.length > 0) ||
+    Boolean(bookingState.procedureId);
+
+  const effectiveSelectedIds =
+    bookingState.selectedProcedureIds && bookingState.selectedProcedureIds.length > 0
+      ? bookingState.selectedProcedureIds
+      : bookingState.procedureId
+      ? [bookingState.procedureId]
+      : [];
+
   const isNextDisabled =
     (stage === 'pet' && (!bookingState.petId || isLoadingPets)) ||
-    (stage === 'procedure' && !bookingState.procedureId);
+    (stage === 'procedure' && !hasSelectedProcedures);
 
   const handleNextPress = () => {
     switch (stage) {
@@ -659,7 +983,10 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
 
             <View style={styles.proceduresColumn}>
               {procedures.map((proc) => {
-                const isSelected = proc.id === bookingState.procedureId;
+                const isSelected = Boolean(
+                  bookingState.selectedProcedureIds &&
+                  bookingState.selectedProcedureIds.includes(proc.id)
+                );
                 return (
                   <TouchableOpacity
                     key={proc.id}
@@ -668,17 +995,15 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                       isSelected && styles.procedureCardSelected,
                     ]}
                     onPress={() => {
-                      setBookingState((prev) => ({
-                        ...prev,
-                        procedureId: proc.id,
-                        procedureName: proc.name,
-                        procedurePrice: proc.price,
-                        procedureDurationMin: proc.durationMin,
-                      }));
-                      setModalProcedure(proc);
+                      if (isSelected) {
+                        handleRemoveProcedure(proc.id);
+                      } else {
+                        setModalProcedure(proc);
+                      }
                     }}
                     accessibilityRole="radio"
-                    accessibilityState={{ selected: isSelected }}
+                    accessibilityState={{ selected: isSelected, checked: isSelected }}
+                    aria-checked={isSelected}
                     testID={`procedure-option-${proc.id}`}
                   >
                     <Text
@@ -694,69 +1019,83 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
               })}
             </View>
 
-            <Modal
-              visible={modalProcedure !== null}
-              transparent
-              animationType="slide"
-              onRequestClose={() => setModalProcedure(null)}
-            >
-              <View style={styles.modalOverlay}>
-                <TouchableOpacity
-                  style={styles.modalBackdropTouch}
-                  activeOpacity={1}
-                  onPress={() => setModalProcedure(null)}
-                />
-                <View style={styles.modalSheet} testID="procedure-modal-sheet">
-                  <View style={styles.modalDragHandleContainer}>
-                    <View style={styles.modalDragHandle} />
-                  </View>
-
-                  {modalProcedure && (
-                    <View style={styles.modalContent}>
-                      <View style={styles.modalTitleRow}>
-                        <Text style={styles.modalTitle}>{modalProcedure.name}</Text>
-                        <Text style={styles.modalDuration}>{modalProcedure.duration}</Text>
-                      </View>
-
-                      <View style={styles.modalDescriptionBox}>
-                        <Text style={styles.modalDescriptionText}>
-                          {modalProcedure.description}
-                        </Text>
-                      </View>
-
-                      <Text style={styles.modalPrice}>{modalProcedure.priceFormatted}</Text>
-
-                      <TouchableOpacity
-                        style={styles.modalPrimaryButton}
-                        onPress={() => {
-                          setBookingState((prev) => ({
-                            ...prev,
-                            procedureId: modalProcedure.id,
-                            procedureName: modalProcedure.name,
-                            procedurePrice: modalProcedure.price,
-                            procedureDurationMin: modalProcedure.durationMin,
-                          }));
-                          setModalProcedure(null);
-                          handleNextFromStep('master');
-                        }}
-                        testID="modal-select-procedure-button"
-                      >
-                        <Text style={styles.modalPrimaryButtonText}>Записатись</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.modalSecondaryLink}
-                        onPress={() => setModalProcedure(null)}
-                      >
-                        <Text style={styles.modalSecondaryLinkText}>
-                          Додати ще процедуру
-                        </Text>
-                      </TouchableOpacity>
+            {modalProcedure && (
+              <Modal
+                visible={modalProcedure !== null}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setModalProcedure(null)}
+              >
+                <View style={styles.modalOverlay}>
+                  <TouchableOpacity
+                    style={styles.modalBackdropTouch}
+                    activeOpacity={1}
+                    onPress={() => setModalProcedure(null)}
+                  />
+                  <View style={styles.modalSheet} testID="procedure-modal-sheet">
+                    <View style={styles.modalDragHandleContainer}>
+                      <View style={styles.modalDragHandle} />
                     </View>
-                  )}
+
+                    {modalProcedure && (
+                      <View style={styles.modalContent}>
+                        <View style={styles.modalTitleRow}>
+                          <Text style={styles.modalTitle}>{modalProcedure.name}</Text>
+                          <Text style={styles.modalDuration}>{modalProcedure.duration}</Text>
+                        </View>
+
+                        <View style={styles.modalDescriptionBox}>
+                          <Text style={styles.modalDescriptionText}>
+                            {modalProcedure.description}
+                          </Text>
+                        </View>
+
+                        <Text style={styles.modalPrice}>{modalProcedure.priceFormatted}</Text>
+
+                        <TouchableOpacity
+                          style={styles.modalPrimaryButton}
+                          onPress={() => {
+                            const currentSelected = bookingState.selectedProcedureIds || [];
+                            if (!currentSelected.includes(modalProcedure.id)) {
+                              if (currentSelected.length > 0) {
+                                handleAddProcedure(modalProcedure);
+                              } else {
+                                handleSelectProcedure(modalProcedure);
+                              }
+                            }
+                            setModalProcedure(null);
+                            handleNextFromStep('master');
+                          }}
+                          testID="modal-select-procedure-button"
+                        >
+                          <Text style={styles.modalPrimaryButtonText}>Записатись</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={styles.modalSecondaryLink}
+                          onPress={() => {
+                            const currentSelected = bookingState.selectedProcedureIds || [];
+                            if (!currentSelected.includes(modalProcedure.id)) {
+                              if (currentSelected.length > 0) {
+                                handleAddProcedure(modalProcedure);
+                              } else {
+                                handleSelectProcedure(modalProcedure);
+                              }
+                            }
+                            setModalProcedure(null);
+                          }}
+                          testID="modal-add-procedure-button"
+                        >
+                          <Text style={styles.modalSecondaryLinkText}>
+                            Додати ще процедуру
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
                 </View>
-              </View>
-            </Modal>
+              </Modal>
+            )}
           </View>
         )}
 
@@ -959,8 +1298,16 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             </View>
 
             <Text style={styles.sectionSubtitle}>Оберіть час</Text>
+            {isLoadingSlots && (
+              <ActivityIndicator
+                size="small"
+                color={colors.terracotta}
+                style={{ marginVertical: 8 }}
+                testID="loading-slots-indicator"
+              />
+            )}
             <View style={styles.timeSlotsTwoColGrid}>
-              {TIME_SLOTS.map((slot) => {
+              {(availableSlots && availableSlots.length > 0 ? availableSlots : TIME_SLOTS).map((slot) => {
                 const isSelected = slot === bookingState.timeSlot;
                 return (
                   <TouchableOpacity
@@ -1102,7 +1449,11 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                     <ScissorsIcon color={colors.terracotta} size={17} />
                   </View>
                   <View style={styles.summaryFigmaTextStack}>
-                    <Text style={styles.summaryFigmaLabel}>Процедура</Text>
+                    <Text style={styles.summaryFigmaLabel}>
+                      {bookingState.selectedProcedures && bookingState.selectedProcedures.length > 1
+                        ? 'Обрані процедури'
+                        : 'Процедура'}
+                    </Text>
                     <Text style={styles.summaryFigmaValue}>
                       {bookingState.procedureName || 'Комплексний грумінг'}
                     </Text>
@@ -1111,12 +1462,30 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                 <TouchableOpacity
                   onPress={() => handleEditStage('procedure')}
                   style={styles.summaryFigmaEditButton}
-                  accessibilityLabel="Редагувати: Процедура"
+                  accessibilityLabel={
+                    bookingState.selectedProcedures && bookingState.selectedProcedures.length > 1
+                      ? 'Редагувати: Обрані процедури'
+                      : 'Редагувати: Процедура'
+                  }
                   testID="edit-procedure-button"
                 >
                   <PencilIcon color={colors.contentPrimary} size={18} />
                 </TouchableOpacity>
               </View>
+
+              {bookingState.selectedProcedures && bookingState.selectedProcedures.length > 1 && (
+                <View style={styles.multiServiceSummaryBox} testID="multi-service-summary-list">
+                  <Text style={styles.multiServiceSummaryTitle}>
+                    Перелік послуг ({bookingState.selectedProcedures.length}):
+                  </Text>
+                  {bookingState.selectedProcedures.map((p) => (
+                    <View key={p.id} style={styles.multiServiceSummaryItem}>
+                      <Text style={styles.multiServiceSummaryName}>{p.name}</Text>
+                      <Text style={styles.multiServiceSummaryPrice}>{p.price} ₴</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
 
               <View style={styles.summaryFigmaRow}>
                 <View style={styles.summaryFigmaRowLeft}>
@@ -1392,7 +1761,11 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
 
             <View style={styles.paymentBreakdownCard}>
               <View style={styles.breakdownRow}>
-                <Text style={styles.breakdownLabel}>Вартість послуги</Text>
+                <Text style={styles.breakdownLabel}>
+                  {bookingState.selectedProcedures && bookingState.selectedProcedures.length > 1
+                    ? 'Вартість послуг'
+                    : 'Вартість послуги'}
+                </Text>
                 <Text style={styles.breakdownValue}>
                   {bookingState.procedurePrice} ₴
                 </Text>
@@ -1496,6 +1869,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             onPress={handleNextPress}
             accessibilityRole="button"
             accessibilityLabel="Далі"
+            accessibilityState={{ disabled: isNextDisabled }}
+            aria-disabled={isNextDisabled}
             testID="next-step-button"
           >
             <Text style={styles.primaryButtonText}>Далі</Text>
@@ -2615,6 +2990,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#34C759',
     marginTop: 2,
+  },
+  multiServiceSummaryBox: {
+    marginTop: 12,
+    marginBottom: 4,
+    padding: 14,
+    borderRadius: radii.md,
+    backgroundColor: colors.surfaceWhite,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+  },
+  multiServiceSummaryTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textMuted,
+    marginBottom: 8,
+  },
+  multiServiceSummaryItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  multiServiceSummaryName: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.contentDark,
+    flex: 1,
+    marginRight: 8,
+  },
+  multiServiceSummaryPrice: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.contentDark,
   },
   completedContainer: {
     paddingTop: 40,
