@@ -221,4 +221,70 @@ describe('MainScreen (Головна)', () => {
       expect(screen.getByText('Стрижка кота')).toBeInTheDocument();
     });
   });
+
+  it('opens corresponding promo info page when promo cards are clicked', () => {
+    const onPromoClick = vi.fn();
+    render(<MainScreen initialVisit={null} onPromoClick={onPromoClick} />);
+
+    fireEvent.click(screen.getByTestId('promo-detail-button'));
+    expect(onPromoClick).toHaveBeenCalledWith('first-grooming');
+    expect(screen.getByTestId('home-promo-detail-container')).toBeInTheDocument();
+    expect(screen.getByTestId('promo-detail-screen')).toBeInTheDocument();
+    expect(screen.getByText('-25%')).toBeInTheDocument();
+    expect(screen.getByText('на перший грумінг')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('promo-detail-back-button'));
+    expect(screen.queryByTestId('promo-detail-screen')).not.toBeInTheDocument();
+    expect(screen.getByTestId('promo-discount-card')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('promo-seasonal-card'));
+    expect(onPromoClick).toHaveBeenCalledWith('free-nail-trimming');
+    expect(screen.getByTestId('promo-detail-screen')).toBeInTheDocument();
+    expect(
+      screen.getByText('підстригання кігтів при комплексному грумінгу')
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('promo-detail-back-button'));
+    expect(screen.queryByTestId('promo-detail-screen')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('promo-weekday-card'));
+    expect(onPromoClick).toHaveBeenCalledWith('weekday-grooming');
+    expect(screen.getByTestId('promo-detail-screen')).toBeInTheDocument();
+    expect(screen.getByText('-20%')).toBeInTheDocument();
+    expect(screen.getByText('на комплексний грумінг у будні')).toBeInTheDocument();
+  });
+
+  it('navigates from promo detail to booking when quick book button is clicked', () => {
+    render(<MainScreen initialVisit={null} />);
+
+    fireEvent.click(screen.getByTestId('promo-seasonal-card'));
+    expect(screen.getByTestId('promo-detail-screen')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('promo-quick-book-button'));
+    expect(screen.queryByTestId('promo-detail-screen')).not.toBeInTheDocument();
+    expect(screen.getByTestId('booking-tab-content')).toBeInTheDocument();
+  });
+
+  it('opens corresponding article info page when expert advice cards are clicked', () => {
+    const onArticleClick = vi.fn();
+    render(<MainScreen initialVisit={null} onArticleClick={onArticleClick} />);
+
+    fireEvent.click(screen.getByTestId('advice-card-shampoo'));
+    expect(onArticleClick).toHaveBeenCalledWith('shampoo-guide');
+    expect(screen.getByTestId('home-article-detail-container')).toBeInTheDocument();
+    expect(screen.getByTestId('article-detail-screen')).toBeInTheDocument();
+    expect(screen.getByText('Як обрати правильний шампунь?')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('article-detail-back-button'));
+    expect(screen.queryByTestId('article-detail-screen')).not.toBeInTheDocument();
+    expect(screen.getByTestId('advice-card-shampoo')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('advice-card-paws'));
+    expect(onArticleClick).toHaveBeenCalledWith('paws-care');
+    expect(screen.getByTestId('article-detail-screen')).toBeInTheDocument();
+    expect(screen.getByText('5 порад для здорових лап')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('article-detail-back-button'));
+    expect(screen.queryByTestId('article-detail-screen')).not.toBeInTheDocument();
+  });
 });

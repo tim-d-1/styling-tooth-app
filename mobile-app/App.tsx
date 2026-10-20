@@ -21,18 +21,24 @@ export type ScreenState =
   | 'profile'
   | 'personal_data'
   | 'addresses'
-  | 'booking';
+  | 'booking'
+  | 'promo_detail'
+  | 'article_detail';
 
 export interface AppProps {
   initialScreen?: ScreenState;
   skipSessionCheck?: boolean;
   initialTab?: DashboardTab;
+  initialPromoId?: string;
+  initialArticleId?: string;
 }
 
 export default function App({
   initialScreen,
   skipSessionCheck = false,
   initialTab,
+  initialPromoId,
+  initialArticleId,
 }: AppProps) {
   const [currentScreen, setCurrentScreen] = useState<ScreenState>(
     initialScreen || 'loading'
@@ -143,7 +149,9 @@ export default function App({
           currentScreen === 'profile' ||
           currentScreen === 'personal_data' ||
           currentScreen === 'addresses' ||
-          currentScreen === 'booking') && (
+          currentScreen === 'booking' ||
+          currentScreen === 'promo_detail' ||
+          currentScreen === 'article_detail') && (
           <MainScreen
             userEmail={userEmail}
             onLogout={handleLogout}
@@ -164,6 +172,15 @@ export default function App({
                 ? 'addresses'
                 : undefined
             }
+            initialHomeSubScreen={
+              currentScreen === 'promo_detail'
+                ? 'promo_detail'
+                : currentScreen === 'article_detail'
+                ? 'article_detail'
+                : undefined
+            }
+            initialPromoId={initialPromoId}
+            initialArticleId={initialArticleId}
           />
         )}
       </View>

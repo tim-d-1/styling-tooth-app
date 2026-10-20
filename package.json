@@ -14,7 +14,8 @@
     "test:mobile": "npm --prefix mobile-app run test",
     "test:backend": "node supabase/tests/backend.test.mjs",
     "test:seed": "node supabase/tests/seed.test.mjs",
-    "test": "npm run test:backend && npm run test:seed && npm run test:web && npm run test:staff && npm run test:mobile"
+    "test": "npm run test:backend && npm run test:seed && npm run test:web && npm run test:staff && npm run test:mobile",
+    "demo": "node scripts/demo_runner.mjs"
   },
 
   "devDependencies": {

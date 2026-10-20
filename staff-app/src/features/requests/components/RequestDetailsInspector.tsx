@@ -246,7 +246,7 @@ export const RequestDetailsInspector: FC<RequestDetailsInspectorProps> = ({
         </span>
         <div className="relative w-full h-24 rounded-xl overflow-hidden bg-visit-gray border border-visit-gray/80">
           <img
-            src="/assets/images/pet-taxi-route-map.webp"
+            src={`${import.meta.env.BASE_URL?.replace(/\/$/, '') || ''}/assets/images/pet-taxi-route-map.webp`}
             alt="Карта салону"
             className="w-full h-full object-cover"
           />

@@ -33,6 +33,8 @@ import { UserAddress } from '../profile/profile_types';
 import { MyPetScreen } from '../pets/MyPetScreen';
 import { BookingScreen } from '../booking/BookingScreen';
 import { QuickScheduleScreen } from '../schedule/QuickScheduleScreen';
+import { PromoDetailScreen } from '../promotions/PromoDetailScreen';
+import { ArticleDetailScreen } from '../articles/ArticleDetailScreen';
 import { DashboardTopHeader } from './DashboardTopHeader';
 import { ScheduledVisitSection } from './ScheduledVisitSection';
 import {
@@ -43,6 +45,7 @@ import {
 } from '../pets/pet_types';
 
 export type DashboardTab = 'home' | 'booking' | 'pets' | 'profile';
+export type HomeSubScreen = 'feed' | 'promo_detail' | 'article_detail';
 
 export interface MainScreenProps {
   onLogout?: () => void;
@@ -53,6 +56,11 @@ export interface MainScreenProps {
   initialTab?: DashboardTab;
   initialProfileSubScreen?: 'main' | 'personal_data' | 'addresses';
   initialBookingSubScreen?: 'schedule' | 'flow';
+  initialHomeSubScreen?: HomeSubScreen;
+  initialPromoId?: string;
+  initialArticleId?: string;
+  onPromoClick?: (promoId: string) => void;
+  onArticleClick?: (articleId: string) => void;
   initialPets?: PetSwitcherItem[];
   initialPetDetail?: PetDetail | null;
   initialSchedule?: CareScheduleItem[];
@@ -69,6 +77,11 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   initialTab,
   initialProfileSubScreen,
   initialBookingSubScreen,
+  initialHomeSubScreen,
+  initialPromoId,
+  initialArticleId,
+  onPromoClick,
+  onArticleClick,
   initialPets,
   initialPetDetail,
   initialSchedule,
@@ -77,6 +90,15 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<DashboardTab>(initialTab || 'home');
+  const [homeSubScreen, setHomeSubScreen] = useState<HomeSubScreen>(
+    initialHomeSubScreen || 'feed'
+  );
+  const [selectedPromoId, setSelectedPromoId] = useState<string | null>(
+    initialPromoId || null
+  );
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(
+    initialArticleId || null
+  );
   const [profileSubScreen, setProfileSubScreen] = useState<
     'main' | 'personal_data' | 'addresses'
   >(initialProfileSubScreen || 'main');
@@ -99,6 +121,18 @@ export const MainScreen: React.FC<MainScreenProps> = ({
       setBookingSubScreen(initialBookingSubScreen);
     }
   }, [initialBookingSubScreen]);
+
+  useEffect(() => {
+    if (initialHomeSubScreen) {
+      setHomeSubScreen(initialHomeSubScreen);
+    }
+    if (initialPromoId) {
+      setSelectedPromoId(initialPromoId);
+    }
+    if (initialArticleId) {
+      setSelectedArticleId(initialArticleId);
+    }
+  }, [initialHomeSubScreen, initialPromoId, initialArticleId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -292,6 +326,22 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             </ScrollView>
           )}
         </View>
+      ) : homeSubScreen === 'promo_detail' ? (
+        <View style={styles.petsTabContainer} testID="home-promo-detail-container">
+          <PromoDetailScreen
+            promoId={selectedPromoId}
+            onBack={() => setHomeSubScreen('feed')}
+            onBook={handleBookingNavigation}
+          />
+        </View>
+      ) : homeSubScreen === 'article_detail' ? (
+        <View style={styles.petsTabContainer} testID="home-article-detail-container">
+          <ArticleDetailScreen
+            articleId={selectedArticleId}
+            onBack={() => setHomeSubScreen('feed')}
+            onBook={handleBookingNavigation}
+          />
+        </View>
       ) : (
         <ScrollView
           contentContainerStyle={[
@@ -337,7 +387,11 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                   </View>
                   <TouchableOpacity
                     style={styles.promoDetailButton}
-                    onPress={handleBookingNavigation}
+                    onPress={() => {
+                      setSelectedPromoId('first-grooming');
+                      setHomeSubScreen('promo_detail');
+                      onPromoClick?.('first-grooming');
+                    }}
                     testID="promo-detail-button"
                     accessibilityRole="button"
                     accessibilityLabel="Знижка 25% на перший грумінг: Детальніше"
@@ -349,7 +403,11 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
               <TouchableOpacity
                 style={styles.promoBannerCard}
-                onPress={handleBookingNavigation}
+                onPress={() => {
+                  setSelectedPromoId('free-nail-trimming');
+                  setHomeSubScreen('promo_detail');
+                  onPromoClick?.('free-nail-trimming');
+                }}
                 activeOpacity={0.9}
                 testID="promo-seasonal-card"
                 accessibilityRole="button"
@@ -374,7 +432,11 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
               <TouchableOpacity
                 style={[styles.promoBannerCard, styles.promoWeekdayCard]}
-                onPress={handleBookingNavigation}
+                onPress={() => {
+                  setSelectedPromoId('weekday-grooming');
+                  setHomeSubScreen('promo_detail');
+                  onPromoClick?.('weekday-grooming');
+                }}
                 activeOpacity={0.9}
                 testID="promo-weekday-card"
                 accessibilityRole="button"
@@ -412,7 +474,11 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             >
               <TouchableOpacity
                 style={[styles.adviceCard, { backgroundColor: '#E6F0F6' }]}
-                onPress={handleBookingNavigation}
+                onPress={() => {
+                  setSelectedArticleId('shampoo-guide');
+                  setHomeSubScreen('article_detail');
+                  onArticleClick?.('shampoo-guide');
+                }}
                 activeOpacity={0.9}
                 testID="advice-card-shampoo"
               >
@@ -437,7 +503,11 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
               <TouchableOpacity
                 style={[styles.adviceCard, { backgroundColor: '#D8E5F3' }]}
-                onPress={handleBookingNavigation}
+                onPress={() => {
+                  setSelectedArticleId('paws-care');
+                  setHomeSubScreen('article_detail');
+                  onArticleClick?.('paws-care');
+                }}
                 activeOpacity={0.9}
                 testID="advice-card-paws"
               >
@@ -473,7 +543,10 @@ export const MainScreen: React.FC<MainScreenProps> = ({
       >
         <TouchableOpacity
           style={styles.tabItem}
-          onPress={() => setActiveTab('home')}
+          onPress={() => {
+            setActiveTab('home');
+            setHomeSubScreen('feed');
+          }}
           accessibilityRole="button"
           accessibilityLabel="Головна"
           testID="tab-home"

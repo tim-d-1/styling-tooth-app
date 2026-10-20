@@ -52,7 +52,9 @@ export const Logo: FC<LogoProps> = ({
   height = 44,
   className,
 }) => {
-  const src = logoFileMap[variant] || logoFileMap['full-transparent'];
+  const base = import.meta.env.BASE_URL?.replace(/\/$/, '') || '';
+  const rawSrc = logoFileMap[variant] || logoFileMap['full-transparent'];
+  const src = `${base}${rawSrc}`;
 
   return (
     <img

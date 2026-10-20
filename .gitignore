@@ -21,3 +21,4 @@ staff-app/dist/
 **/xcuserdata/
 *.md
 !README.md
+!DEMO_SCRIPT.md
