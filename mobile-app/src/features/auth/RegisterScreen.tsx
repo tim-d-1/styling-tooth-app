@@ -150,6 +150,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
       const redirectUrl = makeRedirectUri({
         scheme: 'stylingtooth',
         path: 'auth/callback',
+        preferLocalhost: true,
       });
 
       const { data, error } = await supabase.auth.signInWithOAuth({
